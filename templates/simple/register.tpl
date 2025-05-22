@@ -1,4 +1,4 @@
-<?php include 'header.tpl'; 
+<?php include __DIR__ . '/header.tpl'; 
 session_start();
 // Генерация двух случайных чисел для капчи
 $num1 = rand(1, 20);
@@ -29,4 +29,4 @@ $_SESSION['captcha_answer'] = $num1 + $num2;
     <button type="submit">Зарегистрироваться</button>
 </form><?php else: ?><p class="w3-opacity w3-center"><a href="?">На главную</a></p><?php endif; ?></div>
 </div>
-<?php include 'footer.tpl'; ?>
+<?php include __DIR__ . '/footer.tpl'; ?>
