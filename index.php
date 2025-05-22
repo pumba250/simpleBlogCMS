@@ -21,6 +21,7 @@ try {
 } catch (PDOException $e) {
     echo "Connection failed: " . $e->getMessage();
 }
+$templ = $config['templ'];
 require 'class/Template.php';
 require 'class/User.php';
 require 'class/Contact.php';
