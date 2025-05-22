@@ -1,4 +1,4 @@
-<?php include 'header.tpl'; 
+<?php include __DIR__ . '/header.tpl'; 
 /* Blog entry */
 // Проверяем, есть ли параметр id в GET-запросе
 if (isset($_GET['id'])) {
@@ -129,4 +129,4 @@ $randomImage = $themeimg->getRandomImage($newsItem['title']);
     endif; 
 }
 /* END BLOG ENTRIES */
-include 'footer.tpl'; ?>
+include __DIR__ . '/footer.tpl'; ?>
