@@ -1,4 +1,4 @@
-<?php include 'header.tpl'; 
+<?php include __DIR__ . '/header.tpl'; 
 session_start();
 // Генерация двух случайных чисел для капчи
 //$num1 = rand(1, 10);
@@ -23,4 +23,4 @@ session_start();
 </form>
 </div>
 </div>
-<?php include 'footer.tpl'; ?>
+<?php include __DIR__ . '/footer.tpl'; ?>
