@@ -1,90 +1,202 @@
 <?php
 session_start();
+ob_start(); // Включаем буферизацию вывода
+/*error_reporting(E_ALL);
+ini_set('display_errors', 1);*/
+
 $config = require '../config/config.php';
 try {
-	// Получаем необходимые параметры из конфигурационного файла
     $host = $config['host'];
     $database = $config['database'];
     $db_user = $config['db_user'];
     $db_pass = $config['db_pass'];
-	// Устанавливаем соединение с базой данных
     $pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8", $db_user, $db_pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-    echo "Connection failed: " . $e->getMessage();
+    die("Connection failed: " . $e->getMessage());
 }
-require '../class/User.php';
 
+require '../class/User.php';
 $user = new User($pdo);
 
-
-// Получение пользователя из базы данных
+// Получение пользователя
+$userData = [];
+if (!empty($_SESSION['username'])) {
     $stmt = $pdo->prepare('SELECT * FROM users WHERE username = :username');
     $stmt->execute(['username' => $_SESSION['username']]);
     $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+}
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Обработка авторизации
-if ($_POST['action'] === 'login') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'login') {
     $userData = $user->login($_POST['username'], $_POST['password']);
     if ($userData) {
         $_SESSION['user'] = $userData;
     }
- }
- }
-// Добавьте подгруппы для получения общего числа пользователей, новостей и обратной связи
+}
+
+// Статистика
 $totalUsers = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 $totalNews = $pdo->query("SELECT COUNT(*) FROM blogs")->fetchColumn();
 $totalFeedback = $pdo->query("SELECT COUNT(*) FROM blogs_contacts")->fetchColumn();
+$totalComm = $pdo->query("SELECT COUNT(*) FROM comments")->fetchColumn();
+$totalCommod = $pdo->query("SELECT COUNT(*) FROM comments where moderation = 0")->fetchColumn();
 
+// Проверка прав администратора
 if (isset($userData['isadmin']) && $userData['isadmin'] == 9) {
-    // Определите, какую часть админки показать
     $view = $_GET['view'] ?? 'dashboard';
-    switch ($view) {
-        case 'manage_users':
-            $template = 'manage_users.tpl';
-			$pageTitle = 'Управление пользователями';
-            break;
-        case 'manage_feedback':
-            $template = 'manage_feedback.tpl';
-			$pageTitle = 'Обратная связь';
-            break;
-        case 'add_news':
-            $template = 'add_news.tpl';
-			$pageTitle = 'Добавить пост';
-            break;
-        default:
-            $template = 'dashboard.tpl';
-			$pageTitle = 'Статистика';
-            break;
-    }
-
-    // Передача данных для dashboard.tpl
     $templateVariables = [
-		'pageTitle' => $pageTitle,
+        'pageTitle' => '',
         'totalUsers' => $totalUsers,
         'totalNews' => $totalNews,
         'totalFeedback' => $totalFeedback,
+        'totalComm' => $totalComm,
+        'totalCommod' => $totalCommod,
+        'message' => $_SESSION['message'] ?? ''
     ];
 
+    // Обработка смены шаблона
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'change_template') {
+        $templatesDir = '/var/www/u2339566/data/www/blog.yunisov.tech/templates';
+        $configPath = '/var/www/u2339566/data/www/blog.yunisov.tech/config/config.php';
+        $availableTemplates = array_filter(scandir($templatesDir), function($item) use ($templatesDir) {
+            return $item != '.' && $item != '..' && is_dir($templatesDir.'/'.$item);
+        });
+
+        $newTemplate = $_POST['template'] ?? '';
+        if (in_array($newTemplate, $availableTemplates)) {
+            $config['templ'] = $newTemplate;
+            $configContent = "<?php\nreturn " . var_export($config, true) . ";\n";
+            
+            if (file_put_contents($configPath, $configContent, LOCK_EX)) {
+                $_SESSION['message'] = "Шаблон '{$newTemplate}' успешно активирован!";
+                if (function_exists('opcache_invalidate')) {
+                    opcache_invalidate($configPath);
+                }
+            } else {
+                $_SESSION['message'] = "Ошибка записи в config.php";
+            }
+        } else {
+            $_SESSION['message'] = "Неверный шаблон";
+        }
+        header("Location: ?view=template_settings");
+        exit;
+    }
+
+    // Выбор шаблона админки
+    switch ($view) {
+        case 'manage_users':
+            $template = 'manage_users.tpl';
+            $templateVariables['pageTitle'] = 'Управление пользователями';
+            break;
+        case 'manage_feedback':
+            $template = 'manage_feedback.tpl';
+            $templateVariables['pageTitle'] = 'Обратная связь';
+            break;
+        case 'manage_comment':
+            $template = 'manage_comment.tpl';
+            $templateVariables['pageTitle'] = 'Управление Коментариями';
+            break;
+        case 'add_news':
+            $template = 'add_news.tpl';
+            $templateVariables['pageTitle'] = 'Добавить пост';
+            break;
+        case 'template_settings':
+    $template = 'template_settings.tpl';
+    $pageTitle = 'Управление шаблонами';
+    
+    // Абсолютные пути
+    $templatesDir = '/var/www/u2339566/data/www/blog.yunisov.tech/templates';
+    $configPath = '/var/www/u2339566/data/www/blog.yunisov.tech/config/config.php';
+    
+    // Получаем список реально существующих шаблонов
+    $availableTemplates = [];
+    if (is_dir($templatesDir)) {
+        $items = scandir($templatesDir);
+        foreach ($items as $item) {
+            $fullPath = $templatesDir.'/'.$item;
+            if ($item != '.' && $item != '..' && is_dir($fullPath)) {
+                // Проверяем обязательные файлы шаблона
+                if (file_exists($fullPath.'/footer.tpl') && 
+                    file_exists($fullPath.'/header.tpl')) {
+                    $availableTemplates[] = $item;
+                }
+            }
+        }
+    }
+    
+    // Текущий шаблон из конфига
+    $currentTemplate = $config['templ'] ?? 'simple';
+    
+    // Если текущего шаблона нет в доступных, сбрасываем на default
+    if (!in_array($currentTemplate, $availableTemplates)) {
+        $currentTemplate = 'simple';
+        $config['templ'] = 'simple';
+        file_put_contents($configPath, "<?php\nreturn ".var_export($config, true).";\n");
+    }
+    
+    // Обработка смены шаблона
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && 
+        isset($_POST['action']) && 
+        $_POST['action'] === 'change_template' &&
+        isset($_POST['template'])) {
+        
+        $newTemplate = $_POST['template'];
+        
+        // Дополнительная проверка
+        if (in_array($newTemplate, $availableTemplates)) {
+            $config['templ'] = $newTemplate;
+            $configContent = "<?php\nreturn ".var_export($config, true).";\n";
+            
+            if (file_put_contents($configPath, $configContent)) {
+                $_SESSION['message'] = "Шаблон '{$newTemplate}' успешно активирован!";
+                
+                // Очистка кэша
+                if (function_exists('opcache_invalidate')) {
+                    opcache_invalidate($configPath);
+                }
+            } else {
+                $_SESSION['message'] = "Ошибка записи в config.php";
+            }
+        } else {
+            $_SESSION['message'] = "Шаблон '{$newTemplate}' не существует или неполный!";
+        }
+        
+        header("Location: ?view=template_settings");
+        exit;
+    }
+    
+    // Подготовка данных для шаблона
+    $templateVariables = [
+        'pageTitle' => $pageTitle,
+        'templates' => $availableTemplates,
+        'currentTemplate' => $currentTemplate,
+        'message' => $_SESSION['message'] ?? ''
+    ];
+    unset($_SESSION['message']);
+    break;
+        default:
+            $template = 'dashboard.tpl';
+            $templateVariables['pageTitle'] = 'Статистика';
+            break;
+    }
+
     echo renderTemplate($template, $templateVariables);
+    unset($_SESSION['message']);
 } else {
-// Отображение формы входа для администратора
-$template = 'login_form.tpl';
-$pageTitle = 'Вход в административную панель';
-// Передача данных для dashboard.tpl
-$templateVariables = [
-	'pageTitle' => $pageTitle,
-];
-echo renderTemplate($template, $templateVariables);
+    // Форма входа
+    $template = 'login_form.tpl';
+    $templateVariables = [
+        'pageTitle' => 'Вход в административную панель',
+        'message' => $_SESSION['message'] ?? ''
+    ];
+    echo renderTemplate($template, $templateVariables);
+    unset($_SESSION['message']);
 }
 
-// Функция для отображения шаблона с данными
-function renderTemplate($template, $variables = [])
-{
-    extract($variables); // Извлекаем переменные из массива
+function renderTemplate($template, $variables = []) {
+    extract($variables);
     ob_start();
     include "templates/$template";
     return ob_get_clean();
 }
-?>
