@@ -57,8 +57,8 @@ if (isset($userData['isadmin']) && $userData['isadmin'] == 9) {
 
     // Обработка смены шаблона
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'change_template') {
-        $templatesDir = '/var/www/u2339566/data/www/blog.yunisov.tech/templates';
-        $configPath = '/var/www/u2339566/data/www/blog.yunisov.tech/config/config.php';
+        $templatesDir = '../templates';
+        $configPath = '../config/config.php';
         $availableTemplates = array_filter(scandir($templatesDir), function($item) use ($templatesDir) {
             return $item != '.' && $item != '..' && is_dir($templatesDir.'/'.$item);
         });
@@ -106,8 +106,8 @@ if (isset($userData['isadmin']) && $userData['isadmin'] == 9) {
     $pageTitle = 'Управление шаблонами';
     
     // Абсолютные пути
-    $templatesDir = '/var/www/u2339566/data/www/blog.yunisov.tech/templates';
-    $configPath = '/var/www/u2339566/data/www/blog.yunisov.tech/config/config.php';
+    $templatesDir = '../templates';
+    $configPath = '../config/config.php';
     
     // Получаем список реально существующих шаблонов
     $availableTemplates = [];
