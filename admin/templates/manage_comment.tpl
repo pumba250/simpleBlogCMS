@@ -15,7 +15,7 @@ and is wrapped around the whole page content, except for the footer in this exam
 <!-- Header -->
 <header class="w3-container w3-center w3-padding-32"> 
   <h1>Панель управления</h1>
-  <h2>Обратная связь</h2>
+  <h2>Управление комментариями</h2>
 </header>
 <!-- Grid -->
 <div class="w3-row">
@@ -28,7 +28,9 @@ and is wrapped around the whole page content, except for the footer in this exam
         <div class="w3-container">
             <p>
         <?php
+
 $config = require '../config/config.php';
+
 try {
 	// Получаем необходимые параметры из конфигурационного файла
     $host = $config['host'];
@@ -41,32 +43,59 @@ try {
 } catch (PDOException $e) {
     echo "Connection failed: " . $e->getMessage();
 }
-echo "<table>
+require '../class/Comments.php';
+
+$comments = new Comments($pdo);
+
+$pendingComments = $comments->getPendingComments();
+if (empty($pendingComments)) {
+    // Если массив пустой, отображаем сообщение
+    echo '<p>Нет комментариев на модерацию.</p>';
+} else {
+		echo "<table>
         <tr>
             <th>ID</th>
             <th>Имя</th>
-            <th>Email</th>
             <th>Сообщение</th>
-            <th>Дата</th>
             <th>Действия</th>
         </tr>";
         // Получить список обратной связи
-        $stmt = $pdo->query("SELECT * FROM blogs_contacts ORDER BY created_at DESC");
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            echo "<tr>
-                    <td>{$row['id']}</td>
-                    <td>{$row['name']}</td>
-                    <td>{$row['email']}</td>
-                    <td>{$row['message']}</td>
-                    <td>{$row['created_at']}</td>
+        foreach ($pendingComments as $comment) {
+			/*echo '<div>';
+			echo '<strong>' . htmlspecialchars($comment['user_name']) . ':</strong>';
+			echo '<p>' . htmlspecialchars($comment['user_text']) . '</p>';
+			echo '<form method="post">';
+			echo '<input type="hidden" name="comment_id" value="' . $comment['id'] . '">';
+			echo '<button type="submit" name="approve">Одобрить</button>';
+			echo '<button type="submit" name="reject">Удалить</button>';
+			echo '</form>';
+			echo '</div>';*/
+			
+			echo "<tr>
+                    <td>{$comment['id']}</td>
+                    <td>{$comment['user_name']}</td>
+                    <td>{$comment['user_text']}</td>
                     <td>
-                        <form action='delete_message.php' method='POST' onsubmit='return confirm(\"Вы уверены, что хотите удалить это сообщение?\");'>
-                            <input type='hidden' name='id' value='{$row['id']}'>
-                            <input type='submit' value='Удалить'>
+                        <form method='POST'>
+                            <input type='hidden' name='comment_id' value='{$comment['id']}'>
+							<button type='submit' name='approve'>Одобрить</button>
+							<button type='submit' name='reject'>Удалить</button>
                         </form>
                     </td>
                   </tr>";
-        }
+		}
+}
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $commentId = $_POST['comment_id'];
+    if (isset($_POST['approve'])) {
+        $comments->approveComment($commentId);
+    } elseif (isset($_POST['reject'])) {
+        $comments->rejectComment($commentId);
+    }
+    // Перенаправление обратно на страницу с комментариями
+    header('Location: index.php?view=manage_comment');
+    exit;
+}
         ?>
     </table></p> <!-- Полное содержание -->
             <div class="w3-row">

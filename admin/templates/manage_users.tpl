@@ -9,8 +9,6 @@ body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 </style>
 </head>
 <body class="w3-light-grey">
-<!-- w3-content defines a container for fixed size centered content, 
-and is wrapped around the whole page content, except for the footer in this example -->
 <div class="w3-content" style="max-width:1400px">
 <!-- Header -->
 <header class="w3-container w3-center w3-padding-32"> 
@@ -31,6 +29,7 @@ and is wrapped around the whole page content, except for the footer in this exam
             <th>ID</th>
             <th>Логин</th>
             <th>Email</th>
+			<th>Проверен</th>
             <th>Действия</th>
         </tr>
         <?php
@@ -50,10 +49,13 @@ try {
         // Получить список пользователей для отображения
         $stmt = $pdo->query("SELECT * FROM `users`");
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+		//print_r($row);
+		if ($row['is_verified'] == 1){$verified = 'Да';} elseif ($row['is_verified'] == 0){$verified = 'Нет';}
             echo "<tr>
                     <td>{$row['id']}</td>
                     <td>{$row['username']}</td>
                     <td>{$row['email']}</td>
+					<td>{$verified}</td>
                     <td><a href='delete_user.php?id={$row['id']}'>Удалить</a></td>
                   </tr>";
         }
@@ -72,11 +74,13 @@ try {
 <div class="w3-col l4">
   <!-- About Card -->
   <div class="w3-card w3-margin w3-margin-top">
+  <?php if ($user): ?><img src="https://yunisov.tech<?= htmlspecialchars($user['avatar']);?>" style="width:120px"><?php endif; ?>
     <div class="w3-container w3-white">
             <h4>Навигация</h4>
         <div class="w3-container w3-white">
 			<p><a href="/">BLOG</a></p>
 			<p><a href="index.php?view=manage_users">Управление пользователями</a></p>
+			<p><a href="index.php?view=manage_comment">Управление Коментариями</a></p>
 			<p><a href="index.php?view=template_settings">Управление Шаблонами</a></p>
 			<p><a href="index.php?view=manage_feedback">Обратная связь</a></p>
 			<p><a href="index.php?view=add_news">Добавить запись в блог</a></p>

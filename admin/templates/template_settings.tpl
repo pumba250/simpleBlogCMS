@@ -85,7 +85,7 @@ body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 <div class="w3-col l4">
   <!-- About Card -->
   <div class="w3-card w3-margin w3-margin-top">
-  <?php if ($user): ?><img src="<?= htmlspecialchars($user['avatar']);?>" style="width:120px"><?php endif; ?>
+  <?php if ($user): ?><img src="https://yunisov.tech<?= htmlspecialchars($user['avatar']);?>" style="width:120px"><?php endif; ?>
     <div class="w3-container w3-white">
             <h4>Навигация</h4>
         <div class="w3-container w3-white">
