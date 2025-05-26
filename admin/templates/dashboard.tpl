@@ -47,6 +47,7 @@ and is wrapped around the whole page content, except for the footer in this exam
         <div class="w3-container w3-white">
 			<p><a href="/">BLOG</a></p>
 			<p><a href="index.php?view=manage_users">Управление пользователями</a></p>
+			<p><a href="index.php?view=template_settings">Управление Шаблонами</a></p>
 			<p><a href="index.php?view=manage_feedback">Обратная связь</a></p>
 			<p><a href="index.php?view=add_news">Добавить запись в блог</a></p>
         </div>
