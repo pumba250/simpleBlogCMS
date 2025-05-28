@@ -22,6 +22,7 @@ try {
     echo "Connection failed: " . $e->getMessage();
 }
 $templ = $config['templ'];
+$dbPrefix = $config['db_prefix'] ?? '';
 require 'class/Template.php';
 require 'class/User.php';
 require 'class/Contact.php';
@@ -68,7 +69,7 @@ try {
 	// Получение последних 3 новостей
     $lastThreeNews = $news->getLastThreeNews();
     // Получение всех тегов
-    $stmt = $pdo->query("SELECT * FROM tags ORDER by `name`");
+    $stmt = $pdo->query("SELECT * FROM {$dbPrefix}tags ORDER by `name`");
     $allTags = $stmt->fetchAll(PDO::FETCH_ASSOC);
 	// Передача данных тегов и заголовка в шаблон
     $template->assign('allTags', $allTags);
@@ -85,7 +86,7 @@ try {
         // Получение последних 3 новостей
         $lastThreeNews = $news->getLastThreeNews();
         // Получение всех тегов
-        $stmt = $pdo->query("SELECT * FROM tags ORDER by `name`");
+        $stmt = $pdo->query("SELECT * FROM {$dbPrefix}tags ORDER by `name`");
         $allTags = $stmt->fetchAll(PDO::FETCH_ASSOC);
         // Передача данных в шаблон
         $template->assign('allTags', $allTags);
@@ -106,7 +107,7 @@ try {
     // Получение последних 3 новостей
     $lastThreeNews = $news->getLastThreeNews();
     // Получение всех тегов
-    $stmt = $pdo->query("SELECT DISTINCT(`name`) FROM tags");
+    $stmt = $pdo->query("SELECT DISTINCT(`name`) FROM {$dbPrefix}tags");
     $allTags = $stmt->fetchAll(PDO::FETCH_ASSOC);
     // Передача данных тегов и заголовка в шаблон
     $template->assign('allTags', $allTags);
@@ -123,7 +124,7 @@ try {
             case 'register':
                 // Загрузка страницы регистрации
                 $template->assign('lastThreeNews', $news->getLastThreeNews());
-                $template->assign('allTags', $pdo->query("SELECT DISTINCT(`name`) FROM tags")->fetchAll(PDO::FETCH_ASSOC));
+                $template->assign('allTags', $pdo->query("SELECT DISTINCT(`name`) FROM {$dbPrefix}tags")->fetchAll(PDO::FETCH_ASSOC));
     $template->assign('user', $_SESSION['user'] ?? null);
                 $template->assign('pageTitle', 'Регистрация simpleBlog');
 				    echo $template->render('register.tpl');
@@ -131,7 +132,7 @@ try {
             case 'contact':
                 // Загрузка формы обратной связи
                 $template->assign('lastThreeNews', $news->getLastThreeNews());
-                $template->assign('allTags', $pdo->query("SELECT DISTINCT(`name`) FROM tags")->fetchAll(PDO::FETCH_ASSOC));
+                $template->assign('allTags', $pdo->query("SELECT DISTINCT(`name`) FROM {$dbPrefix}tags")->fetchAll(PDO::FETCH_ASSOC));
     $template->assign('user', $_SESSION['user'] ?? null);
                 $template->assign('pageTitle', 'Форма обратной связи simpleBlog');
 				    echo $template->render('contact.tpl');
