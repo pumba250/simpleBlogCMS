@@ -9,12 +9,11 @@ if (isset($_GET['id'])) {
 
     if ($newsItem): // Если новость найдена
 
-$randomImage = $themeimg->getRandomImage($newsItem['title']);
 ?>
     <div class="w3-card-4 w3-margin w3-white">
         
         <div class="w3-container">
-            <h3><img src="<?= htmlspecialchars($randomImage) ?>" alt="image" style="width:13%;"><b><?= htmlspecialchars($newsItem['title']) ?></b>
+            <h3><b><?= htmlspecialchars($newsItem['title']) ?></b>
                     <?php if (isset($user) && $user['isadmin'] == 9): ?>
                         / <a href="/admin/edit_news.php?id=<?= $newsItem['id'] ?>">edit</a>
                         or <a href="/admin/delete_news.php?id=<?= $newsItem['id'] ?>">delete</a>
@@ -97,12 +96,11 @@ $randomImage = $themeimg->getRandomImage($newsItem['title']);
     if ($news): // Проверяем, есть ли новости
         foreach ($news as $newsItem): // Перебираем все короткие новости
 
-$randomImage = $themeimg->getRandomImage($newsItem['title']);
 ?>
         <div class="w3-card-4 w3-margin w3-white">
             
             <div class="w3-container w3-padding">
-                <h3><img src="<?= htmlspecialchars($randomImage) ?>" alt="image" style="width:13%"><b><?= htmlspecialchars($newsItem['title']) ?></b>
+                <h3><b><?= htmlspecialchars($newsItem['title']) ?></b>
                     <?php if (isset($user) && $user['isadmin'] == 9): ?>
                         / <a href="/admin/edit_news.php?id=<?= $newsItem['id'] ?>">edit</a>
                         or <a href="/admin/delete_news.php?id=<?= $newsItem['id'] ?>">delete</a>

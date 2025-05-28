@@ -7,6 +7,7 @@ class User {
     }
 
     public function register($username, $password, $email) {
+	global $dbPrefix;
     // Проверяем, есть ли уже пользователи в базе данных
     $query = $this->pdo->query("SELECT COUNT(*) FROM {$dbPrefix}users");
     $userCount = $query->fetchColumn();
@@ -33,6 +34,7 @@ class User {
 }
 
 	public function login($username, $password) {
+	global $dbPrefix;
     $stmt = $this->pdo->prepare("SELECT * FROM {$dbPrefix}users WHERE username = ?");
     $stmt->execute([$username]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);

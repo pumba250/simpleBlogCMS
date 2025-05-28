@@ -23,8 +23,8 @@ $_SESSION['captcha_answer'] = $num1 + $num2;
     <label for="email">Email:</label>
     <input type="email" name="email" id="email" placeholder="Email" required><br>
     
-    <label for="question"><p>Сколько будет <?php echo $num1; ?> + <?php echo $num2; ?>?</label>
-    <input type="text" name="posted_answer" id="question" placeholder="Введите ответ" required><br>
+    <label for="question">Сколько будет <img src="<?php echo $captcha_image_url; ?>" alt="Капча"></label>
+    <input type="text" name="captcha" required placeholder="Введите ответ"><br>
     
     <button type="submit">Зарегистрироваться</button>
 </form><?php else: ?><p class="w3-opacity w3-center"><a href="?">На главную</a></p><?php endif; ?></div>

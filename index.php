@@ -40,14 +40,38 @@ try {
             $pageTitle = 'Регистрация simpleBlog';
         }
         // Обработка авторизации
-        if ($_POST['action'] === 'login') {
-            $userData = $user->login($_POST['username'], $_POST['password']);
-            if ($userData) {
-                $_SESSION['user'] = $userData;
-            }
-        }
+        if (isset($_POST['action']) && $_POST['action'] === 'login') {
+			$captchaValid = isset($_POST['captcha']) && $_POST['captcha'] == $_SESSION['captcha_answer'];
+			$username = $_POST['username'] ?? '';
+			$password = $_POST['password'] ?? '';
+			
+			if (!$captchaValid) {
+				$_SESSION['auth_error'] = "Неправильный ответ на капчу. Попробуйте еще раз.";
+			} elseif (empty($username) || empty($password)) {
+				$_SESSION['auth_error'] = "Заполните все поля";
+			} else {
+				$userData = $user->login($username, $password);
+				if ($userData) {
+					$_SESSION['user'] = $userData;
+					sleep(2);
+					header("Location: " . $_SERVER['REQUEST_URI']);
+					exit;
+				} else {
+					$_SESSION['auth_error'] = "Неверный логин или пароль";
+				}
+			}
+			
+			// Сохраняем введенные данные для повторного показа
+			$_SESSION['auth_form_data'] = [
+				'username' => $username
+			];
+			
+			header("Location: " . $_SERVER['REQUEST_URI']);
+			exit;
+		}
         // Обработка обратной связи
         if ($_POST['action'] === 'contact') {
+			$pageTitle = 'Форма обратной связи';
             if (isset($_POST['captcha']) && $_POST['captcha'] == $_SESSION['captcha_answer']) {
                 if ($contact->saveMessage($_POST['name'], $_POST['email'], $_POST['message'])) {
                     $errors[] = "Сообщение успешно отправлено!";
@@ -72,6 +96,7 @@ try {
     $stmt = $pdo->query("SELECT * FROM {$dbPrefix}tags ORDER by `name`");
     $allTags = $stmt->fetchAll(PDO::FETCH_ASSOC);
 	// Передача данных тегов и заголовка в шаблон
+	$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
     $template->assign('allTags', $allTags);
     $template->assign('lastThreeNews', $lastThreeNews);
     $template->assign('user', $_SESSION['user'] ?? null);
@@ -89,6 +114,7 @@ try {
         $stmt = $pdo->query("SELECT * FROM {$dbPrefix}tags ORDER by `name`");
         $allTags = $stmt->fetchAll(PDO::FETCH_ASSOC);
         // Передача данных в шаблон
+		$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
         $template->assign('allTags', $allTags);
         $template->assign('lastThreeNews', $lastThreeNews);
         $template->assign('user', $_SESSION['user'] ?? null);
@@ -110,6 +136,7 @@ try {
     $stmt = $pdo->query("SELECT DISTINCT(`name`) FROM {$dbPrefix}tags");
     $allTags = $stmt->fetchAll(PDO::FETCH_ASSOC);
     // Передача данных тегов и заголовка в шаблон
+	$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
     $template->assign('allTags', $allTags);
     $template->assign('lastThreeNews', $lastThreeNews);
     $template->assign('user', $_SESSION['user'] ?? null);
@@ -124,6 +151,7 @@ try {
             case 'register':
                 // Загрузка страницы регистрации
                 $template->assign('lastThreeNews', $news->getLastThreeNews());
+				$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
                 $template->assign('allTags', $pdo->query("SELECT DISTINCT(`name`) FROM {$dbPrefix}tags")->fetchAll(PDO::FETCH_ASSOC));
     $template->assign('user', $_SESSION['user'] ?? null);
                 $template->assign('pageTitle', 'Регистрация simpleBlog');
@@ -132,6 +160,7 @@ try {
             case 'contact':
                 // Загрузка формы обратной связи
                 $template->assign('lastThreeNews', $news->getLastThreeNews());
+				$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
                 $template->assign('allTags', $pdo->query("SELECT DISTINCT(`name`) FROM {$dbPrefix}tags")->fetchAll(PDO::FETCH_ASSOC));
     $template->assign('user', $_SESSION['user'] ?? null);
                 $template->assign('pageTitle', 'Форма обратной связи simpleBlog');

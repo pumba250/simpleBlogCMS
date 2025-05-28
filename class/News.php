@@ -7,6 +7,7 @@ class News {
     }
 
 public function getAllNews($limit, $offset) {
+	global $dbPrefix;
     $stmt = $this->pdo->prepare("SELECT id, title, LEFT(content, 300) AS excerpt, content, created_at FROM {$dbPrefix}blogs ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
     $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
     $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
@@ -15,9 +16,11 @@ public function getAllNews($limit, $offset) {
 }
 
     public function getTotalNewsCount() {
+	global $dbPrefix;
         return $this->pdo->query("SELECT COUNT(*) FROM {$dbPrefix}blogs")->fetchColumn();
     }
 	public function getLastThreeNews() {
+	global $dbPrefix;
     $stmt = $this->pdo->query("SELECT * FROM {$dbPrefix}blogs ORDER BY created_at DESC LIMIT 3");
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 	}
@@ -52,6 +55,7 @@ public function getAllNews($limit, $offset) {
 		return array_slice($tags, 0, 10);
 	}
 	public function getNewsWithTags() {
+	global $dbPrefix;
     $stmt = $this->pdo->query("
         SELECT n.*, GROUP_CONCAT(t.name SEPARATOR ', ') as tags
         FROM {$dbPrefix}blogs n
@@ -63,6 +67,7 @@ public function getAllNews($limit, $offset) {
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 	}
 	public function updateNews($id, $title, $content, $tags) {
+	global $dbPrefix;
     $stmt = $this->pdo->prepare("UPDATE {$dbPrefix}blogs SET title = ?, content = ? WHERE id = ?");
     $stmt->execute([$title, $content, $id]);
 
@@ -80,6 +85,7 @@ public function getAllNews($limit, $offset) {
     }
 }
 public function deleteNews($id) {
+	global $dbPrefix;
     try {
         // Удаляем теги, связанные с новостью
         $this->removeTags($id); 
@@ -95,22 +101,26 @@ public function deleteNews($id) {
     }
 }
 public function removeUnusedTags() {
+	global $dbPrefix;
     // Удаляем теги, которые больше не используются
     $stmt = $this->pdo->prepare("DELETE FROM {$dbPrefix}tags WHERE id NOT IN (SELECT tag_id FROM blogs_tags)");
     $stmt->execute();
 }
 public function removeTags($newsId) {
+	global $dbPrefix;
     $stmt = $this->pdo->prepare("DELETE FROM {$dbPrefix}blogs_tags WHERE blogs_id = ?");
     $stmt->execute([$newsId]);
 }
 
 public function getNewsById($id) {
+	global $dbPrefix;
     $stmt = $this->pdo->prepare("SELECT * FROM {$dbPrefix}blogs WHERE id = ?");
     $stmt->execute([$id]);
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
 public function getTagsByNewsId($newsId) {
+	global $dbPrefix;
     $stmt = $this->pdo->prepare("
         SELECT t.name
         FROM {$dbPrefix}tags t
@@ -121,6 +131,7 @@ public function getTagsByNewsId($newsId) {
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 public function getNewsByTag($tag) {
+	global $dbPrefix;
     // Сначала получаем ID тега по имени
     $stmt = $this->pdo->prepare("SELECT id FROM {$dbPrefix}tags WHERE name = ?");
     $stmt->execute([$tag]);
