@@ -2,8 +2,8 @@
 $start = microtime(1);
 session_start();
 if (!file_exists('config/config.php')) {
-	header('Location: install.php')
-	die:
+	header('Location: install.php');
+	die;
 }
 if (file_exists('install.php')) {
 	echo "<font color=red>Удалите файл install.php и директорию sql</font>";
