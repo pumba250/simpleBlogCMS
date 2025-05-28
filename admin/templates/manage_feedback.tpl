@@ -41,6 +41,7 @@ try {
 } catch (PDOException $e) {
     echo "Connection failed: " . $e->getMessage();
 }
+$dbPrefix = $config['db_prefix'] ?? '';
 echo "<table>
         <tr>
             <th>ID</th>
@@ -51,7 +52,7 @@ echo "<table>
             <th>Действия</th>
         </tr>";
         // Получить список обратной связи
-        $stmt = $pdo->query("SELECT * FROM blogs_contacts ORDER BY created_at DESC");
+        $stmt = $pdo->query("SELECT * FROM {$dbPrefix}blogs_contacts ORDER BY created_at DESC");
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             echo "<tr>
                     <td>{$row['id']}</td>
@@ -88,7 +89,6 @@ echo "<table>
         <div class="w3-container w3-white">
 			<p><a href="/">BLOG</a></p>
 			<p><a href="index.php?view=manage_users">Управление пользователями</a></p>
-			<p><a href="index.php?view=manage_comment">Управление Коментариями</a></p>
 			<p><a href="index.php?view=template_settings">Управление Шаблонами</a></p>
 			<p><a href="index.php?view=manage_feedback">Обратная связь</a></p>
 			<p><a href="index.php?view=add_news">Добавить запись в блог</a></p>

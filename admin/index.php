@@ -15,14 +15,14 @@ try {
 } catch (PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }
-
+$dbPrefix = $config['db_prefix'] ?? '';
 require '../class/User.php';
 $user = new User($pdo);
 
 // Получение пользователя
 $userData = [];
 if (!empty($_SESSION['username'])) {
-    $stmt = $pdo->prepare('SELECT * FROM users WHERE username = :username');
+    $stmt = $pdo->prepare('SELECT * FROM '.$dbPrefix.'users WHERE username = :username');
     $stmt->execute(['username' => $_SESSION['username']]);
     $userData = $stmt->fetch(PDO::FETCH_ASSOC);
 }
@@ -36,11 +36,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Статистика
-$totalUsers = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
-$totalNews = $pdo->query("SELECT COUNT(*) FROM blogs")->fetchColumn();
-$totalFeedback = $pdo->query("SELECT COUNT(*) FROM blogs_contacts")->fetchColumn();
-$totalComm = $pdo->query("SELECT COUNT(*) FROM comments")->fetchColumn();
-$totalCommod = $pdo->query("SELECT COUNT(*) FROM comments where moderation = 0")->fetchColumn();
+$totalUsers = $pdo->query("SELECT COUNT(*) FROM {$dbPrefix}users")->fetchColumn();
+$totalNews = $pdo->query("SELECT COUNT(*) FROM {$dbPrefix}blogs")->fetchColumn();
+$totalFeedback = $pdo->query("SELECT COUNT(*) FROM {$dbPrefix}blogs_contacts")->fetchColumn();
+//$totalComm = $pdo->query("SELECT COUNT(*) FROM {$dbPrefix}comments")->fetchColumn();
+//$totalCommod = $pdo->query("SELECT COUNT(*) FROM '{$dbPrefix}comments' where moderation = 0")->fetchColumn();
 
 // Проверка прав администратора
 if (isset($userData['isadmin']) && $userData['isadmin'] == 9) {

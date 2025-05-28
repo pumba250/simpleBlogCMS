@@ -7,6 +7,7 @@ if (!file_exists('config/config.php')) {
 }
 if (file_exists('install.php')) {
 	echo "<font color=red>Удалите файл install.php и директорию sql</font>";
+	die;
 }
 $config = require 'config/config.php';
 try {
@@ -54,7 +55,7 @@ try {
 				if ($userData) {
 					$_SESSION['user'] = $userData;
 					sleep(2);
-					header("Location: " . $_SERVER['REQUEST_URI']);
+					header("Location: /");
 					exit;
 				} else {
 					$_SESSION['auth_error'] = "Неверный логин или пароль";

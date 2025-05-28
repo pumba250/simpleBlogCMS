@@ -43,13 +43,12 @@ and is wrapped around the whole page content, except for the footer in this exam
 <div class="w3-col l4">
   <!-- About Card -->
   <div class="w3-card w3-margin w3-margin-top">
-  <?php if ($user): ?><img src="https://yunisov.tech<?= htmlspecialchars($user['avatar']);?>" style="width:120px"><?php endif; ?>
+  <?php if ($user): ?><img src="<?= htmlspecialchars($user['avatar']);?>" style="width:120px"><?php endif; ?>
     <div class="w3-container w3-white">
             <h4>Навигация</h4>
         <div class="w3-container w3-white">
 			<p><a href="/">BLOG</a></p>
 			<p><a href="index.php?view=manage_users">Управление пользователями</a></p>
-			<p><a href="index.php?view=manage_comment">Управление Коментариями</a></p>
 			<p><a href="index.php?view=template_settings">Управление Шаблонами</a></p>
 			<p><a href="index.php?view=manage_feedback">Обратная связь</a></p>
 			<p><a href="index.php?view=add_news">Добавить запись в блог</a></p>

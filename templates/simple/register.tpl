@@ -1,11 +1,5 @@
 <?php include __DIR__ . '/header.tpl'; 
 session_start();
-// Генерация двух случайных чисел для капчи
-$num1 = rand(1, 20);
-$num2 = rand(1, 10);
-// Сохраним правильный ответ в сессии
-$_SESSION['captcha_answer'] = $num1 + $num2;
-//$expected_answer = $_SESSION['captcha_answer'];
 
 ?><div class="w3-card-4 w3-margin w3-white">
 <div id="contact" class="w3-container w3-center w3-padding-32">

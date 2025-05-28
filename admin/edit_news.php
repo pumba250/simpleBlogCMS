@@ -13,7 +13,7 @@ try {
 } catch (PDOException $e) {
     echo "Connection failed: " . $e->getMessage();
 }
-
+$dbPrefix = $config['db_prefix'] ?? '';
 if (!isset($_SESSION['isadmin']) || (int)$_SESSION['isadmin'] !== 9) {
        header('Location: index.php');
        exit();

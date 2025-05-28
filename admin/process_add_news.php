@@ -14,7 +14,7 @@ try {
 } catch (PDOException $e) {
     echo "Connection failed: " . $e->getMessage();
 }
-
+$dbPrefix = $config['db_prefix'] ?? '';
 
 if (!isset($_SESSION['isadmin']) || $_SESSION['user']['isadmin'] !== '9') {
 	//echo "Доступ запрещен. Вы не являетесь администратором.";
@@ -33,21 +33,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tags = $news->generateTags($title, $content);
 
     // Сохранение новости
-    $stmt = $pdo->prepare("INSERT INTO blogs (title, content) VALUES (?, ?)");
+    $stmt = $pdo->prepare("INSERT INTO {$dbPrefix}blogs (title, content) VALUES (?, ?)");
     $stmt->execute([$title, $content]);
     $newsId = $pdo->lastInsertId();
 
     // Сохранение тегов в БД
     foreach ($tags as $tag) {
         // Проверка, существует ли тег в БД
-        $stmt = $pdo->prepare("INSERT INTO tags (name) VALUES (?) ON DUPLICATE KEY UPDATE id=id");
+        $stmt = $pdo->prepare("INSERT INTO {$dbPrefix}tags (name) VALUES (?) ON DUPLICATE KEY UPDATE id=id");
         $stmt->execute([$tag]);
         
         // Получаем ID тега
         $tagId = $pdo->lastInsertId();
 
         // Связываем тег с новостью
-        $stmt = $pdo->prepare("INSERT INTO blogs_tags (blogs_id, tag_id) VALUES (?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO {$dbPrefix}blogs_tags (blogs_id, tag_id) VALUES (?, ?)");
         $stmt->execute([$newsId, $tagId]);
     }
 
