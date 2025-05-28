@@ -7,7 +7,7 @@ class News {
     }
 
 public function getAllNews($limit, $offset) {
-    $stmt = $this->pdo->prepare("SELECT id, title, LEFT(content, 300) AS excerpt, content, created_at FROM blogs ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
+    $stmt = $this->pdo->prepare("SELECT id, title, LEFT(content, 300) AS excerpt, content, created_at FROM {$dbPrefix}blogs ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
     $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
     $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
@@ -15,10 +15,10 @@ public function getAllNews($limit, $offset) {
 }
 
     public function getTotalNewsCount() {
-        return $this->pdo->query("SELECT COUNT(*) FROM blogs")->fetchColumn();
+        return $this->pdo->query("SELECT COUNT(*) FROM {$dbPrefix}blogs")->fetchColumn();
     }
 	public function getLastThreeNews() {
-    $stmt = $this->pdo->query("SELECT * FROM blogs ORDER BY created_at DESC LIMIT 3");
+    $stmt = $this->pdo->query("SELECT * FROM {$dbPrefix}blogs ORDER BY created_at DESC LIMIT 3");
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 	}
 	public function generateTags($title, $content) {
@@ -54,16 +54,16 @@ public function getAllNews($limit, $offset) {
 	public function getNewsWithTags() {
     $stmt = $this->pdo->query("
         SELECT n.*, GROUP_CONCAT(t.name SEPARATOR ', ') as tags
-        FROM blogs n
-        LEFT JOIN blogs_tags nt ON n.id = nt.blogs_id
-        LEFT JOIN tags t ON nt.tag_id = t.id
+        FROM {$dbPrefix}blogs n
+        LEFT JOIN {$dbPrefix}blogs_tags nt ON n.id = nt.blogs_id
+        LEFT JOIN {$dbPrefix}tags t ON nt.tag_id = t.id
         GROUP BY n.id
         ORDER BY n.created_at DESC
     ");
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 	}
 	public function updateNews($id, $title, $content, $tags) {
-    $stmt = $this->pdo->prepare("UPDATE blogs SET title = ?, content = ? WHERE id = ?");
+    $stmt = $this->pdo->prepare("UPDATE {$dbPrefix}blogs SET title = ?, content = ? WHERE id = ?");
     $stmt->execute([$title, $content, $id]);
 
     // Удаление старых тегов
@@ -71,11 +71,11 @@ public function getAllNews($limit, $offset) {
 
     // Сохранение новых тегов
     foreach ($tags as $tag) {
-        $stmt = $this->pdo->prepare("INSERT INTO tags (name) VALUES (?) ON DUPLICATE KEY UPDATE id=id");
+        $stmt = $this->pdo->prepare("INSERT INTO {$dbPrefix}tags (name) VALUES (?) ON DUPLICATE KEY UPDATE id=id");
         $stmt->execute([$tag]);
         $tagId = $this->pdo->lastInsertId();
 
-        $stmt = $this->pdo->prepare("INSERT INTO blogs_tags (blogs_id, tag_id) VALUES (?, ?)");
+        $stmt = $this->pdo->prepare("INSERT INTO {$dbPrefix}blogs_tags (blogs_id, tag_id) VALUES (?, ?)");
         $stmt->execute([$id, $tagId]);
     }
 }
@@ -85,7 +85,7 @@ public function deleteNews($id) {
         $this->removeTags($id); 
         
         // Удаляем саму новость
-        $stmt = $this->pdo->prepare("DELETE FROM blogs WHERE id = ?");
+        $stmt = $this->pdo->prepare("DELETE FROM {$dbPrefix}blogs WHERE id = ?");
         $stmt->execute([$id]);
 
         // После удаления новости, удаляем неиспользуемые теги
@@ -96,16 +96,16 @@ public function deleteNews($id) {
 }
 public function removeUnusedTags() {
     // Удаляем теги, которые больше не используются
-    $stmt = $this->pdo->prepare("DELETE FROM tags WHERE id NOT IN (SELECT tag_id FROM blogs_tags)");
+    $stmt = $this->pdo->prepare("DELETE FROM {$dbPrefix}tags WHERE id NOT IN (SELECT tag_id FROM blogs_tags)");
     $stmt->execute();
 }
 public function removeTags($newsId) {
-    $stmt = $this->pdo->prepare("DELETE FROM blogs_tags WHERE blogs_id = ?");
+    $stmt = $this->pdo->prepare("DELETE FROM {$dbPrefix}blogs_tags WHERE blogs_id = ?");
     $stmt->execute([$newsId]);
 }
 
 public function getNewsById($id) {
-    $stmt = $this->pdo->prepare("SELECT * FROM blogs WHERE id = ?");
+    $stmt = $this->pdo->prepare("SELECT * FROM {$dbPrefix}blogs WHERE id = ?");
     $stmt->execute([$id]);
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
@@ -113,8 +113,8 @@ public function getNewsById($id) {
 public function getTagsByNewsId($newsId) {
     $stmt = $this->pdo->prepare("
         SELECT t.name
-        FROM tags t
-        JOIN blogs_tags nt ON t.id = nt.tag_id
+        FROM {$dbPrefix}tags t
+        JOIN {$dbPrefix}blogs_tags nt ON t.id = nt.tag_id
         WHERE nt.blogs_id = ?
     ");
     $stmt->execute([$newsId]);
@@ -122,7 +122,7 @@ public function getTagsByNewsId($newsId) {
 }
 public function getNewsByTag($tag) {
     // Сначала получаем ID тега по имени
-    $stmt = $this->pdo->prepare("SELECT id FROM tags WHERE name = ?");
+    $stmt = $this->pdo->prepare("SELECT id FROM {$dbPrefix}tags WHERE name = ?");
     $stmt->execute([$tag]);
     $tagId = $stmt->fetchColumn();
     // Если тег не найден, возвращаем пустой массив
@@ -133,8 +133,8 @@ public function getNewsByTag($tag) {
     // Теперь получаем все новости, связанные с этим тегом
     $stmt = $this->pdo->prepare("
         SELECT b.*
-        FROM blogs b
-        JOIN blogs_tags bt ON b.id = bt.blogs_id
+        FROM {$dbPrefix}blogs b
+        JOIN {$dbPrefix}blogs_tags bt ON b.id = bt.blogs_id
         WHERE bt.tag_id = ?
     ");
     $stmt->execute([$tagId]);
