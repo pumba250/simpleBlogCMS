@@ -8,7 +8,7 @@ class User {
 
     public function register($username, $password, $email) {
     // Проверяем, есть ли уже пользователи в базе данных
-    $query = $this->pdo->query("SELECT COUNT(*) FROM users");
+    $query = $this->pdo->query("SELECT COUNT(*) FROM {$dbPrefix}users");
     $userCount = $query->fetchColumn();
 
     // Хеширование пароля
@@ -18,7 +18,7 @@ class User {
     $isAdmin = ($userCount == 0) ? 9 : 0;
 
     // Проверка уникальности имени пользователя и электронной почты
-    $stmtCheck = $this->pdo->prepare("SELECT COUNT(*) FROM users WHERE username = ? OR email = ?");
+    $stmtCheck = $this->pdo->prepare("SELECT COUNT(*) FROM {$dbPrefix}users WHERE username = ? OR email = ?");
     $stmtCheck->execute([$username, $email]);
     $exists = $stmtCheck->fetchColumn();
 
@@ -28,12 +28,12 @@ class User {
     }
 
     // Подготовка и выполнение запроса на добавление пользователя
-    $stmt = $this->pdo->prepare("INSERT INTO users (username, password, email, isadmin) VALUES (?, ?, ?, ?)");
+    $stmt = $this->pdo->prepare("INSERT INTO {$dbPrefix}users (username, password, email, isadmin) VALUES (?, ?, ?, ?)");
     return $stmt->execute([$username, $hash, $email, $isAdmin]);
 }
 
 	public function login($username, $password) {
-    $stmt = $this->pdo->prepare("SELECT * FROM users WHERE username = ?");
+    $stmt = $this->pdo->prepare("SELECT * FROM {$dbPrefix}users WHERE username = ?");
     $stmt->execute([$username]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
