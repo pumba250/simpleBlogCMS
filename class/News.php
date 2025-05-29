@@ -155,4 +155,38 @@ public function getNewsByTag($tag) {
          return $news;
 }
 
+public function generateMetaDescription($content, $length = 160) {
+    $content = strip_tags($content);
+    $content = preg_replace('/\s+/', ' ', $content);
+    $content = trim($content);
+    
+    if (mb_strlen($content) > $length) {
+        $content = mb_substr($content, 0, $length - 3) . '...';
+    }
+    
+    return $content;
+}
+
+public function generateMetaKeywords($title, $content, $maxKeywords = 15) {
+    $text = $title . ' ' . $content;
+    $text = strip_tags($text);
+    $text = mb_strtolower($text);
+    
+    // Удаляем спецсимволы, оставляем только слова
+    $words = preg_split('/\s+/', preg_replace('/[^a-zA-Zа-яА-Я0-9\s]/u', '', $text));
+    
+    // Удаляем стоп-слова
+    $stopWords = ['и', 'в', 'на', 'с', 'по', 'для', 'не', 'что', 'это', 'как'];
+    $words = array_diff($words, $stopWords);
+    
+    // Подсчитываем частоту слов
+    $wordCounts = array_count_values($words);
+    arsort($wordCounts);
+    
+    // Берем самые частые слова
+    $keywords = array_slice(array_keys($wordCounts), 0, $maxKeywords);
+    
+    return implode(', ', $keywords);
+}
+
 }

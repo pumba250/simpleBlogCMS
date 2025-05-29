@@ -40,7 +40,9 @@ try {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($_POST['action'] === 'register') {
             $user->register($_POST['username'], $_POST['password'], $_POST['email']);
-            $pageTitle = 'Регистрация simpleBlog';
+            $pageTitle = 'Регистрация';
+			$metaDescription = 'Форма регистрации нового пользователя в IT блоге';
+			$metaKeywords = 'регистрация, создать аккаунт, IT блог';
         }
         // Обработка авторизации
         if (isset($_POST['action']) && $_POST['action'] === 'login') {
@@ -75,6 +77,8 @@ try {
         // Обработка обратной связи
         if ($_POST['action'] === 'contact') {
 			$pageTitle = 'Форма обратной связи';
+			$metaDescription = 'Контактная форма для связи с администрацией IT блога';
+			$metaKeywords = 'контакты, обратная связь, IT блог';
             if (isset($_POST['captcha']) && $_POST['captcha'] == $_SESSION['captcha_answer']) {
                 if ($contact->saveMessage($_POST['name'], $_POST['email'], $_POST['message'])) {
                     $errors[] = "Сообщение успешно отправлено!";
@@ -93,6 +97,9 @@ try {
     // Получаем одну новость по id
     $newsId = (int)$_GET['id'];
     $newsItem = $news->getNewsById($newsId); // Получаем одну новость
+	$pageTitle = htmlspecialchars($newsItem['title']) . ' | IT Блог';
+    $metaDescription = $news->generateMetaDescription($newsItem['content']);
+    $metaKeywords = $news->generateMetaKeywords($newsItem['title'], $newsItem['content']);
 	// Получение последних 3 новостей
     $lastThreeNews = $news->getLastThreeNews();
     // Получение всех тегов
@@ -102,15 +109,20 @@ try {
 	$template->assign('dbPrefix', $dbPrefix);
 	$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
     $template->assign('allTags', $allTags);
+	$template->assign('metaDescription', $metaDescription);
+	$template->assign('metaKeywords', $metaKeywords);
     $template->assign('lastThreeNews', $lastThreeNews);
     $template->assign('user', $_SESSION['user'] ?? null);
 	$template->assign('news', $news);
 	$template->assign('comments', $comments);
+	$template->assign('templ', $templ);
     $template->assign('pageTitle', $pageTitle); // Передача заголовка в шаблон
 } elseif (isset($_GET['tags'])) {
         // Обработка тегов
-        $tag = htmlspecialchars($_GET['tags']); // Получаем тег и экранируем его
-        $pageTitle = "Новости по тегу: " . $tag; // Заголовок для страницы с новостями по тегу
+        $tag = htmlspecialchars($_GET['tags']);
+		$pageTitle = "Новости по тегу: " . $tag;
+		$metaDescription = "Все публикации по теме: " . $tag;
+		$metaKeywords = $tag . ', IT, блог, сети';
         // Получение новостей по тегу
         $newsByTag = $news->getNewsByTag($tag);
         // Получение последних 3 новостей
@@ -121,14 +133,19 @@ try {
         // Передача данных в шаблон
 		$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
         $template->assign('allTags', $allTags);
+		$template->assign('metaDescription', $metaDescription);
+		$template->assign('metaKeywords', $metaKeywords);
         $template->assign('lastThreeNews', $lastThreeNews);
         $template->assign('user', $_SESSION['user'] ?? null);
         $template->assign('news', $newsByTag);
 	$template->assign('comments', $comments);
+	$template->assign('templ', $templ);
         $template->assign('pageTitle', $pageTitle); // Передача заголовка в шаблон
     } else {
     // Загрузка главной страницы
     $pageTitle = 'Главная страница'; // Заголовок для главной страницы
+	$metaDescription = 'IT блог о настройке сетевого оборудования, MikroTik, RouterBoard и сетевой безопасности';
+	$metaKeywords = 'IT, блог, сети, mikrotik, routerboard, безопасность';
     // Настройка пагинации
     $limit = 6; // Количество новостей на странице
     $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -144,10 +161,13 @@ try {
     // Передача данных тегов и заголовка в шаблон
 	$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
     $template->assign('allTags', $allTags);
+	$template->assign('metaDescription', $metaDescription);
+	$template->assign('metaKeywords', $metaKeywords);
     $template->assign('lastThreeNews', $lastThreeNews);
     $template->assign('user', $_SESSION['user'] ?? null);
     $template->assign('news', $allNews);
 	$template->assign('comments', $comments);
+	$template->assign('templ', $templ);
     $template->assign('totalPages', $totalPages);
     $template->assign('currentPage', $page);
     $template->assign('pageTitle', $pageTitle); // Передача заголовка в шаблон
@@ -158,24 +178,33 @@ try {
             case 'register':
                 // Загрузка страницы регистрации
                 $template->assign('lastThreeNews', $news->getLastThreeNews());
+				$template->assign('templ', $templ);
 				$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
+				$template->assign('metaDescription', $metaDescription);
+				$template->assign('metaKeywords', $metaKeywords);
                 $template->assign('allTags', $pdo->query("SELECT DISTINCT(`name`) FROM {$dbPrefix}tags")->fetchAll(PDO::FETCH_ASSOC));
-    $template->assign('user', $_SESSION['user'] ?? null);
+				$template->assign('user', $_SESSION['user'] ?? null);
                 $template->assign('pageTitle', 'Регистрация simpleBlog');
 				    echo $template->render('register.tpl');
                 break;
             case 'contact':
                 // Загрузка формы обратной связи
                 $template->assign('lastThreeNews', $news->getLastThreeNews());
+				$template->assign('templ', $templ);
+				$template->assign('metaDescription', $metaDescription);
+				$template->assign('metaKeywords', $metaKeywords);
 				$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
                 $template->assign('allTags', $pdo->query("SELECT DISTINCT(`name`) FROM {$dbPrefix}tags")->fetchAll(PDO::FETCH_ASSOC));
-    $template->assign('user', $_SESSION['user'] ?? null);
+				$template->assign('user', $_SESSION['user'] ?? null);
                 $template->assign('pageTitle', 'Форма обратной связи simpleBlog');
 				    echo $template->render('contact.tpl');
                 break;
             default:
                 // Обработка 404 ошибки
                 header($_SERVER["SERVER_PROTOCOL"] . " 404 Not Found");
+				$template->assign('templ', $templ);
+				$template->assign('metaDescription', 'Страница не найдена');
+				$template->assign('metaKeywords', '404, страница не найдена');
                 $template->assign('pageTitle', '404 - Страница не найдена simpleBlog');
                 echo $template->render('404.tpl');
                 exit;
@@ -185,6 +214,9 @@ try {
     // Обработка ошибки 500
     error_log($e->getMessage()); // Логирование ошибки
     header($_SERVER["SERVER_PROTOCOL"] . " 500 Internal Server Error");
+	$template->assign('templ', $templ);
+	$template->assign('metaDescription', 'Внутренняя ошибка сервера');
+	$template->assign('metaKeywords', '500, ошибка сервера');
     $template->assign('pageTitle', '500 - Внутренняя ошибка сервера simpleBlog');
     echo $template->render('500.tpl');
     exit;
