@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         
         // Создание файла конфигурации
-        file_put_contents('config/config.php', "<?php\n\nreturn [\n  'host' => '$dbHost',\n  'database' => '$dbName',\n  'db_user' => '$dbUser',\n  'db_pass' => '$dbPass',\n  'templ' => 'simple',\n  'db_prefix' => '$dbPrefix',\n];");
+        file_put_contents('config/config.php', "<?php\n\nreturn [\n  'host' => '$dbHost',\n  'database' => '$dbName',\n  'db_user' => '$dbUser',\n  'db_pass' => '$dbPass',\n  'templ' => 'simple',\n  'db_prefix' => '$dbPrefix',\n  'powered' => 'simpleBlog',\n  'version' => 'v0.2.4',\n  ];");
 
         echo "<p>Установка завершена успешно!<br>Не забудте удалить install.php и sql!
         <a href='index.php'>Перейти</a></p>";
