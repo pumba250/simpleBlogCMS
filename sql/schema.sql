@@ -12,12 +12,26 @@ CREATE TABLE `{PREFIX_}blogs_contacts` (
  `message` text NOT NULL,
  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 CREATE TABLE `{PREFIX_}blogs_tags` (
  `blogs_id` int(11) NOT NULL,
  `tag_id` int(11) NOT NULL,
  PRIMARY KEY (`blogs_id`,`tag_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `{PREFIX_}comments` (
+ `id` int(9) unsigned NOT NULL AUTO_INCREMENT,
+ `parent_id` mediumint(9) unsigned NOT NULL DEFAULT '0',
+ `f_parent` mediumint(9) unsigned NOT NULL DEFAULT '0',
+ `created_at` int(10) unsigned NOT NULL,
+ `theme_id` smallint(6) unsigned NOT NULL,
+ `user_name` varchar(30) COLLATE utf8_unicode_ci NOT NULL,
+ `user_text` varchar(9999) COLLATE utf8_unicode_ci NOT NULL,
+ `moderation` tinyint(3) unsigned NOT NULL DEFAULT '0',
+ `plus` mediumint(9) NOT NULL DEFAULT '0',
+ `minus` mediumint(9) NOT NULL DEFAULT '0',
+ PRIMARY KEY (`id`),
+ KEY `theme_id` (`theme_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 CREATE TABLE `{PREFIX_}tags` (
  `id` int(11) NOT NULL AUTO_INCREMENT,
  `name` varchar(255) NOT NULL,
@@ -29,7 +43,7 @@ CREATE TABLE `{PREFIX_}users` (
  `password` varchar(60) NOT NULL,
  `email` varchar(80) NOT NULL,
  `isadmin` tinyint(1) NOT NULL,
- `avatar` varchar(100) NOT NULL,
+ `avatar` varchar(100) NOT NULL DEFAULT '/images/avatar_g.png',
  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
  PRIMARY KEY (`id`),
  UNIQUE KEY `id` (`id`)

@@ -6,7 +6,7 @@ if (!file_exists('config/config.php')) {
 	die;
 }
 if (file_exists('install.php')) {
-	echo "<font color=red>Удалите файл install.php и директорию sql</font>";
+	echo '<p style="color: red; text-align: center;">Удалите файл install.php и директорию sql</p>';
 	die;
 }
 $config = require 'config/config.php';
@@ -27,11 +27,13 @@ $dbPrefix = $config['db_prefix'] ?? '';
 require 'class/Template.php';
 require 'class/User.php';
 require 'class/Contact.php';
+require 'class/Comments.php';
 require 'class/News.php';
 $template = new Template();
 $user = new User($pdo);
 $contact = new Contact($pdo);
 $news = new News($pdo);
+$comments = new Comments($pdo);
 $pageTitle = 'simpleBlog';
 try {
     // Обработка регистрации
@@ -96,12 +98,14 @@ try {
     // Получение всех тегов
     $stmt = $pdo->query("SELECT * FROM {$dbPrefix}tags ORDER by `name`");
     $allTags = $stmt->fetchAll(PDO::FETCH_ASSOC);
-	// Передача данных тегов и заголовка в шаблон
+	// Передача данных тегов и заголовка в шаблон 
+	$template->assign('dbPrefix', $dbPrefix);
 	$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
     $template->assign('allTags', $allTags);
     $template->assign('lastThreeNews', $lastThreeNews);
     $template->assign('user', $_SESSION['user'] ?? null);
 	$template->assign('news', $news);
+	$template->assign('comments', $comments);
     $template->assign('pageTitle', $pageTitle); // Передача заголовка в шаблон
 } elseif (isset($_GET['tags'])) {
         // Обработка тегов
@@ -120,6 +124,7 @@ try {
         $template->assign('lastThreeNews', $lastThreeNews);
         $template->assign('user', $_SESSION['user'] ?? null);
         $template->assign('news', $newsByTag);
+	$template->assign('comments', $comments);
         $template->assign('pageTitle', $pageTitle); // Передача заголовка в шаблон
     } else {
     // Загрузка главной страницы
@@ -142,6 +147,7 @@ try {
     $template->assign('lastThreeNews', $lastThreeNews);
     $template->assign('user', $_SESSION['user'] ?? null);
     $template->assign('news', $allNews);
+	$template->assign('comments', $comments);
     $template->assign('totalPages', $totalPages);
     $template->assign('currentPage', $page);
     $template->assign('pageTitle', $pageTitle); // Передача заголовка в шаблон

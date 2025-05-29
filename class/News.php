@@ -114,7 +114,7 @@ public function removeTags($newsId) {
 
 public function getNewsById($id) {
 	global $dbPrefix;
-    $stmt = $this->pdo->prepare("SELECT * FROM {$dbPrefix}blogs WHERE id = ?");
+    $stmt = $this->pdo->prepare("SELECT * FROM `{$dbPrefix}blogs` WHERE id = ?");
     $stmt->execute([$id]);
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
