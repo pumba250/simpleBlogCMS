@@ -107,6 +107,8 @@ try {
     $allTags = $stmt->fetchAll(PDO::FETCH_ASSOC);
 	// Передача данных тегов и заголовка в шаблон 
 	$template->assign('dbPrefix', $dbPrefix);
+	$template->assign('powered', $config['powered']);
+	$template->assign('version', $config['version']);
 	$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
     $template->assign('allTags', $allTags);
 	$template->assign('metaDescription', $metaDescription);
@@ -132,6 +134,8 @@ try {
         $allTags = $stmt->fetchAll(PDO::FETCH_ASSOC);
         // Передача данных в шаблон
 		$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
+		$template->assign('powered', $config['powered']);
+		$template->assign('version', $config['version']);
         $template->assign('allTags', $allTags);
 		$template->assign('metaDescription', $metaDescription);
 		$template->assign('metaKeywords', $metaKeywords);
@@ -160,6 +164,8 @@ try {
     $allTags = $stmt->fetchAll(PDO::FETCH_ASSOC);
     // Передача данных тегов и заголовка в шаблон
 	$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
+	$template->assign('powered', $config['powered']);
+	$template->assign('version', $config['version']);
     $template->assign('allTags', $allTags);
 	$template->assign('metaDescription', $metaDescription);
 	$template->assign('metaKeywords', $metaKeywords);
@@ -178,6 +184,8 @@ try {
             case 'register':
                 // Загрузка страницы регистрации
                 $template->assign('lastThreeNews', $news->getLastThreeNews());
+				$template->assign('powered', $config['powered']);
+				$template->assign('version', $config['version']);
 				$template->assign('templ', $templ);
 				$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
 				$template->assign('metaDescription', $metaDescription);
@@ -190,6 +198,8 @@ try {
             case 'contact':
                 // Загрузка формы обратной связи
                 $template->assign('lastThreeNews', $news->getLastThreeNews());
+				$template->assign('powered', $config['powered']);
+				$template->assign('version', $config['version']);
 				$template->assign('templ', $templ);
 				$template->assign('metaDescription', $metaDescription);
 				$template->assign('metaKeywords', $metaKeywords);
@@ -202,6 +212,8 @@ try {
             default:
                 // Обработка 404 ошибки
                 header($_SERVER["SERVER_PROTOCOL"] . " 404 Not Found");
+				$template->assign('powered', $config['powered']);
+				$template->assign('version', $config['version']);
 				$template->assign('templ', $templ);
 				$template->assign('metaDescription', 'Страница не найдена');
 				$template->assign('metaKeywords', '404, страница не найдена');
@@ -214,6 +226,8 @@ try {
     // Обработка ошибки 500
     error_log($e->getMessage()); // Логирование ошибки
     header($_SERVER["SERVER_PROTOCOL"] . " 500 Internal Server Error");
+	$template->assign('powered', $config['powered']);
+	$template->assign('version', $config['version']);
 	$template->assign('templ', $templ);
 	$template->assign('metaDescription', 'Внутренняя ошибка сервера');
 	$template->assign('metaKeywords', '500, ошибка сервера');
