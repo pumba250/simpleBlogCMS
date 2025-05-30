@@ -8,27 +8,22 @@ class User {
 
     public function register($username, $password, $email) {
 	global $dbPrefix;
-    // Проверяем, есть ли уже пользователи в базе данных
     $query = $this->pdo->query("SELECT COUNT(*) FROM {$dbPrefix}users");
     $userCount = $query->fetchColumn();
 
-    // Хеширование пароля
     $hash = password_hash($password, PASSWORD_BCRYPT);
 
-    // Если это первый пользователь, устанавливаем права администратора
     $isAdmin = ($userCount == 0) ? 9 : 0;
 
-    // Проверка уникальности имени пользователя и электронной почты
     $stmtCheck = $this->pdo->prepare("SELECT COUNT(*) FROM {$dbPrefix}users WHERE username = ? OR email = ?");
     $stmtCheck->execute([$username, $email]);
     $exists = $stmtCheck->fetchColumn();
 
     if ($exists) {
-        // Логика обработки ошибки: имя пользователя или email уже заняты
+        flash('Имя пользователя или email уже заняты'); // Логика обработки ошибки: имя пользователя или email уже заняты
         return false; // Можно выбросить исключение или вернуть ошибку
     }
 
-    // Подготовка и выполнение запроса на добавление пользователя
     $stmt = $this->pdo->prepare("INSERT INTO {$dbPrefix}users (username, password, email, isadmin) VALUES (?, ?, ?, ?)");
     return $stmt->execute([$username, $hash, $email, $isAdmin]);
 }
@@ -40,9 +35,7 @@ class User {
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($user && password_verify($password, $user['password'])) {
-        // Инициализация сессии
         session_start();
-        // Сохранение информации о пользователе в сессии
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
 		$_SESSION['isadmin'] = $user['isadmin'];
@@ -51,14 +44,11 @@ class User {
     return false;
 }
 public function logout() {
-    // Начать сессию, если она еще не инициализирована
     if (session_status() == PHP_SESSION_NONE) {
         session_start();
     }
-    // Удалить все переменные сессии
     $_SESSION = [];
     
-    // Уничтожить сессию
     session_destroy();
 }
 }
@@ -67,8 +57,8 @@ function flash(?string $message = null){
         $_SESSION['flash'] = $message;
     } else {
         if (!empty($_SESSION['flash'])) { ?>
-          <div class="w3-text-red">
-              <?=$_SESSION['flash']?>
+          <div style="color: red;">
+              <?= htmlspecialchars($_SESSION['flash'] ?? '') ?>
           </div>
         <?php }
         unset($_SESSION['flash']);

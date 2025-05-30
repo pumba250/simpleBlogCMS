@@ -11,12 +11,10 @@ if (file_exists('install.php')) {
 }
 $config = require 'config/config.php';
 try {
-	// Получаем необходимые параметры из конфигурационного файла
     $host = $config['host'];
     $database = $config['database'];
     $db_user = $config['db_user'];
     $db_pass = $config['db_pass'];
-	// Устанавливаем соединение с базой данных
     $pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8", $db_user, $db_pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
@@ -66,7 +64,6 @@ try {
 				}
 			}
 			
-			// Сохраняем введенные данные для повторного показа
 			$_SESSION['auth_form_data'] = [
 				'username' => $username
 			];
@@ -92,7 +89,6 @@ try {
     }
     // Обработка GET-запросов
     if (!isset($_GET['action'])) {
-        // Если не указано действие, загружаем главную страницу
         if (isset($_GET['id'])) {
     // Получаем одну новость по id
     $newsId = (int)$_GET['id'];
@@ -100,9 +96,7 @@ try {
 	$pageTitle = htmlspecialchars($newsItem['title']) . ' | IT Блог';
     $metaDescription = $news->generateMetaDescription($newsItem['content']);
     $metaKeywords = $news->generateMetaKeywords($newsItem['title'], $newsItem['content']);
-	// Получение последних 3 новостей
     $lastThreeNews = $news->getLastThreeNews();
-    // Получение всех тегов
     $stmt = $pdo->query("SELECT * FROM {$dbPrefix}tags ORDER by `name`");
     $allTags = $stmt->fetchAll(PDO::FETCH_ASSOC);
 	// Передача данных тегов и заголовка в шаблон 
@@ -118,18 +112,15 @@ try {
 	$template->assign('news', $news);
 	$template->assign('comments', $comments);
 	$template->assign('templ', $templ);
-    $template->assign('pageTitle', $pageTitle); // Передача заголовка в шаблон
+    $template->assign('pageTitle', $pageTitle); 
 } elseif (isset($_GET['tags'])) {
         // Обработка тегов
         $tag = htmlspecialchars($_GET['tags']);
 		$pageTitle = "Новости по тегу: " . $tag;
 		$metaDescription = "Все публикации по теме: " . $tag;
 		$metaKeywords = $tag . ', IT, блог, сети';
-        // Получение новостей по тегу
         $newsByTag = $news->getNewsByTag($tag);
-        // Получение последних 3 новостей
         $lastThreeNews = $news->getLastThreeNews();
-        // Получение всех тегов
         $stmt = $pdo->query("SELECT * FROM {$dbPrefix}tags ORDER by `name`");
         $allTags = $stmt->fetchAll(PDO::FETCH_ASSOC);
         // Передача данных в шаблон
@@ -144,22 +135,19 @@ try {
         $template->assign('news', $newsByTag);
 	$template->assign('comments', $comments);
 	$template->assign('templ', $templ);
-        $template->assign('pageTitle', $pageTitle); // Передача заголовка в шаблон
+        $template->assign('pageTitle', $pageTitle);
     } else {
     // Загрузка главной страницы
     $pageTitle = 'Главная страница'; // Заголовок для главной страницы
 	$metaDescription = 'IT блог о настройке сетевого оборудования, MikroTik, RouterBoard и сетевой безопасности';
 	$metaKeywords = 'IT, блог, сети, mikrotik, routerboard, безопасность';
-    // Настройка пагинации
     $limit = 6; // Количество новостей на странице
     $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
     $offset = ($page - 1) * $limit;
     $allNews = $news->getAllNews($limit, $offset);
     $totalNewsCount = $news->getTotalNewsCount();
     $totalPages = ceil($totalNewsCount / $limit);
-    // Получение последних 3 новостей
     $lastThreeNews = $news->getLastThreeNews();
-    // Получение всех тегов
     $stmt = $pdo->query("SELECT DISTINCT(`name`) FROM {$dbPrefix}tags");
     $allTags = $stmt->fetchAll(PDO::FETCH_ASSOC);
     // Передача данных тегов и заголовка в шаблон
@@ -176,7 +164,7 @@ try {
 	$template->assign('templ', $templ);
     $template->assign('totalPages', $totalPages);
     $template->assign('currentPage', $page);
-    $template->assign('pageTitle', $pageTitle); // Передача заголовка в шаблон
+    $template->assign('pageTitle', $pageTitle);
 }
     echo $template->render('home.tpl');
     } else {

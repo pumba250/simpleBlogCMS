@@ -5,6 +5,6 @@ $user = new User($pdo);
 $user->logout(); // Вызов метода logout
 
 // Перенаправление на главную страницу или страницу входа
-$referer = $_SERVER['HTTP_REFERER'];
+$referer = '/';
 header('Location: '.$referer); // или login.php
 exit();

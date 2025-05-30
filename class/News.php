@@ -25,33 +25,26 @@ public function getAllNews($limit, $offset) {
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 	}
 	public function generateTags($title, $content) {
-		// Простой алгоритм генерации тегов (можно усовершенствовать)
 		$tags = [];
 		
-		// Массив стоп-слов
-		$stopWords = ['и', 'в', 'на', 'с', 'по', 'к', 'из', 'для', 'это', 'что', 'как']; // Добавьте дополнительные
+		$stopWords = ['и', 'в', 'на', 'с', 'по', 'к', 'из', 'для', 'это', 'что', 'как']; 
 
-		// Удаляем HTML-теги и приводим к нижнему регистру
 		$title = strip_tags($title);
 		$content = strip_tags($content);
 		
-		// Удаляем знаки препинания 
 		$title = preg_replace('/[^\w\s]/', '', $title);
 		$content = preg_replace('/[^\w\s]/', '', $content);
 		
-		// Собираем слова из заголовка и контента
 		$words = preg_split('/\s+/', $title . ' ' . $content);
 		
 		foreach ($words as $word) {
 			$word = strtolower(trim($word));
 			
-			// Пропускаем короткие слова и стоп-слова
 			if (strlen($word) > 5 && !in_array($word, $tags) && !in_array($word, $stopWords)) {
 				$tags[] = $word;
 			}
 		}
 
-		// Ограничиваем количество тегов (например, до 10)
 		return array_slice($tags, 0, 10);
 	}
 	public function getNewsWithTags() {
@@ -71,10 +64,8 @@ public function getAllNews($limit, $offset) {
     $stmt = $this->pdo->prepare("UPDATE {$dbPrefix}blogs SET title = ?, content = ? WHERE id = ?");
     $stmt->execute([$title, $content, $id]);
 
-    // Удаление старых тегов
     $this->removeTags($id);
 
-    // Сохранение новых тегов
     foreach ($tags as $tag) {
         $stmt = $this->pdo->prepare("INSERT INTO {$dbPrefix}tags (name) VALUES (?) ON DUPLICATE KEY UPDATE id=id");
         $stmt->execute([$tag]);
@@ -87,14 +78,11 @@ public function getAllNews($limit, $offset) {
 public function deleteNews($id) {
 	global $dbPrefix;
     try {
-        // Удаляем теги, связанные с новостью
         $this->removeTags($id); 
         
-        // Удаляем саму новость
         $stmt = $this->pdo->prepare("DELETE FROM {$dbPrefix}blogs WHERE id = ?");
         $stmt->execute([$id]);
 
-        // После удаления новости, удаляем неиспользуемые теги
         $this->removeUnusedTags();
     } catch (PDOException $e) {
         echo 'Ошибка при удалении новости: ' . $e->getMessage();
@@ -102,7 +90,6 @@ public function deleteNews($id) {
 }
 public function removeUnusedTags() {
 	global $dbPrefix;
-    // Удаляем теги, которые больше не используются
     $stmt = $this->pdo->prepare("DELETE FROM {$dbPrefix}tags WHERE id NOT IN (SELECT tag_id FROM blogs_tags)");
     $stmt->execute();
 }
@@ -132,16 +119,13 @@ public function getTagsByNewsId($newsId) {
 }
 public function getNewsByTag($tag) {
 	global $dbPrefix;
-    // Сначала получаем ID тега по имени
     $stmt = $this->pdo->prepare("SELECT id FROM {$dbPrefix}tags WHERE name = ?");
     $stmt->execute([$tag]);
     $tagId = $stmt->fetchColumn();
-    // Если тег не найден, возвращаем пустой массив
     if (!$tagId) {
         return [];
     }
 
-    // Теперь получаем все новости, связанные с этим тегом
     $stmt = $this->pdo->prepare("
         SELECT b.*
         FROM {$dbPrefix}blogs b
@@ -172,18 +156,14 @@ public function generateMetaKeywords($title, $content, $maxKeywords = 15) {
     $text = strip_tags($text);
     $text = mb_strtolower($text);
     
-    // Удаляем спецсимволы, оставляем только слова
     $words = preg_split('/\s+/', preg_replace('/[^a-zA-Zа-яА-Я0-9\s]/u', '', $text));
     
-    // Удаляем стоп-слова
     $stopWords = ['и', 'в', 'на', 'с', 'по', 'для', 'не', 'что', 'это', 'как'];
     $words = array_diff($words, $stopWords);
     
-    // Подсчитываем частоту слов
     $wordCounts = array_count_values($words);
     arsort($wordCounts);
     
-    // Берем самые частые слова
     $keywords = array_slice(array_keys($wordCounts), 0, $maxKeywords);
     
     return implode(', ', $keywords);
