@@ -1,8 +1,6 @@
 <?php
 $start = microtime(1);
 session_start();
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 // Проверка конфигурации и установки
 if (!file_exists('config/config.php')) {
     header('Location: install.php');
@@ -224,9 +222,6 @@ try {
             break;
 		
 		case 'template_settings':
-			//$template = 'template_settings.tpl';
-			//$pageTitle = 'Управление шаблонами';
-			
 			// Абсолютные пути
 			$templatesDir = 'templates';
 			$configPath = 'config/config.php';
