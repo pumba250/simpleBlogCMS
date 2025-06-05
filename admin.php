@@ -1,6 +1,8 @@
 <?php
 $start = microtime(1);
 session_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 // Проверка конфигурации и установки
 if (!file_exists('config/config.php')) {
     header('Location: install.php');
@@ -142,25 +144,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			case 'change_template':
 				$templatesDir = 'templates';
 				$configPath = 'config/config.php';
-				$availableTemplates = array_filter(scandir($templatesDir), function($item) use ($templatesDir) {
-					return $item != '.' && $item != '..' && is_dir($templatesDir.'/'.$item);
-				});
-
+				$availableTemplates = $template->getAvailableTemplates($templatesDir);
 				$newTemplate = $_POST['template'] ?? '';
-				if (in_array($newTemplate, $availableTemplates)) {
-					$config['templ'] = $newTemplate;
-					$configContent = "<?php\nreturn " . var_export($config, true) . ";\n";
-					
-					if (file_put_contents($configPath, $configContent, LOCK_EX)) {
-						$_SESSION['admin_message'] = "Шаблон <b>{$newTemplate}</b> успешно активирован!";
-						if (function_exists('opcache_invalidate')) {
-							opcache_invalidate($configPath);
-						}
-					} else {
-						$_SESSION['admin_error'] = "Ошибка записи в config.php";
-					}
+				
+				if ($template->changeTemplate($newTemplate, $availableTemplates, $config, $configPath)) {
+					$_SESSION['admin_message'] = "Шаблон <b>{$newTemplate}</b> успешно активирован!";
 				} else {
-					$_SESSION['admin_error'] = "Неверный шаблон";
+					$_SESSION['admin_error'] = "Ошибка при смене шаблона";
 				}
 				header("Location: ?section=template_settings");
 			break;
@@ -222,27 +212,9 @@ try {
             break;
 		
 		case 'template_settings':
-			// Абсолютные пути
 			$templatesDir = 'templates';
 			$configPath = 'config/config.php';
-			
-			// Получаем список реально существующих шаблонов
-			$availableTemplates = [];
-			if (is_dir($templatesDir)) {
-				$items = scandir($templatesDir);
-				foreach ($items as $item) {
-					$fullPath = $templatesDir.'/'.$item;
-					if ($item != '.' && $item != '..' && is_dir($fullPath)) {
-						// Проверяем обязательные файлы шаблона
-						if (file_exists($fullPath.'/footer.tpl') && 
-							file_exists($fullPath.'/header.tpl')) {
-							$availableTemplates[] = $item;
-						}
-					}
-				}
-			}
-			
-			// Текущий шаблон из конфига
+			$availableTemplates = $template->getAvailableTemplates($templatesDir);
 			$currentTemplate = $config['templ'] ?? 'simple';
 			
 			// Если текущего шаблона нет в доступных, сбрасываем на default
@@ -252,46 +224,8 @@ try {
 				file_put_contents($configPath, "<?php\nreturn ".var_export($config, true).";\n");
 			}
 			
-			// Обработка смены шаблона
-			if ($_SERVER['REQUEST_METHOD'] === 'POST' && 
-				isset($_POST['action']) && 
-				$_POST['action'] === 'change_template' &&
-				isset($_POST['template'])) {
-				
-				$newTemplate = $_POST['template'];
-				
-				// Дополнительная проверка
-				if (in_array($newTemplate, $availableTemplates)) {
-					$config['templ'] = $newTemplate;
-					$configContent = "<?php\nreturn ".var_export($config, true).";\n";
-					
-					if (file_put_contents($configPath, $configContent)) {
-						$_SESSION['message'] = "Шаблон '{$newTemplate}' успешно активирован!";
-						
-						// Очистка кэша
-						if (function_exists('opcache_invalidate')) {
-							opcache_invalidate($configPath);
-						}
-					} else {
-						$_SESSION['message'] = "Ошибка записи в config.php";
-					}
-				} else {
-					$_SESSION['message'] = "Шаблон '{$newTemplate}' не существует или неполный!";
-				}
-				
-				header("Location: ?section=template_settings");
-				exit;
-			}
 			$template->assign('templates', $availableTemplates);
-            $template->assign('currentTemplate', $currentTemplate);
-			// Подготовка данных для шаблона
-			/*$templateVariables = [
-				'pageTitle' => $pageTitle,
-				'templates' => $availableTemplates,
-				'currentTemplate' => $currentTemplate,
-				'message' => $_SESSION['message'] ?? ''
-			];*/
-			//unset($_SESSION['message']);
+			$template->assign('currentTemplate', $currentTemplate);
 		break;
     }
     
