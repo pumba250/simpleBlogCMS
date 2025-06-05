@@ -39,11 +39,12 @@
 <body>
     <div class="admin-container">
         <div class="admin-sidebar">
-            <h2 style="padding: 0 20px;">Админпанель</h2>
+            <h2 style="padding: 0 20px;">Меню</h2>
             <ul class="admin-menu">
                 <li <?if ($section == 'blogs'):?>class="active"<?endif;?>><a href="?section=blogs">Записи блога</a></li>
                 <li <?if ($section == 'contacts'):?>class="active"<?endif;?>><a href="?section=contacts">Обратная связь</a></li>
                 <li <?if ($section == 'users'):?>class="active"<?endif;?>><a href="?section=users">Пользователи</a></li>
+				<li <?if ($section == 'comments'):?>class="active"<?endif;?>><a href="?section=comments">Комментарии</a></li>
                 <li <?if ($section == 'tags'):?>class="active"<?endif;?>><a href="?section=tags">Теги</a></li>
                 <li <?if ($section == 'template_settings'):?>class="active"<?endif;?>><a href="?section=template_settings">Шаблоны</a></li>
                 <li><a href="/">На сайт</a></li>
@@ -379,7 +380,94 @@
                         <?endforeach;?>
                     </tbody>
                 </table>
-            <?endif;?>
+            <?elseif ($section == 'comments'):?>
+				<!-- Раздел комментариев -->
+				<h2>Управление комментариями <span class="badge"><?=$pendingCount;?> на модерации</span></h2>
+				
+				<table class="admin-table">
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>Пост</th>
+							<th>Пользователь</th>
+							<th>Текст</th>
+							<th>Дата</th>
+							<th>Рейтинг (+/-)</th>
+							<th>Статус</th>
+							<th>Действия</th>
+						</tr>
+					</thead>
+					<tbody>
+						<?foreach ($comments as $comment):?>
+						<tr>
+							<td><?=$comment['id'];?></td>
+							<td><?=$comment['post_title'] ?? 'Без привязки';?></td>
+							<td><?=$comment['user_name'];?></td>
+							<td><?=mb_substr($comment['user_text'], 0, 50, 'UTF-8');?>...</td>
+							<td><?=date('d.m.Y H:i', $comment['created_at']);?></td>
+							<td><?=$comment['plus'];?>/<?=$comment['minus'];?></td>
+							<td>
+								<?if ($comment['moderation']):?>
+									<span class="badge" style="background: #28a745;">Одобрен</span>
+								<?else:?>
+									<span class="badge" style="background: #ffc107;">На модерации</span>
+								<?endif;?>
+							</td>
+							<td>
+								<button onclick="showCommentEditForm(<?=$comment['id'];?>, '<?=htmlspecialchars($comment['user_text'], ENT_QUOTES);?>', <?=$comment['moderation'];?>)" class="btn btn-primary">Ред.</button>
+								<form method="POST" style="display:inline;">
+									<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
+									<input type="hidden" name="action" value="toggle_comment">
+									<input type="hidden" name="id" value="<?=$comment['id'];?>">
+									<button type="submit" class="btn <?=$comment['moderation'] ? 'btn-warning' : 'btn-success';?>">
+										<?=$comment['moderation'] ? 'Скрыть' : 'Одобрить';?>
+									</button>
+								</form>
+								<form method="POST" style="display:inline;">
+									<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
+									<input type="hidden" name="action" value="delete_comment">
+									<input type="hidden" name="id" value="<?=$comment['id'];?>">
+									<button type="submit" class="btn btn-danger" onclick="return confirm('Удалить этот комментарий?')">Удалить</button>
+								</form>
+							</td>
+						</tr>
+						<?endforeach;?>
+					</tbody>
+				</table>
+
+				<!-- Форма редактирования комментария -->
+				<div id="edit-comment-form" style="display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 5px; box-shadow: 0 0 20px rgba(0,0,0,0.2); z-index: 1000; width: 80%; max-width: 800px;">
+					<h3>Редактировать комментарий</h3>
+					<form method="POST" id="edit-comment-form-content">
+						<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
+						<input type="hidden" name="action" value="edit_comment">
+						<input type="hidden" name="id" id="edit-comment-id">
+						
+						<div class="form-group">
+							<label>Текст комментария:</label>
+							<textarea name="user_text" id="edit-comment-text" class="form-control" rows="8" required></textarea>
+						</div>
+						
+						<div class="form-group">
+							<input type="checkbox" name="moderation" id="edit-comment-moderation">
+							<label for="edit-comment-moderation" class="checkbox-label">Одобрен</label>
+						</div>
+						
+						<button type="submit" class="btn btn-success">Сохранить</button>
+						<button type="button" onclick="document.getElementById('edit-comment-form').style.display='none'" class="btn btn-danger">Отмена</button>
+					</form>
+				</div>
+
+				<script>
+					function showCommentEditForm(id, text, moderation) {
+						document.getElementById('edit-comment-id').value = id;
+						document.getElementById('edit-comment-text').value = text;
+						document.getElementById('edit-comment-moderation').checked = moderation == 1;
+						
+						document.getElementById('edit-comment-form').style.display = 'block';
+					}
+				</script>
+			<?endif;?>
         </div>
     </div>
 </body>

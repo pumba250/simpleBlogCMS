@@ -14,10 +14,6 @@ if (isset($_GET['id'])) {
         
         <div class="w3-container">
             <h3><b><?= htmlspecialchars($newsItem['title']) ?></b>
-                    <?php if (isset($user) && $user['isadmin'] == 9): ?>
-                        / <a href="/admin/edit_news.php?id=<?= $newsItem['id'] ?>">edit</a>
-                        or <a href="/admin/delete_news.php?id=<?= $newsItem['id'] ?>">delete</a>
-                    <?php endif; ?>
                     </h3>
             <h5><span class="w3-opacity"><?= htmlspecialchars($newsItem['created_at']) ?></span></h5>
         </div>
@@ -101,10 +97,6 @@ if (isset($_GET['id'])) {
             
             <div class="w3-container w3-padding">
                 <h3><b><?= htmlspecialchars($newsItem['title']) ?></b>
-                    <?php if (isset($user) && $user['isadmin'] == 9): ?>
-                        / <a href="/admin/edit_news.php?id=<?= $newsItem['id'] ?>">edit</a>
-                        or <a href="/admin/delete_news.php?id=<?= $newsItem['id'] ?>">delete</a>
-                    <?php endif; ?>
                     </h3>
                 <h5><span class="w3-opacity"><?= htmlspecialchars($newsItem['created_at']) ?></span></h5>
             </div>
