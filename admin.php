@@ -31,7 +31,10 @@ require 'class/Template.php';
 require 'class/User.php';
 require 'class/Contact.php';
 require 'class/News.php';
+require 'class/Comments.php';
 
+// После создания других объектов добавить:
+$comments = new Comments($pdo);
 $template = new Template();
 $user = new User($pdo);
 $contact = new Contact($pdo);
@@ -43,7 +46,7 @@ if (!isset($_SESSION['user']) || !$_SESSION['user']['isadmin']) {
     exit;
 }
 
-$pageTitle = 'Админпанель';
+$pageTitle = 'Админ-панель';
 if (isset($_GET['logout'])) {
     $_SESSION = array();
     session_destroy();
@@ -59,6 +62,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Обработка действий
     if (isset($_POST['action'])) {
         switch ($_POST['action']) {
+			case 'edit_comment':
+				$id = (int)$_POST['id'];
+				$userText = htmlspecialchars(trim($_POST['user_text']));
+				$moderation = isset($_POST['moderation']) ? 1 : 0;
+				
+				if ($comments->editComment($id, $userText)) {
+					// Обновляем статус модерации отдельно
+					if ($moderation) {
+						$comments->approveComment($id);
+					} else {
+						$stmt = $pdo->prepare("UPDATE `{$dbPrefix}comments` SET moderation = 0 WHERE id = ?");
+						$stmt->execute([$id]);
+					}
+					$_SESSION['admin_message'] = 'Комментарий успешно обновлен';
+				} else {
+					$_SESSION['admin_error'] = 'Ошибка при обновлении комментария';
+				}
+				break;
+				
+			case 'delete_comment':
+				$id = (int)$_POST['id'];
+				if ($comments->deleteComment($id)) {
+					$_SESSION['admin_message'] = 'Комментарий успешно удален';
+				} else {
+					$_SESSION['admin_error'] = 'Ошибка при удалении комментария';
+				}
+				break;
+				
+			case 'toggle_comment':
+				$id = (int)$_POST['id'];
+				if ($comments->toggleModeration($id)) {
+					$status = $comments->getCommentStatus($id);
+					$_SESSION['admin_message'] = 'Статус комментария изменен: ' . ($status ? 'Одобрен' : 'На модерации');
+				} else {
+					$_SESSION['admin_error'] = 'Ошибка при изменении статуса комментария';
+				}
+				break;
             case 'edit_blog':
                 $id = (int)$_POST['id'];
                 $title = htmlspecialchars(trim($_POST['title']));
@@ -196,7 +236,13 @@ try {
             $template->assign('allTags', $allTags);
             break;
             
-        case 'contacts':
+        case 'comments':
+			$allComments = $comments->AllComments();
+			$pendingCount = $comments->countPendingComments();
+			$template->assign('comments', $allComments);
+			$template->assign('pendingCount', $pendingCount);
+			break;
+		case 'contacts':
             $contacts = $contact->getAllMessages();
             $template->assign('contacts', $contacts);
             break;
