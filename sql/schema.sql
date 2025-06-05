@@ -24,7 +24,7 @@ CREATE TABLE `{PREFIX_}comments` (
  `f_parent` mediumint(9) unsigned NOT NULL DEFAULT '0',
  `created_at` int(10) unsigned NOT NULL,
  `theme_id` smallint(6) unsigned NOT NULL,
- `user_name` varchar(30) COLLATE utf8_unicode_ci NOT NULL,
+ `user_name` varchar(30) CHARACTER SET utf8 NOT NULL,
  `user_text` varchar(9999) COLLATE utf8_unicode_ci NOT NULL,
  `moderation` tinyint(3) unsigned NOT NULL DEFAULT '0',
  `plus` mediumint(9) NOT NULL DEFAULT '0',
@@ -44,7 +44,8 @@ CREATE TABLE `{PREFIX_}users` (
  `email` varchar(80) NOT NULL,
  `isadmin` tinyint(1) NOT NULL,
  `avatar` varchar(100) NOT NULL DEFAULT '/images/avatar_g.png',
- `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ `last_activity` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00'
  PRIMARY KEY (`id`),
  UNIQUE KEY `id` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;

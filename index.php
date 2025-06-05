@@ -21,7 +21,7 @@ try {
     echo "Connection failed: " . $e->getMessage();
 }
 $templ = $config['templ'];
-$dbPrefix = $config['db_prefix'] ?? '';
+$dbPrefix = $config['db_prefix'];
 require 'class/Template.php';
 require 'class/User.php';
 require 'class/Contact.php';
@@ -87,6 +87,17 @@ try {
             }
         }
     }
+	if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_text'])) {
+		$themeId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+		$userName = isset($_SESSION['user']['username']) ? $_SESSION['user']['username'] : $_POST['user_name'];
+		$userText = $_POST['user_text'];
+		
+		if ($themeId > 0 && !empty($userName) && !empty($userText)) {
+			$comments->addComment(0, 0, $themeId, $userName, $userText);
+			header("Location: ?id=" . $themeId);
+			exit;
+		}
+	}
     // Обработка GET-запросов
     if (!isset($_GET['action'])) {
         if (isset($_GET['id'])) {
@@ -169,6 +180,20 @@ try {
     echo $template->render('home.tpl');
     } else {
         switch ($_GET['action']) {
+			case 'login':
+            // Загрузка страницы регистрации
+                $template->assign('lastThreeNews', $news->getLastThreeNews());
+				$template->assign('powered', $config['powered']);
+				$template->assign('version', $config['version']);
+				$template->assign('templ', $templ);
+				$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
+				$template->assign('metaDescription', $metaDescription);
+				$template->assign('metaKeywords', $metaKeywords);
+                $template->assign('allTags', $pdo->query("SELECT DISTINCT(`name`) FROM {$dbPrefix}tags")->fetchAll(PDO::FETCH_ASSOC));
+				$template->assign('user', $_SESSION['user'] ?? null);
+                $template->assign('pageTitle', 'Авторизация simpleBlog');
+				    echo $template->render('login.tpl');
+                break;
             case 'register':
                 // Загрузка страницы регистрации
                 $template->assign('lastThreeNews', $news->getLastThreeNews());

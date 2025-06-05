@@ -9,9 +9,9 @@
   <?php if ($user): ?><img src="<?= htmlspecialchars($user['avatar']);?>" style="width:120px"><?php endif; ?>
     <div class="w3-container w3-white"><?php flash(); ?>
       <?php if ($user): ?>
-	  <p><form class="mt-5" method="post" action="/admin/do_logout.php"></p>
+	  <p><form class="mt-5" method="post" action="/admin.php?logout=1"></p>
         <p>Привет, <?= htmlspecialchars($user['username']) ?>!<button type="submit" class="btn btn-primary">Выйти</button></form></p>
-		<?php if ($user['isadmin']=='9'): ?><p><a href="/admin/">Admin Panel</a></p><?php endif; ?>
+		<?php if ($user['isadmin']=='9'): ?><p><a href="/admin.php">Admin Panel</a></p><?php endif; ?>
     <?php else: ?>
         <p><button onclick="document.getElementById('id01').style.display='block'" class="w3-button w3-gray w3-large">Login</button></p>
 
@@ -112,7 +112,7 @@
                 <button class="w3-button w3-black w3-disabled w3-padding-large w3-margin-bottom">След. &raquo;</button>
             <?php endif; ?>
         </div>
-  <p align="center">Powered by <a href="https://www.w3schools.com/w3css/default.asp" target="_blank">w3.css</a> Copyright &copy; <?php echo date("Y");?> by <b><?php echo $_SERVER['SERVER_NAME'];?></b><br>
+  <p align="center">Powered by <a href="https://www.w3schools.com/w3css/default.asp" target="_blank">w3.css</a> &copy; <?= date("Y") ?> <?= htmlspecialchars($_SERVER['SERVER_NAME']) ?>. Powered by <?= $powered ?>_<?= $version ?>. Все права защищены.</b><br>
 
   </p>
 </footer>

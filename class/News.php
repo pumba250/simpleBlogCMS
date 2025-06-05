@@ -14,6 +14,33 @@ public function getAllNews($limit, $offset) {
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
+    /**
+     * Получить все записи блога (для админки)
+     */
+    public function getAllAdm($limit = 0, $offset = 0) {
+		global $dbPrefix;
+        $limitClause = $limit > 0 ? "LIMIT $limit OFFSET $offset" : "";
+        
+        $stmt = $this->pdo->query("
+            SELECT b.*, GROUP_CONCAT(t.name) as tag_names, GROUP_CONCAT(t.id) as tag_ids
+            FROM `{$dbPrefix}blogs` b
+            LEFT JOIN `{$dbPrefix}blogs_tags` bt ON b.id = bt.blogs_id
+            LEFT JOIN `{$dbPrefix}tags` t ON bt.tag_id = t.id
+            GROUP BY b.id
+            ORDER BY b.created_at DESC
+            $limitClause
+        ");
+        
+        $blogs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Преобразуем теги в массивы
+        foreach ($blogs as &$blog) {
+            $blog['tags'] = $blog['tag_names'] ? explode(',', $blog['tag_names']) : [];
+            $blog['tag_ids'] = $blog['tag_ids'] ? array_map('intval', explode(',', $blog['tag_ids'])) : [];
+        }
+        
+        return $blogs;
+    }
 
     public function getTotalNewsCount() {
 	global $dbPrefix;
@@ -75,12 +102,44 @@ public function getAllNews($limit, $offset) {
         $stmt->execute([$id, $tagId]);
     }
 }
+    /**
+     * Обновить запись блога
+     */
+    public function updateBlog($id, $title, $content, $tags = []) {
+		global $dbPrefix;
+        try {
+            $this->pdo->beginTransaction();
+            
+            // Обновляем саму запись
+            $stmt = $this->pdo->prepare("UPDATE {$dbPrefix}blogs SET title = ?, content = ? WHERE id = ?");
+            $stmt->execute([$title, $content, $id]);
+            
+            // Удаляем все текущие связи с тегами
+            $stmt = $this->pdo->prepare("DELETE FROM {$dbPrefix}blogs_tags WHERE blogs_id = ?");
+            $stmt->execute([$id]);
+            
+            // Добавляем новые связи с тегами
+            if (!empty($tags)) {
+                $stmt = $this->pdo->prepare("INSERT INTO {$dbPrefix}blogs_tags (blogs_id, tag_id) VALUES (?, ?)");
+                foreach ($tags as $tagId) {
+                    $stmt->execute([$id, $tagId]);
+                }
+            }
+            
+            $this->pdo->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            error_log($e->getMessage());
+            return false;
+        }
+    }
 public function deleteNews($id) {
 	global $dbPrefix;
     try {
         $this->removeTags($id); 
         
-        $stmt = $this->pdo->prepare("DELETE FROM {$dbPrefix}blogs WHERE id = ?");
+        $stmt = $this->pdo->prepare("DELETE FROM `{$dbPrefix}blogs` WHERE id = ?");
         $stmt->execute([$id]);
 
         $this->removeUnusedTags();
@@ -88,14 +147,104 @@ public function deleteNews($id) {
         echo 'Ошибка при удалении новости: ' . $e->getMessage();
     }
 }
+    /**
+     * Удалить запись блога
+     */
+    public function deleteBlog($id) {
+		global $dbPrefix;
+        try {
+            $this->pdo->beginTransaction();
+            
+            // Удаляем связи с тегами
+            $stmt = $this->pdo->prepare("DELETE FROM {$dbPrefix}blogs_tags WHERE blogs_id = ?");
+            $stmt->execute([$id]);
+            
+            // Удаляем саму запись
+            $stmt = $this->pdo->prepare("DELETE FROM {$dbPrefix}blogs WHERE id = ?");
+            $stmt->execute([$id]);
+            
+            $this->pdo->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            error_log($e->getMessage());
+            return false;
+        }
+    }
+	
+    /**
+     * Добавить новую запись блога
+     */
+    public function addBlog($title, $content, $tags = []) {
+		global $dbPrefix;
+        try {
+            $this->pdo->beginTransaction();
+            
+            // Добавляем запись
+            $stmt = $this->pdo->prepare("INSERT INTO {$dbPrefix}blogs (title, content) VALUES (?, ?)");
+            $stmt->execute([$title, $content]);
+            $blogId = $this->pdo->lastInsertId();
+            
+            // Добавляем связи с тегами
+            if (!empty($tags)) {
+                $stmt = $this->pdo->prepare("INSERT INTO {$dbPrefix}blogs_tags (blogs_id, tag_id) VALUES (?, ?)");
+                foreach ($tags as $tagId) {
+                    $stmt->execute([$blogId, $tagId]);
+                }
+            }
+            
+            $this->pdo->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            error_log($e->getMessage());
+            return false;
+        }
+    }
+
+public function addTag($name) {
+		global $dbPrefix;
+        try {
+            $stmt = $this->pdo->prepare("INSERT INTO {$dbPrefix}tags (name) VALUES (?)");
+            return $stmt->execute([$name]);
+        } catch (Exception $e) {
+            error_log($e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Удалить тег
+     */
+    public function deleteTag($id) {
+		global $dbPrefix;
+        try {
+            $this->pdo->beginTransaction();
+            
+            // Удаляем связи с записями
+            $stmt = $this->pdo->prepare("DELETE FROM {$dbPrefix}blogs_tags WHERE tag_id = ?");
+            $stmt->execute([$id]);
+            
+            // Удаляем сам тег
+            $stmt = $this->pdo->prepare("DELETE FROM {$dbPrefix}tags WHERE id = ?");
+            $stmt->execute([$id]);
+            
+            $this->pdo->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            error_log($e->getMessage());
+            return false;
+        }
+    }
 public function removeUnusedTags() {
 	global $dbPrefix;
-    $stmt = $this->pdo->prepare("DELETE FROM {$dbPrefix}tags WHERE id NOT IN (SELECT tag_id FROM blogs_tags)");
+    $stmt = $this->pdo->prepare("DELETE FROM `{$dbPrefix}tags` WHERE id NOT IN (SELECT tag_id FROM `{$dbPrefix}blogs_tags`)");
     $stmt->execute();
 }
 public function removeTags($newsId) {
 	global $dbPrefix;
-    $stmt = $this->pdo->prepare("DELETE FROM {$dbPrefix}blogs_tags WHERE blogs_id = ?");
+    $stmt = $this->pdo->prepare("DELETE FROM `{$dbPrefix}blogs_tags` WHERE blogs_id = ?");
     $stmt->execute([$newsId]);
 }
 

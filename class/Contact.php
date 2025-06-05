@@ -8,13 +8,23 @@ class Contact {
 
     public function saveMessage($name, $email, $message) {
 		global $dbPrefix;
-        $stmt = $this->pdo->prepare("INSERT INTO {$dbPrefix}blogs_contacts (name, email, message) VALUES (?, ?, ?)");
+        $stmt = $this->pdo->prepare("INSERT INTO `{$dbPrefix}blogs_contacts` (name, email, message) VALUES (?, ?, ?)");
         return $stmt->execute([$name, $email, $message]);
     }
-	public function deleteMessage($id) {
+	public function getAllMessages() {
 		global $dbPrefix;
-		$stmt = $this->pdo->prepare("DELETE FROM {$dbPrefix}blogs_contacts WHERE id = ?");
-		return $stmt->execute([$id]);
-	}
+        $stmt = $this->pdo->query("SELECT * FROM `{$dbPrefix}blogs_contacts` ORDER BY created_at DESC");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    public function deleteMessage($id) {
+		global $dbPrefix;
+        try {
+            $stmt = $this->pdo->prepare("DELETE FROM `{$dbPrefix}blogs_contacts` WHERE id = ?");
+            return $stmt->execute([$id]);
+        } catch (Exception $e) {
+            error_log($e->getMessage());
+            return false;
+        }
+    }
 }
 ?>
