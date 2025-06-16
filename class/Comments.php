@@ -76,7 +76,14 @@ class Comments {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 	public function countPendingComments() {
-    return $this->pdo->query("SELECT COUNT(*) FROM `{$dbPrefix}comments` WHERE moderation = 0")->fetchColumn();
+		global $dbPrefix;
+		return $this->pdo->query("SELECT COUNT(*) FROM `{$dbPrefix}comments` WHERE moderation = 0")->fetchColumn();
+	}
+public function getCommentStatus($id) {
+    global $dbPrefix;
+    $stmt = $this->pdo->prepare("SELECT moderation FROM `{$dbPrefix}comments` WHERE id = ?");
+    $stmt->execute([$id]);
+    return (bool)$stmt->fetchColumn();
 }
 }
 

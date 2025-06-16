@@ -1,19 +1,55 @@
 <?php
 $start = microtime(1);
 session_start();
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+/**
+ * Возвращает строку с временем, прошедшим с указанной даты
+ */
+function time_elapsed_string($datetime, $full = false) {
+    $now = new DateTime;
+    $ago = new DateTime($datetime);
+    $diff = $now->diff($ago);
+    $diff->w = floor($diff->d / 7);
+    $diff->d -= $diff->w * 7;
+    $string = array(
+        'y' => 'год',
+        'm' => 'месяц',
+        'w' => 'неделю',
+        'd' => 'день',
+        'h' => 'час',
+        'i' => 'минуту',
+        's' => 'секунду',
+    );
+    foreach ($string as $k => &$v) {
+        if ($diff->$k) {
+            $v = $diff->$k . ' ' . $v . ($diff->$k > 1 ? (in_array($k, ['y', 'm']) ? 'а' : (in_array($k, ['d', 'h']) ? 'а' : 'ы')) : '');
+        } else {
+            unset($string[$k]);
+        }
+    }
+    if (!$full) $string = array_slice($string, 0, 1);
+    return $string ? implode(', ', $string) . ' назад' : 'только что';
+}
+/**
+ * Возвращает цвет badge в зависимости от типа действия
+ */
+function getLogBadgeColor($action) {
+    $action = strtolower($action);
+    if (strpos($action, 'удал') !== false) return 'danger';
+    if (strpos($action, 'добав') !== false || strpos($action, 'созда') !== false) return 'success';
+    if (strpos($action, 'опытк') !== false || strpos($action, 'измен') !== false) return 'warning';
+    if (strpos($action, 'ошибка') !== false) return 'danger';
+    if (strpos($action, 'вход') !== false || strpos($action, 'выход') !== false) return 'info';
+    return 'secondary';
+}
 // Проверка конфигурации и установки
 if (!file_exists('config/config.php')) {
     header('Location: install.php');
     die;
 }
-
 if (file_exists('install.php')) {
     echo "<font color=red>Удалите файл install.php и директорию sql</font>";
     die;
 }
-
 $config = require 'config/config.php';
 try {
     $host = $config['host'];
@@ -25,8 +61,65 @@ try {
 } catch (PDOException $e) {
     echo "Connection failed: " . $e->getMessage();
 }
-
 $dbPrefix = $config['db_prefix'] ?? '';
+// Функция для логирования действий
+function logAction($action, $details = null) {
+    global $pdo, $dbPrefix;
+    if (!$pdo) {
+        error_log("Не удалось записать лог: соединение с БД не установлено");
+        return false;
+    }
+    $user_id = isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
+    $username = isset($_SESSION['user']['username']) ? $_SESSION['user']['username'] : 'Система';
+    try {
+        $stmt = $pdo->prepare("INSERT INTO {$dbPrefix}admin_logs (user_id, username, action, details, ip_address) 
+                              VALUES (:user_id, :username, :action, :details, :ip)");
+        return $stmt->execute([
+            ':user_id' => $user_id,
+            ':username' => $username,
+            ':action' => $action,
+            ':details' => $details,
+            ':ip' => $_SERVER['REMOTE_ADDR']
+        ]);
+    } catch (PDOException $e) {
+        error_log("Ошибка записи лога: " . $e->getMessage());
+        return false;
+    }
+}
+if (isset($_GET['logout'])) {
+    if (isset($pdo)) {
+        logAction('Выход из системы', 'Пользователь вышел из админ-панели');
+    }
+    $_SESSION = array();
+    session_destroy();
+    header("Location: /");
+    exit();
+}
+// Проверка авторизации и прав администратора
+if (!isset($_SESSION['user']) || !$_SESSION['user']['isadmin']) {
+    // Получаем IP адрес
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    // Формируем сообщение с деталями попытки доступа
+    $details = "Попытка доступа к админ-панели";
+    // Проверяем, есть ли соединение с БД
+    if (isset($pdo)) {
+        try {
+            // Записываем в лог
+            $stmt = $pdo->prepare("INSERT INTO {$dbPrefix}admin_logs 
+                                 (action, details, ip_address) 
+                                 VALUES (:action, :details, :ip)");
+            $stmt->execute([
+                ':action' => 'Неавторизованный доступ',
+                ':details' => $details,
+                ':ip' => $ip
+            ]);
+        } catch (PDOException $e) {
+            error_log("Ошибка записи лога: " . $e->getMessage());
+        }
+    }
+    header('Location: /');
+    exit;
+}
 require 'class/Template.php';
 require 'class/User.php';
 require 'class/Contact.php';
@@ -39,161 +132,252 @@ $template = new Template();
 $user = new User($pdo);
 $contact = new Contact($pdo);
 $news = new News($pdo);
-
-// Проверка авторизации и прав администратора
-if (!isset($_SESSION['user']) || !$_SESSION['user']['isadmin']) {
-    header('Location: /');
-    exit;
+function getRoleName($roleValue) {
+    switch((int)$roleValue) {
+        case 9: return 'Администратор';
+        case 7: return 'Модератор';
+        case 0: return 'Пользователь';
+        default: return 'Неизвестная роль';
+    }
 }
-
 $pageTitle = 'Админ-панель';
-if (isset($_GET['logout'])) {
-    $_SESSION = array();
-    session_destroy();
-    header("Location: /");
-    exit();
-}
+
 // Обработка POST-запросов
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Проверка CSRF-токена
     if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        logAction('Ошибка CSRF', 'Попытка выполнения действия с неверным CSRF-токеном');
         die("Неверный CSRF-токен");
     }
+	$currentUserRole = $_SESSION['user']['isadmin'] ?? 0;
+
+// Функция проверки прав
+function hasPermission($requiredRole, $currentRole) {
+    return $currentRole >= $requiredRole;
+}
     // Обработка действий
     if (isset($_POST['action'])) {
         switch ($_POST['action']) {
-			case 'edit_comment':
-				$id = (int)$_POST['id'];
-				$userText = htmlspecialchars(trim($_POST['user_text']));
-				$moderation = isset($_POST['moderation']) ? 1 : 0;
-				
-				if ($comments->editComment($id, $userText)) {
-					// Обновляем статус модерации отдельно
-					if ($moderation) {
-						$comments->approveComment($id);
-					} else {
-						$stmt = $pdo->prepare("UPDATE `{$dbPrefix}comments` SET moderation = 0 WHERE id = ?");
-						$stmt->execute([$id]);
-					}
-					$_SESSION['admin_message'] = 'Комментарий успешно обновлен';
-				} else {
-					$_SESSION['admin_error'] = 'Ошибка при обновлении комментария';
-				}
-				break;
-				
-			case 'delete_comment':
-				$id = (int)$_POST['id'];
-				if ($comments->deleteComment($id)) {
-					$_SESSION['admin_message'] = 'Комментарий успешно удален';
-				} else {
-					$_SESSION['admin_error'] = 'Ошибка при удалении комментария';
-				}
-				break;
-				
-			case 'toggle_comment':
-				$id = (int)$_POST['id'];
-				if ($comments->toggleModeration($id)) {
-					$status = $comments->getCommentStatus($id);
-					$_SESSION['admin_message'] = 'Статус комментария изменен: ' . ($status ? 'Одобрен' : 'На модерации');
-				} else {
-					$_SESSION['admin_error'] = 'Ошибка при изменении статуса комментария';
-				}
-				break;
+            case 'edit_comment':
+			if (!hasPermission(7, $currentUserRole)) {
+				$_SESSION['admin_error'] = ("Недостаточно прав");
+				logAction('Попытка редактирования комментария', "Редактирование комментария запрещено");
+			} else {
+                $id = (int)$_POST['id'];
+                $userText = htmlspecialchars(trim($_POST['user_text']));
+                $moderation = isset($_POST['moderation']) ? 1 : 0;
+                
+                if ($comments->editComment($id, $userText)) {
+                    // Обновляем статус модерации отдельно
+                    if ($moderation) {
+                        $comments->approveComment($id);
+                        logAction('Редактирование комментария', "Комментарий ID $id отредактирован и одобрен");
+                    } else {
+                        $stmt = $pdo->prepare("UPDATE `{$dbPrefix}comments` SET moderation = 0 WHERE id = ?");
+                        $stmt->execute([$id]);
+                        logAction('Редактирование комментария', "Комментарий ID $id отредактирован и снят с публикации");
+                    }
+                    $_SESSION['admin_message'] = 'Комментарий успешно обновлен';
+                } else {
+                    logAction('Ошибка редактирования комментария', "Не удалось отредактировать комментарий ID $id");
+                    $_SESSION['admin_error'] = 'Ошибка при обновлении комментария';
+                }
+			}
+                break;
+                
+            case 'delete_comment':
+			if (!hasPermission(9, $currentUserRole)) {
+				$_SESSION['admin_error'] = ("Недостаточно прав");
+				logAction('Попытка удаления комментария', "Удаление комментария запрещено");
+			} else {
+                $id = (int)$_POST['id'];
+                if ($comments->deleteComment($id)) {
+                    logAction('Удаление комментария', "Комментарий ID $id удален");
+                    $_SESSION['admin_message'] = 'Комментарий успешно удален';
+                } else {
+                    logAction('Ошибка удаления комментария', "Не удалось удалить комментарий ID $id");
+                    $_SESSION['admin_error'] = 'Ошибка при удалении комментария';
+                }
+			}
+                break;
+                
+            case 'toggle_comment':
+			if (!hasPermission(7, $currentUserRole)) {
+				$_SESSION['admin_error'] = ("Недостаточно прав");
+				logAction('Попытка изменения статуса комментария', "Изменение статуса запрещено");
+			} else {
+                $id = (int)$_POST['id'];
+                if ($comments->toggleModeration($id)) {
+                    $status = $comments->getCommentStatus($id);
+                    logAction('Изменение статуса комментария', "Комментарий ID $id: " . ($status ? 'Одобрен' : 'На модерации'));
+                    $_SESSION['admin_message'] = 'Статус комментария изменен: ' . ($status ? 'Одобрен' : 'На модерации');
+                } else {
+                    logAction('Ошибка изменения статуса комментария', "Не удалось изменить статус комментария ID $id");
+                    $_SESSION['admin_error'] = 'Ошибка при изменении статуса комментария';
+                }
+			}
+                break;
+                
             case 'edit_blog':
+			if (!hasPermission(7, $currentUserRole)) {
+				$_SESSION['admin_error'] = ("Недостаточно прав");
+				logAction('Попытка редактирования записи блога', "Редактирование запрещено");
+			} else {
                 $id = (int)$_POST['id'];
                 $title = htmlspecialchars(trim($_POST['title']));
                 $content = htmlspecialchars(trim($_POST['content']));
                 $tags = isset($_POST['tags']) ? $_POST['tags'] : [];
                 
                 if ($news->updateBlog($id, $title, $content, $tags)) {
+                    logAction('Редактирование записи блога', "Запись ID $id отредактирована. Новый заголовок: $title");
                     $_SESSION['admin_message'] = 'Запись успешно обновлена';
                 } else {
+                    logAction('Ошибка редактирования записи блога', "Не удалось отредактировать запись ID $id");
                     $_SESSION['admin_error'] = 'Ошибка при обновлении записи';
                 }
+			}
                 break;
                 
             case 'delete_blog':
+			if (!hasPermission(9, $currentUserRole)) {
+				$_SESSION['admin_error'] = ("Недостаточно прав");
+				logAction('Попытка удаления записи блога', "Удаление запрещено");
+			} else {
                 $id = (int)$_POST['id'];
                 if ($news->deleteBlog($id)) {
+                    logAction('Удаление записи блога', "Запись ID $id удалена");
                     $_SESSION['admin_message'] = 'Запись успешно удалена';
                 } else {
+                    logAction('Ошибка удаления записи блога', "Не удалось удалить запись ID $id");
                     $_SESSION['admin_error'] = 'Ошибка при удалении записи';
                 }
+			}
                 break;
                 
             case 'add_blog':
+			if (!hasPermission(7, $currentUserRole)) {
+				$_SESSION['admin_error'] = ("Недостаточно прав");
+				logAction('Попытка добавления записи блога', "Добавление запрещено");
+			} else {
                 $title = htmlspecialchars(trim($_POST['title']));
                 $content = htmlspecialchars(trim($_POST['content']));
                 $tags = isset($_POST['tags']) ? $_POST['tags'] : [];
                 
                 if ($news->addBlog($title, $content, $tags)) {
+                    logAction('Добавление записи блога', "Добавлена новая запись: $title");
                     $_SESSION['admin_message'] = 'Запись успешно добавлена';
                 } else {
+                    logAction('Ошибка добавления записи блога', "Не удалось добавить запись: $title");
                     $_SESSION['admin_error'] = 'Ошибка при добавлении записи';
                 }
+			}
                 break;
                 
             case 'delete_contact':
+			if (!hasPermission(9, $currentUserRole)) {
+				$_SESSION['admin_error'] = ("Недостаточно прав");
+				logAction('Попытка удаления сообщения', "Удаление запрещено");
+			} else {
                 $id = (int)$_POST['id'];
                 if ($contact->deleteMessage($id)) {
+                    logAction('Удаление сообщения', "Сообщение ID $id удалено");
                     $_SESSION['admin_message'] = 'Сообщение успешно удалено';
                 } else {
+                    logAction('Ошибка удаления сообщения', "Не удалось удалить сообщение ID $id");
                     $_SESSION['admin_error'] = 'Ошибка при удалении сообщения';
                 }
+			}
                 break;
                 
             case 'edit_user':
+			if (!hasPermission(9, $currentUserRole)) {
+				$_SESSION['admin_error'] = ("Недостаточно прав");
+				logAction('Попытка редактирования пользователя', "Редактирование запрещено");
+			} else {
                 $id = (int)$_POST['id'];
                 $username = htmlspecialchars(trim($_POST['username']));
                 $email = htmlspecialchars(trim($_POST['email']));
-                $isadmin = isset($_POST['isadmin']) ? 1 : 0;
+                $isadmin = (int)$_POST['isadmin']; // Получаем 0, 7 или 9
                 
                 if ($user->updateUser($id, $username, $email, $isadmin)) {
+					$roleName = getRoleName($isadmin);
+                    logAction('Редактирование пользователя', "ID: $id, Новые данные: $username, $email, Роль: $roleName");
                     $_SESSION['admin_message'] = 'Пользователь успешно обновлен';
                 } else {
+                    logAction('Ошибка редактирования пользователя', "Не удалось обновить пользователя ID $id");
                     $_SESSION['admin_error'] = 'Ошибка при обновлении пользователя';
                 }
+			}
                 break;
                 
             case 'delete_user':
+			if (!hasPermission(9, $currentUserRole)) {
+				$_SESSION['admin_error'] = ("Недостаточно прав");
+				logAction('Попытка удаления пользователя', "Удаление запрещено");
+			} else {
                 $id = (int)$_POST['id'];
                 if ($user->deleteUser($id)) {
+                    logAction('Удаление пользователя', "Пользователь ID $id удален");
                     $_SESSION['admin_message'] = 'Пользователь успешно удален';
                 } else {
+                    logAction('Ошибка удаления пользователя', "Не удалось удалить пользователя ID $id");
                     $_SESSION['admin_error'] = 'Ошибка при удалении пользователя';
                 }
+			}		
                 break;
                 
             case 'add_tag':
+			if (!hasPermission(7, $currentUserRole)) {
+				$_SESSION['admin_error'] = ("Недостаточно прав");
+				logAction('Попытка добавления тега', "Добавление запрещено");
+			} else {
                 $name = htmlspecialchars(trim($_POST['name']));
                 if ($news->addTag($name)) {
+                    logAction('Добавление тега', "Добавлен новый тег: $name");
                     $_SESSION['admin_message'] = 'Тег успешно добавлен';
                 } else {
+                    logAction('Ошибка добавления тега', "Не удалось добавить тег: $name");
                     $_SESSION['admin_error'] = 'Ошибка при добавлении тега';
                 }
+			}
                 break;
                 
             case 'delete_tag':
+			if (!hasPermission(9, $currentUserRole)) {
+				$_SESSION['admin_error'] = ("Недостаточно прав");
+				logAction('Попытка удаления тега', "Удаление запрещено");
+			} else {
                 $id = (int)$_POST['id'];
                 if ($news->deleteTag($id)) {
+                    logAction('Удаление тега', "Тег ID $id удален");
                     $_SESSION['admin_message'] = 'Тег успешно удален';
                 } else {
+                    logAction('Ошибка удаления тега', "Не удалось удалить тег ID $id");
                     $_SESSION['admin_error'] = 'Ошибка при удалении тега';
                 }
+			}
                 break;
-			case 'change_template':
-				$templatesDir = 'templates';
-				$configPath = 'config/config.php';
-				$availableTemplates = $template->getAvailableTemplates($templatesDir);
-				$newTemplate = $_POST['template'] ?? '';
-				
-				if ($template->changeTemplate($newTemplate, $availableTemplates, $config, $configPath)) {
-					$_SESSION['admin_message'] = "Шаблон <b>{$newTemplate}</b> успешно активирован!";
-				} else {
-					$_SESSION['admin_error'] = "Ошибка при смене шаблона";
-				}
-				header("Location: ?section=template_settings");
-			break;
+                
+            case 'change_template':
+			if (!hasPermission(9, $currentUserRole)) {
+				$_SESSION['admin_error'] = ("Недостаточно прав");
+				logAction('Попытка смены шаблона', "Смена шаблона запрещена");
+			} else {
+                $templatesDir = 'templates';
+                $configPath = 'config/config.php';
+                $availableTemplates = $template->getAvailableTemplates($templatesDir);
+                $newTemplate = $_POST['template'] ?? '';
+                
+                if ($template->changeTemplate($newTemplate, $availableTemplates, $config, $configPath)) {
+                    logAction('Смена шаблона', "Активирован шаблон: $newTemplate");
+                    $_SESSION['admin_message'] = "Шаблон <b>{$newTemplate}</b> успешно активирован!";
+                } else {
+                    logAction('Ошибка смены шаблона', "Не удалось активировать шаблон: $newTemplate");
+                    $_SESSION['admin_error'] = "Ошибка при смене шаблона";
+                }
+			}
+                header("Location: ?section=template_settings");
+                break;
         }
         
         header("Location: " . $_SERVER['REQUEST_URI']);
@@ -207,7 +391,7 @@ if (empty($_SESSION['csrf_token'])) {
 }
 
 // Определение раздела админки
-$section = isset($_GET['section']) ? $_GET['section'] : 'blogs';
+$section = isset($_GET['section']) ? $_GET['section'] : 'server_info';
 
 try {
     // Подготовка данных для шаблона
@@ -229,7 +413,7 @@ try {
     // Загрузка данных в зависимости от раздела
     switch ($section) {
         case 'blogs':
-            $blogs = $news->getAllAdm(0, 0); // Получаем все блоги без пагинации
+            $blogs = $news->getAllAdm(0, 0);
             $allTags = $pdo->query("SELECT * FROM `{$dbPrefix}tags` ORDER by `name`")->fetchAll(PDO::FETCH_ASSOC);
             
             $template->assign('blogs', $blogs);
@@ -237,12 +421,13 @@ try {
             break;
             
         case 'comments':
-			$allComments = $comments->AllComments();
-			$pendingCount = $comments->countPendingComments();
-			$template->assign('comments', $allComments);
-			$template->assign('pendingCount', $pendingCount);
-			break;
-		case 'contacts':
+            $allComments = $comments->AllComments();
+            $pendingCount = $comments->countPendingComments();
+            $template->assign('comments', $allComments);
+            $template->assign('pendingCount', $pendingCount);
+            break;
+            
+        case 'contacts':
             $contacts = $contact->getAllMessages();
             $template->assign('contacts', $contacts);
             break;
@@ -256,28 +441,74 @@ try {
             $tags = $pdo->query("SELECT * FROM `{$dbPrefix}tags` ORDER by `name`")->fetchAll(PDO::FETCH_ASSOC);
             $template->assign('tags', $tags);
             break;
-		
-		case 'template_settings':
-			$templatesDir = 'templates';
-			$configPath = 'config/config.php';
-			$availableTemplates = $template->getAvailableTemplates($templatesDir);
-			$currentTemplate = $config['templ'] ?? 'simple';
+            
+        case 'template_settings':
+            $templatesDir = 'templates';
+            $configPath = 'config/config.php';
+            $availableTemplates = $template->getAvailableTemplates($templatesDir);
+            $currentTemplate = $config['templ'] ?? 'simple';
+            
+            if (!in_array($currentTemplate, $availableTemplates)) {
+                $currentTemplate = 'simple';
+                $config['templ'] = 'simple';
+                file_put_contents($configPath, "<?php\nreturn ".var_export($config, true).";\n");
+            }
+            
+            $template->assign('templates', $availableTemplates);
+            $template->assign('currentTemplate', $currentTemplate);
+            break;
+            
+        case 'logs':
+            $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+            $limit = 20;
+            $offset = ($page - 1) * $limit;
+            
+            $logs = $pdo->query("SELECT * FROM `{$dbPrefix}admin_logs` ORDER BY created_at DESC LIMIT $limit OFFSET $offset")->fetchAll(PDO::FETCH_ASSOC);
+            $totalLogs = $pdo->query("SELECT COUNT(*) FROM `{$dbPrefix}admin_logs`")->fetchColumn();
+            
+            $template->assign('logs', $logs);
+            $template->assign('totalLogs', $totalLogs);
+            $template->assign('currentPage', $page);
+            $template->assign('perPage', $limit);
+            break;
 			
-			// Если текущего шаблона нет в доступных, сбрасываем на default
-			if (!in_array($currentTemplate, $availableTemplates)) {
-				$currentTemplate = 'simple';
-				$config['templ'] = 'simple';
-				file_put_contents($configPath, "<?php\nreturn ".var_export($config, true).";\n");
-			}
-			
-			$template->assign('templates', $availableTemplates);
-			$template->assign('currentTemplate', $currentTemplate);
-		break;
+		case 'server_info':
+    // Информация о сервере
+    $serverInfo = [
+        'Веб-сервер' => $_SERVER['SERVER_SOFTWARE'] ?? 'Неизвестно',
+        'PHP версия' => phpversion(),
+        'MySQL версия' => $pdo->query("SELECT version()")->fetchColumn(),
+        'ОС сервера' => php_uname(),
+        'Лимит памяти PHP' => ini_get('memory_limit'),
+        'Максимальное время выполнения' => ini_get('max_execution_time') . ' сек',
+    ];
+    
+    // Проверка прав доступа к файлам
+    $filePermissions = [
+        'config/config.php' => file_exists('config/config.php') ? substr(sprintf('%o', fileperms('config/config.php')), -4) : 'Не найден',
+        'install.php' => file_exists('install.php') ? substr(sprintf('%o', fileperms('install.php')), -4) : 'Не найден',
+        'admin.php' => substr(sprintf('%o', fileperms('admin.php')), -4),
+    ];
+    
+    // Проверка важных PHP модулей
+    $phpModules = [
+        'PDO' => extension_loaded('pdo') ? '✓' : '✗',
+        'PDO MySQL' => extension_loaded('pdo_mysql') ? '✓' : '✗',
+        'OpenSSL' => extension_loaded('openssl') ? '✓' : '✗',
+        'GD' => extension_loaded('gd') ? '✓' : '✗',
+        'MBString' => extension_loaded('mbstring') ? '✓' : '✗',
+    ];
+    
+    $template->assign('serverInfo', $serverInfo);
+    $template->assign('filePermissions', $filePermissions);
+    $template->assign('phpModules', $phpModules);
+    break;
     }
     
     echo $template->render('admin/index.tpl');
     
 } catch (Exception $e) {
+    logAction('Ошибка системы', "Ошибка в админ-панели: " . $e->getMessage());
     error_log($e->getMessage());
     header($_SERVER["SERVER_PROTOCOL"] . " 500 Internal Server Error");
     $template->assign('pageTitle', '500 - Внутренняя ошибка сервера');
@@ -286,4 +517,4 @@ try {
 }
 
 $finish = microtime(1);
-echo '<!-- generation time: ' . round($finish - $start, 5) . ' сек -->';
+echo 'generation time: ' . round($finish - $start, 5) . ' сек';
