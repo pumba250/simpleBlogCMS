@@ -11,7 +11,7 @@
       <?php if ($user): ?>
 	  <p><form class="mt-5" method="post" action="/admin.php?logout=1"></p>
         <p>Привет, <?= htmlspecialchars($user['username']) ?>!<button type="submit" class="btn btn-primary">Выйти</button></form></p>
-		<?php if ($user['isadmin']=='9'): ?><p><a href="/admin.php">Admin Panel</a></p><?php endif; ?>
+		<?php if ($user['isadmin']>='7'): ?><p><a href="/admin.php">Admin Panel</a></p><?php endif; ?>
     <?php else: ?>
         <p><button onclick="document.getElementById('id01').style.display='block'" class="w3-button w3-gray w3-large">Login</button></p>
 

@@ -34,6 +34,128 @@
 		.template-card { background-color: white; padding: 1.5rem; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center; border: 2px solid transparent; }
 		.template-card.active { border-color: var(--success-color); }
 		.template-card h4 { margin-top: 0; }
+		/* Основные стили для горизонтальной пагинации */
+.pagination {
+    display: flex;
+    flex-wrap: nowrap;
+    padding-left: 0;
+    list-style: none;
+    margin: 0;
+}
+
+.pagination.pagination-sm .page-item .page-link {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.pagination .page-item {
+    margin: 0 2px; /* Небольшой отступ между элементами */
+}
+
+.pagination .page-item .page-link {
+    position: relative;
+    display: block;
+    color: #0d6efd;
+    text-decoration: none;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+}
+
+.pagination .page-item.active .page-link {
+    z-index: 3;
+    color: #fff;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+    border-color: #dee2e6;
+}
+
+/* Для float-right */
+.float-right {
+    float: right !important;
+}
+
+/* Очистка float */
+.m-0 {
+    margin: 0 !important;
+}
+		/* Base badge styles */
+.badge {
+    display: inline-block;
+    padding: 0.35em 0.65em;
+    font-size: 0.75em;
+    font-weight: 700;
+    line-height: 1;
+    color: #000;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Color variants */
+.badge.bg-primary {
+    background-color: #0d6efd;
+}
+
+.badge.bg-secondary {
+    background-color: #6c757d;
+}
+
+.badge.bg-success {
+    background-color: #00bd49;
+}
+
+.badge.bg-danger {
+    background-color: #dc3545;
+}
+
+.badge.bg-warning {
+    background-color: #ff5858;
+    color: #212529; /* Dark text for better contrast */
+}
+
+.badge.bg-info {
+    background-color: #0dcaf0;
+    color: #212529; /* Dark text for better contrast */
+}
+
+/* Optional: Add some animations */
+.badge {
+    transition: all 0.2s ease-in-out;
+}
+
+.badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* For the checkmark and cross icons */
+.badge .icon {
+    margin-right: 3px;
+    font-size: 0.9em;
+}
+
+/* Small version */
+.badge-sm {
+    padding: 0.2em 0.4em;
+    font-size: 0.65em;
+}
+
+/* Large version */
+.badge-lg {
+    padding: 0.5em 0.8em;
+    font-size: 0.9em;
+}
     </style>
 </head>
 <body>
@@ -46,6 +168,7 @@
                 <li <?if ($section == 'users'):?>class="active"<?endif;?>><a href="?section=users">Пользователи</a></li>
 				<li <?if ($section == 'comments'):?>class="active"<?endif;?>><a href="?section=comments">Комментарии</a></li>
                 <li <?if ($section == 'tags'):?>class="active"<?endif;?>><a href="?section=tags">Теги</a></li>
+				<li <?if ($section == 'logs'):?>class="active"<?endif;?>><a href="?section=logs">Логи действий</a></li>
                 <li <?if ($section == 'template_settings'):?>class="active"<?endif;?>><a href="?section=template_settings">Шаблоны</a></li>
                 <li><a href="/">На сайт</a></li>
                 <li><a href="?logout">Выйти</a></li>
@@ -238,21 +361,25 @@
                             <th>ID</th>
                             <th>Логин</th>
                             <th>Email</th>
-                            <th>Админ</th>
+                            <th>Роль</th>
                             <th>Дата регистрации</th>
                             <th>Действия</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?foreach ($users as $user):?>
+						<? $roleName = getRoleName($user['isadmin']);?>
                         <tr>
                             <td><?=$user['id'];?></td>
                             <td><?=$user['username'];?></td>
                             <td><?=$user['email'];?></td>
-                            <td><?=$user['isadmin'];?></td>
+                            <td><?=$roleName;?></td>
                             <td><?=$user['created_at'];?></td>
                             <td>
-                                <button onclick="showUserEditForm(<?=$user['id'];?>, '<?=$user['username'];?>', '<?=$user['email'];?>', <?=$user['isadmin'];?>)" class="btn btn-primary">Редактировать</button>
+                                <!-- Кнопка редактирования в таблице пользователей -->
+<button onclick="showUserEditForm(<?=$user['id'];?>, '<?=htmlspecialchars($user['username'], ENT_QUOTES);?>', '<?=htmlspecialchars($user['email'], ENT_QUOTES);?>', <?=(int)$user['isadmin'];?>)" class="btn btn-primary btn-sm">
+    <i class="fas fa-edit"></i> Редактировать
+</button>
                                 <?if ($user['id'] != $_SESSION['user_id']):?>
                                     <form method="POST" style="display:inline;">
                                         <input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
@@ -267,44 +394,101 @@
                     </tbody>
                 </table>
                 
-                <!-- Форма редактирования пользователя -->
-                <div id="edit-user-form" style="display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 5px; box-shadow: 0 0 20px rgba(0,0,0,0.2); z-index: 1000;">
-                    <h3>Редактировать пользователя</h3>
-                    <form method="POST" id="edit-user-form-content">
-                        <input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
-                        <input type="hidden" name="action" value="edit_user">
-                        <input type="hidden" name="id" id="edit-user-id">
-                        
-                        <div class="form-group">
-                            <label>Логин:</label>
-                            <input type="text" name="username" id="edit-username" class="form-control" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Email:</label>
-                            <input type="email" name="email" id="edit-email" class="form-control" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <input type="checkbox" name="isadmin" id="edit-isadmin">
-                            <label for="edit-isadmin" class="checkbox-label">Администратор</label>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-success">Сохранить</button>
-                        <button type="button" onclick="document.getElementById('edit-user-form').style.display='none'" class="btn btn-danger">Отмена</button>
-                    </form>
-                </div>
-                
-                <script>
-                    function showUserEditForm(id, username, email, isadmin) {
-                        document.getElementById('edit-user-id').value = id;
-                        document.getElementById('edit-username').value = username;
-                        document.getElementById('edit-email').value = email;
-                        document.getElementById('edit-isadmin').checked = isadmin == 9;
-                        
-                        document.getElementById('edit-user-form').style.display = 'block';
-                    }
-                </script>
+                <!-- Форма редактирования -->
+<div id="edit-user-form" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; padding:25px; border-radius:8px; box-shadow:0 0 15px rgba(0,0,0,0.2); z-index:1050; width:450px; max-width:95%;">
+    <button onclick="closeEditForm()" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.2rem; cursor:pointer;">&times;</button>
+    
+    <h4 style="margin-top:0; margin-bottom:20px;">Редактировать пользователя</h4>
+    
+    <form method="POST" id="edit-user-form-content">
+        <input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
+        <input type="hidden" name="action" value="edit_user">
+        <input type="hidden" name="id" id="edit-user-id">
+        
+        <div style="margin-bottom:15px;">
+            <label style="display:block; margin-bottom:5px; font-weight:500;">Логин:</label>
+            <input type="text" name="username" id="edit-username" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;" required>
+        </div>
+        
+        <div style="margin-bottom:15px;">
+            <label style="display:block; margin-bottom:5px; font-weight:500;">Email:</label>
+            <input type="email" name="email" id="edit-email" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;" required>
+        </div>
+        
+        <div style="margin-bottom:20px;">
+            <label style="display:block; margin-bottom:8px; font-weight:500;">Роль:</label>
+            <div style="display:flex; gap:10px;">
+                <label style="flex:1; text-align:center;">
+                    <input type="radio" name="isadmin" value="0" style="margin-right:5px;"> Пользователь
+                </label>
+                <label style="flex:1; text-align:center;">
+                    <input type="radio" name="isadmin" value="7" style="margin-right:5px;"> Модератор
+                </label>
+                <label style="flex:1; text-align:center;">
+                    <input type="radio" name="isadmin" value="9" style="margin-right:5px;"> Админ
+                </label>
+            </div>
+        </div>
+        
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+            <button type="button" onclick="closeEditForm()" style="padding:8px 15px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer;">Отмена</button>
+            <button type="submit" style="padding:8px 15px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer;">Сохранить</button>
+        </div>
+    </form>
+</div>
+
+<script>
+// Функция открытия формы редактирования
+function showUserEditForm(id, username, email, isadmin) {
+    console.log('Opening edit form for user:', {id, username, email, isadmin});
+    
+    // Заполняем форму данными
+    document.getElementById('edit-user-id').value = id;
+    document.getElementById('edit-username').value = username;
+    document.getElementById('edit-email').value = email;
+    
+    // Устанавливаем правильную роль
+    const roleRadios = document.getElementsByName('isadmin');
+    for (let radio of roleRadios) {
+        radio.checked = (radio.value == isadmin);
+    }
+    
+    // Показываем форму
+    document.getElementById('edit-user-form').style.display = 'block';
+    
+    // Добавляем затемнение фона
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-overlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.background = 'rgba(0,0,0,0.5)';
+    overlay.style.zIndex = '1040';
+    overlay.onclick = closeEditForm;
+    document.body.appendChild(overlay);
+}
+
+// Функция закрытия формы
+function closeEditForm() {
+    document.getElementById('edit-user-form').style.display = 'none';
+    const overlay = document.getElementById('modal-overlay');
+    if (overlay) {
+        overlay.remove();
+    }
+}
+
+// Закрытие по ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeEditForm();
+    }
+});
+
+// Для тестирования - можно раскомментировать
+// showUserEditForm(1, 'testuser', 'test@example.com', 7);
+</script>
             <?elseif ($section == 'template_settings'):?>
                 <!-- Раздел тегов -->
                 <h2>Управление Шаблонами</h2>
@@ -467,7 +651,189 @@
 						document.getElementById('edit-comment-form').style.display = 'block';
 					}
 				</script>
-			<?endif;?>
+			<?php elseif ($section == 'logs'): ?>
+				<h2>Логи административных действий</h2><span class="badge bg-primary">Всего записей: <?= $totalLogs ?></span>
+					<table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+							<th>Пользователь</th>
+                            <th>Действия</th>
+                            <th>Доп.инфо</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+									<?php foreach ($logs as $log): ?>
+									<tr>
+										<td style="width: 60px; padding: 10px; text-align: center;">
+											<?php if (!empty($log['user_id'])): ?>
+												<img src="<?= !empty($log['avatar']) ? htmlspecialchars($log['avatar']) : '/images/avatar_g.png' ?>" 
+													 class="img-circle elevation-2" 
+													 style="width: 40px; height: 40px; object-fit: cover;" 
+													 alt="User Avatar">
+											<?php else: ?>
+												<i class="fas fa-cog fa-2x text-muted"></i>
+											<?php endif; ?>
+										</td>
+										<td style="vertical-align: middle;">
+											<div class="d-flex flex-column">
+												<div class="d-flex justify-content-between">
+													<strong>
+														<?php if (!empty($log['user_id'])): ?>
+															<?= htmlspecialchars($log['username'] ?? 'Система') ?>
+														<?php else: ?>
+															Система
+														<?php endif; ?>
+													</strong>
+													<small class="text-muted" title="<?= date('d.m.Y H:i:s', strtotime($log['created_at'])) ?>">
+														<?= time_elapsed_string($log['created_at']) ?>
+													</small>
+												</div></td><td>
+												<div class="text-break">
+													<span class="badge bg-<?= getLogBadgeColor($log['action']) ?>">
+														<?= htmlspecialchars($log['action']) ?>
+													</span>
+													<?php if (!empty($log['details'])): ?>
+														- <?= htmlspecialchars($log['details']) ?>
+													<?php endif; ?>
+												</div></td><td>
+												<?php if (!empty($log['ip_address'])): ?>
+													<small class="text-muted">
+														IP: <?= htmlspecialchars($log['ip_address']) ?>
+													</small>
+												<?php endif; ?>
+											</div>
+										</td>
+									</tr>
+									<?php endforeach; ?>
+								</tbody>
+							</table>
+					<div class="card-footer clearfix">
+						<?php if ($totalLogs > $perPage): ?>
+							<ul class="pagination pagination-sm m-0 float-right">
+								<?php if ($currentPage > 1): ?>
+									<li class="page-item">
+										<a class="page-link" href="?section=logs&page=<?= $currentPage - 1 ?>">&laquo;</a>
+									</li>
+								<?php endif; ?>
+								
+								<?php 
+								$totalPages = ceil($totalLogs / $perPage);
+								$startPage = max(1, $currentPage - 2);
+								$endPage = min($totalPages, $currentPage + 2);
+								
+								if ($startPage > 1) {
+									echo '<li class="page-item"><a class="page-link" href="?section=logs&page=1">1</a></li>';
+									if ($startPage > 2) echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+								}
+								
+								for ($i = $startPage; $i <= $endPage; $i++): ?>
+									<li class="page-item <?= $i == $currentPage ? 'active' : '' ?>">
+										<a class="page-link" href="?section=logs&page=<?= $i ?>"><?= $i ?></a>
+									</li>
+								<?php endfor; 
+								
+								if ($endPage < $totalPages) {
+									if ($endPage < $totalPages - 1) echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+									echo '<li class="page-item"><a class="page-link" href="?section=logs&page='.$totalPages.'">'.$totalPages.'</a></li>';
+								}
+								?>
+								
+								<?php if ($currentPage < $totalPages): ?>
+									<li class="page-item">
+										<a class="page-link" href="?section=logs&page=<?= $currentPage + 1 ?>">&raquo;</a>
+									</li>
+								<?php endif; ?>
+							</ul>
+						<?php endif; ?>
+					</div>
+				</div>
+				<?php elseif ($section == 'server_info'): ?>
+					<div class="card">
+						<div class="card-header">
+							<h3 class="card-title">Информация о сервере</h3>
+						</div>
+						<div class="card-body">
+							<div class="row">
+								<div class="col-md-6">
+									<div class="card">
+										<div class="card-header bg-primary">
+											<h4 class="card-title">Основная информация</h4>
+										</div>
+										<div class="card-body p-0">
+											<table class="admin-table">
+												<tbody>
+													<?php foreach ($serverInfo as $key => $value): ?>
+													<tr>
+														<td width="40%"><strong><?= $key ?></strong></td>
+														<td><?= htmlspecialchars($value) ?></td>
+													</tr>
+													<?php endforeach; ?>
+												</tbody>
+											</table>
+										</div>
+									</div>
+								</div>
+								
+								<div class="col-md-6">
+									<div class="card">
+										<div class="card-header bg-info">
+											<h4 class="card-title">Права доступа к файлам</h4>
+										</div>
+										<div class="card-body p-0">
+											<table class="admin-table">
+												<tbody>
+													<?php foreach ($filePermissions as $file => $perms): ?>
+													<tr>
+														<td width="40%"><strong><?= $file ?></strong></td>
+														<td>
+														<?php if ($file == 'install.php' && $perms == 'Не найден'): ?>
+															<span class="badge bg-success" title="Файл удален, что рекомендуется для безопасности">
+																<i class="fas fa-check"></i> Удален
+															</span>
+														<?php else: ?>
+															<span class="badge bg-<?= ($perms == '0644' || $perms == '0444') ? 'success' : 'warning' ?>">
+																<?= $perms ?>
+															</span>
+															<?php if (($file == 'config/config.php') && $perms != '0644' && $perms != '0444'): ?>
+															<small class="text-danger">(Рекомендуется 0644)</small>
+															<?php endif; ?>
+															<?php endif; ?>
+															
+														</td>
+													</tr>
+													<?php endforeach; ?>
+												</tbody>
+											</table>
+										</div>
+									</div>
+									
+									<div class="card mt-4">
+										<div class="card-header bg-secondary">
+											<h4 class="card-title">PHP модули</h4>
+										</div>
+										<div class="card-body p-0">
+											<table class="admin-table">
+												<tbody>
+													<?php foreach ($phpModules as $module => $status): ?>
+													<tr>
+														<td width="40%"><strong><?= $module ?></strong></td>
+														<td>
+															<span class="badge bg-<?= $status == '✓' ? 'success' : 'danger' ?>">
+																<?= $status ?>
+															</span>
+														</td>
+													</tr>
+													<?php endforeach; ?>
+												</tbody>
+											</table>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<?php endif; ?>
         </div>
     </div>
 </body>
