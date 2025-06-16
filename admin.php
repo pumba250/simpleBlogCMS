@@ -8,9 +8,12 @@ function time_elapsed_string($datetime, $full = false) {
     $now = new DateTime;
     $ago = new DateTime($datetime);
     $diff = $now->diff($ago);
-    $diff->w = floor($diff->d / 7);
-    $diff->d -= $diff->w * 7;
-    $string = array(
+    
+    // Вместо динамического свойства используем переменную
+    $weeks = floor($diff->d / 7);
+    $days = $diff->d - $weeks * 7;
+    
+    $string = [
         'y' => 'год',
         'm' => 'месяц',
         'w' => 'неделю',
@@ -18,14 +21,27 @@ function time_elapsed_string($datetime, $full = false) {
         'h' => 'час',
         'i' => 'минуту',
         's' => 'секунду',
-    );
+    ];
+    
+    // Заменяем использование $diff->w и $diff->d
+    $values = [
+        'y' => $diff->y,
+        'm' => $diff->m,
+        'w' => $weeks,
+        'd' => $days,
+        'h' => $diff->h,
+        'i' => $diff->i,
+        's' => $diff->s,
+    ];
+    
     foreach ($string as $k => &$v) {
-        if ($diff->$k) {
-            $v = $diff->$k . ' ' . $v . ($diff->$k > 1 ? (in_array($k, ['y', 'm']) ? 'а' : (in_array($k, ['d', 'h']) ? 'а' : 'ы')) : '');
+        if ($values[$k]) {
+            $v = $values[$k] . ' ' . $v . ($values[$k] > 1 ? (in_array($k, ['y', 'm']) ? 'а' : (in_array($k, ['d', 'h']) ? 'а' : 'ы')) : '');
         } else {
             unset($string[$k]);
         }
     }
+    
     if (!$full) $string = array_slice($string, 0, 1);
     return $string ? implode(', ', $string) . ' назад' : 'только что';
 }
