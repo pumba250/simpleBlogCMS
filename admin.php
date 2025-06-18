@@ -385,15 +385,32 @@ function hasPermission($requiredRole, $currentRole) {
                 $newTemplate = $_POST['template'] ?? '';
                 
                 if ($template->changeTemplate($newTemplate, $availableTemplates, $config, $configPath)) {
-                    logAction('Смена шаблона', "Активирован шаблон: $newTemplate");
                     $_SESSION['admin_message'] = "Шаблон <b>{$newTemplate}</b> успешно активирован!";
                 } else {
-                    logAction('Ошибка смены шаблона', "Не удалось активировать шаблон: $newTemplate");
                     $_SESSION['admin_error'] = "Ошибка при смене шаблона";
                 }
 			}
                 header("Location: ?section=template_settings");
                 break;
+			
+			case 'delete_log':
+				if (!hasPermission(9, $currentUserRole)) {
+					$_SESSION['admin_error'] = "Недостаточно прав";
+					logAction('Попытка удаления лога', "Удаление лога запрещено");
+				} else {
+					$id = (int)$_POST['id'];
+					try {
+						$stmt = $pdo->prepare("DELETE FROM `{$dbPrefix}admin_logs` WHERE id = ?");
+						if ($stmt->execute([$id])) {
+							$_SESSION['admin_message'] = 'Запись лога успешно удалена';
+						} else {
+							$_SESSION['admin_error'] = 'Ошибка при удалении записи лога';
+						}
+					} catch (PDOException $e) {
+						$_SESSION['admin_error'] = 'Ошибка базы данных при удалении лога';
+					}
+				}
+				break;
         }
         
         header("Location: " . $_SERVER['REQUEST_URI']);
@@ -437,9 +454,18 @@ try {
             break;
             
         case 'comments':
-            $allComments = $comments->AllComments();
+			$perPage = 15;
+			$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+			$offset = ($page - 1) * $perPage;
+			
+			$allComments = $comments->AllComments($perPage, $offset);
             $pendingCount = $comments->countPendingComments();
-            $template->assign('comments', $allComments);
+			$totalComments = $comments->countAllComments();
+			$totalPages = ceil($totalComments / $perPage);
+			
+			$template->assign('comments', $allComments);
+			$template->assign('totalPages', $totalPages);
+			$template->assign('currentPage', $page);
             $template->assign('pendingCount', $pendingCount);
             break;
             
@@ -512,6 +538,7 @@ try {
         'PDO MySQL' => extension_loaded('pdo_mysql') ? '✓' : '✗',
         'OpenSSL' => extension_loaded('openssl') ? '✓' : '✗',
         'GD' => extension_loaded('gd') ? '✓' : '✗',
+		'Zlib' => extension_loaded('zlib') ? '✓' : '✗',
         'MBString' => extension_loaded('mbstring') ? '✓' : '✗',
     ];
     

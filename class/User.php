@@ -57,6 +57,7 @@ class User {
     }
 
     $stmt = $this->pdo->prepare("INSERT INTO {$dbPrefix}users (username, password, email, isadmin) VALUES (?, ?, ?, ?)");
+	flash('Регистрация успешна, авторизуйтесь!');
     return $stmt->execute([$username, $hash, $email, $isAdmin]);
 }
 

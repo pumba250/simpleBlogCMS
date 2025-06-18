@@ -1,6 +1,9 @@
 <?php
 $start = microtime(1);
 session_start();
+if (!ob_start("ob_gzhandler")) {
+    ob_start();
+}
 if (!file_exists('config/config.php')) {
 	header('Location: install.php');
 	die;
@@ -108,20 +111,32 @@ try {
     $metaDescription = $news->generateMetaDescription($newsItem['content']);
     $metaKeywords = $news->generateMetaKeywords($newsItem['title'], $newsItem['content']);
     $lastThreeNews = $news->getLastThreeNews();
-    $stmt = $pdo->query("SELECT * FROM {$dbPrefix}tags ORDER by `name`");
-    $allTags = $stmt->fetchAll(PDO::FETCH_ASSOC);
+	// Установите количество комментариев на страницу
+	$commentsPerPage = 10;
+	$currentCommentPage = isset($_GET['comment_page']) ? max(1, (int)$_GET['comment_page']) : 1;
+	$commentsOffset = ($currentCommentPage - 1) * $commentsPerPage;
+
+	// Получаем комментарии с пагинацией
+	$commentsList = $comments->getComments($newsId, $commentsPerPage, $commentsOffset);
+	$totalComments = $comments->countComments($newsId);
+	$totalCommentPages = ceil($totalComments / $commentsPerPage);
+
+	// Передаем данные в шаблон
+	$template->assign('commentsList', $commentsList);
+	$template->assign('totalCommentPages', $totalCommentPages);
+	$template->assign('currentCommentPage', $currentCommentPage);
 	// Передача данных тегов и заголовка в шаблон 
 	$template->assign('dbPrefix', $dbPrefix);
 	$template->assign('powered', $config['powered']);
 	$template->assign('version', $config['version']);
 	$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
-    $template->assign('allTags', $allTags);
+    $template->assign('allTags', $news->GetAllTags());
 	$template->assign('metaDescription', $metaDescription);
 	$template->assign('metaKeywords', $metaKeywords);
     $template->assign('lastThreeNews', $lastThreeNews);
     $template->assign('user', $_SESSION['user'] ?? null);
 	$template->assign('news', $news);
-	$template->assign('comments', $comments);
+	//$template->assign('comments', $comments);
 	$template->assign('templ', $templ);
     $template->assign('pageTitle', $pageTitle); 
 } elseif (isset($_GET['tags'])) {
@@ -130,20 +145,18 @@ try {
 		$pageTitle = "Новости по тегу: " . $tag;
 		$metaDescription = "Все публикации по теме: " . $tag;
 		$metaKeywords = $tag . ', IT, блог, сети';
-        $newsByTag = $news->getNewsByTag($tag);
+        $newsByTags = $news->getNewsByTag($tag);
         $lastThreeNews = $news->getLastThreeNews();
-        $stmt = $pdo->query("SELECT * FROM {$dbPrefix}tags ORDER by `name`");
-        $allTags = $stmt->fetchAll(PDO::FETCH_ASSOC);
         // Передача данных в шаблон
 		$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
 		$template->assign('powered', $config['powered']);
 		$template->assign('version', $config['version']);
-        $template->assign('allTags', $allTags);
+        $template->assign('allTags', $news->GetAllTags());
 		$template->assign('metaDescription', $metaDescription);
 		$template->assign('metaKeywords', $metaKeywords);
         $template->assign('lastThreeNews', $lastThreeNews);
         $template->assign('user', $_SESSION['user'] ?? null);
-        $template->assign('news', $newsByTag);
+        $template->assign('news', $newsByTags);
 	$template->assign('comments', $comments);
 	$template->assign('templ', $templ);
         $template->assign('pageTitle', $pageTitle);
@@ -159,13 +172,11 @@ try {
     $totalNewsCount = $news->getTotalNewsCount();
     $totalPages = ceil($totalNewsCount / $limit);
     $lastThreeNews = $news->getLastThreeNews();
-    $stmt = $pdo->query("SELECT DISTINCT(`name`) FROM {$dbPrefix}tags");
-    $allTags = $stmt->fetchAll(PDO::FETCH_ASSOC);
     // Передача данных тегов и заголовка в шаблон
 	$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
 	$template->assign('powered', $config['powered']);
 	$template->assign('version', $config['version']);
-    $template->assign('allTags', $allTags);
+    $template->assign('allTags', $news->GetAllTags());
 	$template->assign('metaDescription', $metaDescription);
 	$template->assign('metaKeywords', $metaKeywords);
     $template->assign('lastThreeNews', $lastThreeNews);
@@ -189,7 +200,7 @@ try {
 				$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
 				$template->assign('metaDescription', $metaDescription);
 				$template->assign('metaKeywords', $metaKeywords);
-                $template->assign('allTags', $pdo->query("SELECT DISTINCT(`name`) FROM {$dbPrefix}tags")->fetchAll(PDO::FETCH_ASSOC));
+                $template->assign('allTags', $news->GetAllTags());
 				$template->assign('user', $_SESSION['user'] ?? null);
                 $template->assign('pageTitle', 'Авторизация simpleBlog');
 				    echo $template->render('login.tpl');
@@ -203,7 +214,7 @@ try {
 				$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
 				$template->assign('metaDescription', $metaDescription);
 				$template->assign('metaKeywords', $metaKeywords);
-                $template->assign('allTags', $pdo->query("SELECT DISTINCT(`name`) FROM {$dbPrefix}tags")->fetchAll(PDO::FETCH_ASSOC));
+                $template->assign('allTags', $news->GetAllTags());
 				$template->assign('user', $_SESSION['user'] ?? null);
                 $template->assign('pageTitle', 'Регистрация simpleBlog');
 				    echo $template->render('register.tpl');
@@ -217,7 +228,7 @@ try {
 				$template->assign('metaDescription', $metaDescription);
 				$template->assign('metaKeywords', $metaKeywords);
 				$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
-                $template->assign('allTags', $pdo->query("SELECT DISTINCT(`name`) FROM {$dbPrefix}tags")->fetchAll(PDO::FETCH_ASSOC));
+                $template->assign('allTags', $news->GetAllTags());
 				$template->assign('user', $_SESSION['user'] ?? null);
                 $template->assign('pageTitle', 'Форма обратной связи simpleBlog');
 				    echo $template->render('contact.tpl');
@@ -231,6 +242,8 @@ try {
 				$template->assign('metaDescription', 'Страница не найдена');
 				$template->assign('metaKeywords', '404, страница не найдена');
                 $template->assign('pageTitle', '404 - Страница не найдена simpleBlog');
+				$template->assign('lastThreeNews', $news->getLastThreeNews());
+				$template->assign('allTags', $news->GetAllTags());
                 echo $template->render('404.tpl');
                 exit;
         }

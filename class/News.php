@@ -201,7 +201,10 @@ public function deleteNews($id) {
             return false;
         }
     }
-
+public function GetAllTags() {
+	global $dbPrefix;
+	return $this->pdo->query("SELECT DISTINCT(`name`) FROM {$dbPrefix}tags")->fetchAll(PDO::FETCH_ASSOC);
+}
 public function addTag($name) {
 		global $dbPrefix;
         try {
@@ -276,10 +279,11 @@ public function getNewsByTag($tag) {
     }
 
     $stmt = $this->pdo->prepare("
-        SELECT b.*
+        SELECT b.id, b.title, LEFT(b.content, 300) AS excerpt, b.content, b.created_at
         FROM {$dbPrefix}blogs b
         JOIN {$dbPrefix}blogs_tags bt ON b.id = bt.blogs_id
         WHERE bt.tag_id = ?
+        ORDER BY b.created_at DESC
     ");
     $stmt->execute([$tagId]);
 

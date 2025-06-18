@@ -2,9 +2,12 @@
 
 class Comments {
     private $pdo;
+	private $dbPrefix;
 
     public function __construct($pdo) {
         $this->pdo = $pdo;
+        global $dbPrefix;
+        $this->dbPrefix = $dbPrefix;
     }
 
     public function addComment($parentId, $fParent, $themeId, $userName, $userText) {
@@ -26,23 +29,65 @@ class Comments {
         return $stmt->execute([$id]);
     }
 
-    public function getComments($themeId) {
+    /**
+     * Получает комментарии для конкретной темы с пагинацией
+     * @param int $themeId ID темы
+     * @param int $limit Количество комментариев на странице
+     * @param int $offset Смещение
+     * @param bool $moderatedOnly Только модерированные комментарии (по умолчанию true)
+     * @return array
+     */
+    public function getComments($themeId, $limit = 10, $offset = 0, $moderatedOnly = true) {
+    $moderationCondition = $moderatedOnly ? 'AND moderation = 1' : '';
+    $stmt = $this->pdo->prepare("SELECT * FROM `{$this->dbPrefix}comments` 
+                                WHERE theme_id = ? $moderationCondition 
+                                ORDER BY created_at DESC 
+                                LIMIT ? OFFSET ?");
+    // Явно указываем тип параметров (PDO::PARAM_INT)
+    $stmt->bindValue(1, $themeId, PDO::PARAM_INT);
+    $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+    $stmt->bindValue(3, $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+public function AllComments($limit = 10, $offset = 0) {
+    $stmt = $this->pdo->prepare("SELECT c.*, b.title as post_title, u.username 
+                                FROM `{$this->dbPrefix}comments` c 
+                                LEFT JOIN `{$this->dbPrefix}blogs` b ON c.theme_id = b.id 
+                                LEFT JOIN `{$this->dbPrefix}users` u ON c.user_name = u.username
+                                ORDER BY c.created_at DESC
+                                LIMIT ? OFFSET ?");
+    // Явно указываем тип параметров
+    $stmt->bindValue(1, $limit, PDO::PARAM_INT);
+    $stmt->bindValue(2, $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+    /**
+     * Считает общее количество комментариев для темы
+     * @param int $themeId ID темы
+     * @param bool $moderatedOnly Только модерированные
+     * @return int
+     */
+    public function countComments($themeId, $moderatedOnly = true) {
 		global $dbPrefix;
-        $stmt = $this->pdo->prepare("SELECT * FROM `{$dbPrefix}comments` WHERE theme_id = ? AND moderation = 1 ORDER BY created_at DESC");
+        $moderationCondition = $moderatedOnly ? 'AND moderation = 1' : '';
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM `{$dbPrefix}comments` 
+                                    WHERE theme_id = ? $moderationCondition");
         $stmt->execute([$themeId]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $stmt->fetchColumn();
     }
-	
-	public function AllComments() {
+
+    /**
+     * Считает общее количество всех комментариев (для админки)
+     * @return int
+     */
+    public function countAllComments() {
 		global $dbPrefix;
-        $stmt = $this->pdo->prepare("SELECT c.*, b.title as post_title, u.username 
-            FROM `{$dbPrefix}comments` c 
-            LEFT JOIN `{$dbPrefix}blogs` b ON c.theme_id = b.id 
-            LEFT JOIN `{$dbPrefix}users` u ON c.user_name = u.username
-            ORDER BY c.created_at DESC");
-        $stmt->execute();
-        //return var_dump($stmt); //
-		return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $this->pdo->query("SELECT COUNT(*) FROM `{$dbPrefix}comments`")
+                        ->fetchColumn();
     }
 
     public function toggleModeration($id) {

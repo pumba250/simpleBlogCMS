@@ -9,8 +9,8 @@ $captchaResult = ($operator == '+') ? $num1 + $num2 : $num1 - $num2;
 $_SESSION['captcha_answer'] = $captchaResult;
 
 // Параметры изображения
-$width = 180;
-$height = 60;
+$width = 140;
+$height = 40;
 $image = imagecreatetruecolor($width, $height);
 
 // Цветовая палитра (футуристичные цвета)
@@ -37,10 +37,10 @@ for ($i = 0; $i < 5; $i++) {
 
 // Генерация текста капчи
 $text = "$num1 $operator $num2 = ?";
-$fontSize = 20;
+$fontSize = 15;
 $angle = rand(-5, 5); // Небольшой наклон
-$x = 15;
-$y = 40;
+$x = 10;
+$y = 30;
 
 // Тень текста
 imagettftext($image, $fontSize, $angle, $x+1, $y+1, $accentColor, 'arial.ttf', $text);
