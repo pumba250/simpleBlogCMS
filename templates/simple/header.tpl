@@ -3,8 +3,8 @@
 <title><? echo $pageTitle; ?></title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Блог о настройке сетевого оборудования и IT-решениях">
-<meta name="keywords" content="mikrotik, routerboard, netinstall, firewall, IT">
+<meta name="description" content="<?= htmlspecialchars($metaDescription ?? 'IT блог о настройке сетевого оборудования') ?>">
+    <meta name="keywords" content="<?= htmlspecialchars($metaKeywords ?? 'IT, блог, сети, mikrotik') ?>">
 <link id="theme-style" rel="stylesheet" href="/css/w3.css">
 <link id="theme-style" rel="stylesheet" href="/css/css">
 <style>

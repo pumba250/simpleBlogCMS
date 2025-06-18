@@ -5,7 +5,7 @@ if (isset($_GET['id'])) {
     // Получаем одну новость по id
     $newsId = (int)$_GET['id'];
     $newsItem = $news->getNewsById($newsId); // Получаем одну новость
-	$commentsList = $comments->getComments($newsId);
+	//$commentsList = $comments->getComments($newsId);
 
     if ($newsItem): // Если новость найдена
 
@@ -46,8 +46,25 @@ if (isset($_GET['id'])) {
 						   echo '<p>' . htmlspecialchars($comment['user_text']) . '</p>';
 						   echo '</div>';
 					   }
-			}
-			?><hr>
+?><!-- Пагинация -->
+                <?php if ($totalCommentPages > 1): ?>
+                    <div class="w3-center w3-padding">
+                        <div class="w3-bar">
+                            <?php if ($currentCommentPage > 1): ?>
+                                <a href="?id=<?= $newsId ?>&comment_page=<?= $currentCommentPage-1 ?>" class="w3-button">&laquo;</a>
+                            <?php endif; ?>
+                            
+                            <?php for ($page = 1; $page <= $totalCommentPages; $page++): ?>
+                                <a href="?id=<?= $newsId ?>&comment_page=<?= $page ?>" class="w3-button <?= ($page == $currentCommentPage) ? 'w3-green' : '' ?>"><?= $page ?></a>
+                            <?php endfor; ?>
+                            
+                            <?php if ($currentCommentPage < $totalCommentPages): ?>
+                                <a href="?id=<?= $newsId ?>&comment_page=<?= $currentCommentPage+1 ?>" class="w3-button">&raquo;</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            <?php } ?><hr>
 			<?
 			if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			   $userName = isset($user['username']) ? $user['username'] : trim($_POST['user_name']);
@@ -101,7 +118,7 @@ if (isset($_GET['id'])) {
                 <h5><span class="w3-opacity"><?= htmlspecialchars($newsItem['created_at']) ?></span></h5>
             </div>
             <div class="w3-container">
-                <p><?= ($newsItem['excerpt']) ?>...</p> <!-- Краткое содержание -->
+                <p><?= ($newsItem['excerpt'] ?? '') ?>...</p> <!-- Краткое содержание -->
                 <div class="w3-row">
                     <div class="w3-col m8 s12">
                         <p><a href="?id=<?= $newsItem['id'] ?>"><button class="w3-button w3-padding-large w3-white w3-border"><b>

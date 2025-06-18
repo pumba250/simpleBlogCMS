@@ -6,13 +6,18 @@
 <div class="w3-col l4">
   <!-- About Card -->
   <div class="w3-card w3-margin w3-margin-top">
-  <?php if ($user): ?><img src="<?= htmlspecialchars($user['avatar']);?>" style="width:120px"><?php endif; ?>
+  <?php if ($user): ?><img src="<?= !empty($user['avatar']) ? htmlspecialchars($user['avatar'], ENT_QUOTES) : '/images/avatar_g.png'; ?>" style="width:120px"><?php endif; ?>
     <div class="w3-container w3-white"><?php flash(); ?>
       <?php if ($user): ?>
 	  <p><form class="mt-5" method="post" action="/admin.php?logout=1"></p>
         <p>Привет, <?= htmlspecialchars($user['username']) ?>!<button type="submit" class="btn btn-primary">Выйти</button></form></p>
 		<?php if ($user['isadmin']>='7'): ?><p><a href="/admin.php">Admin Panel</a></p><?php endif; ?>
     <?php else: ?>
+		<?php if (isset($_SESSION['auth_error'])): ?>
+            <div class="w3-red">
+                <i class="fas fa-exclamation-circle"></i> <?= $_SESSION['auth_error'] ?>
+            </div>
+        <?php endif; ?>
         <p><button onclick="document.getElementById('id01').style.display='block'" class="w3-button w3-gray w3-large">Login</button></p>
 
   <div id="id01" class="w3-modal">
@@ -99,6 +104,7 @@
 
 <!-- Footer -->
 <footer class="w3-container w3-dark-grey w3-padding-32 w3-margin-top">
+	<?if (isset($_GET['id']) || isset($_GET['action'])) {} else {?>
         <div class="pagination">
             <?php if ($currentPage > 1): ?>
                 <a href="?page=<?= $currentPage - 1 ?>" class="w3-button w3-black w3-padding-large w3-margin-bottom">Пред.</a>
@@ -110,7 +116,7 @@
                 <a href="?page=<?= $currentPage + 1 ?>" class="w3-button w3-black w3-padding-large w3-margin-bottom">След. &raquo;</a>
             <?php else: ?>
                 <button class="w3-button w3-black w3-disabled w3-padding-large w3-margin-bottom">След. &raquo;</button>
-            <?php endif; ?>
+	<?php endif; }?>
         </div>
   <p align="center">Powered by <a href="https://www.w3schools.com/w3css/default.asp" target="_blank">w3.css</a> &copy; <?= date("Y") ?> <?= htmlspecialchars($_SERVER['SERVER_NAME']) ?>. Powered by <?= $powered ?>_<?= $version ?>. Все права защищены.</b><br>
 
@@ -118,3 +124,4 @@
 </footer>
 
 </body></html>
+<?unset($_SESSION['auth_error']);

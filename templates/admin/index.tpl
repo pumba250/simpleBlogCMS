@@ -618,7 +618,19 @@ document.addEventListener('keydown', function(e) {
 						<?endforeach;?>
 					</tbody>
 				</table>
-
+<?if ($totalPages > 1):?>
+    <div class="admin-pagination">
+        <?if ($currentPage > 1):?>
+            <a href="?section=comments&page=<?=$currentPage-1;?>">← Предыдущая</a>
+        <?endif;?>
+        
+        Страница <?=$currentPage;?> из <?=$totalPages;?>
+        
+        <?if ($currentPage < $totalPages):?>
+            <a href="?section=comments&page=<?=$currentPage+1;?>">Следующая →</a>
+        <?endif;?>
+    </div>
+<?endif;?>
 				<!-- Форма редактирования комментария -->
 				<div id="edit-comment-form" style="display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 5px; box-shadow: 0 0 20px rgba(0,0,0,0.2); z-index: 1000; width: 80%; max-width: 800px;">
 					<h3>Редактировать комментарий</h3>
@@ -660,6 +672,7 @@ document.addEventListener('keydown', function(e) {
 							<th>Пользователь</th>
                             <th>Действия</th>
                             <th>Доп.инфо</th>
+							<th>Действия</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -676,8 +689,7 @@ document.addEventListener('keydown', function(e) {
 											<?php endif; ?>
 										</td>
 										<td style="vertical-align: middle;">
-											<div class="d-flex flex-column">
-												<div class="d-flex justify-content-between">
+											
 													<strong>
 														<?php if (!empty($log['user_id'])): ?>
 															<?= htmlspecialchars($log['username'] ?? 'Система') ?>
@@ -688,7 +700,8 @@ document.addEventListener('keydown', function(e) {
 													<small class="text-muted" title="<?= date('d.m.Y H:i:s', strtotime($log['created_at'])) ?>">
 														<?= time_elapsed_string($log['created_at']) ?>
 													</small>
-												</div></td><td>
+										</td>
+										<td>
 												<div class="text-break">
 													<span class="badge bg-<?= getLogBadgeColor($log['action']) ?>">
 														<?= htmlspecialchars($log['action']) ?>
@@ -696,13 +709,25 @@ document.addEventListener('keydown', function(e) {
 													<?php if (!empty($log['details'])): ?>
 														- <?= htmlspecialchars($log['details']) ?>
 													<?php endif; ?>
-												</div></td><td>
+												</div>
+										</td>
+										<td>
 												<?php if (!empty($log['ip_address'])): ?>
 													<small class="text-muted">
 														IP: <?= htmlspecialchars($log['ip_address']) ?>
 													</small>
 												<?php endif; ?>
-											</div>
+											
+										</td>
+										<td>
+											<form method="post" style="display:inline;">
+												<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
+												<input type="hidden" name="action" value="delete_log">
+												<input type="hidden" name="id" value="<?=$log['id']?>">
+												<button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Вы уверены, что хотите удалить эту запись лога?')">
+													<i class="bi bi-trash"></i> Удалить
+												</button>
+											</form>
 										</td>
 									</tr>
 									<?php endforeach; ?>
