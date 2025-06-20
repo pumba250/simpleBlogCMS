@@ -135,6 +135,7 @@ function cleanOldBackups($backupDir, $maxBackups) {
  * Проверяет, нужно ли создавать резервную копию по расписанию
  */
 function checkScheduledBackup($pdo, $config) {
+	global $pdo, $dbPrefix, $backupDir, $maxBackups, $version;
     $lastBackupFile = getLastBackupFile($config['backup_dir']);
     $lastBackupTime = $lastBackupFile ? filemtime($lastBackupFile) : 0;
     
@@ -152,9 +153,9 @@ function checkScheduledBackup($pdo, $config) {
             $needBackup = ($now - $lastBackupTime) > 2592000; // 30 дней
             break;
     }
-    
+	
     if ($needBackup) {
-        createBackup($pdo, $config);
+        dbBackup(__DIR__.'/../'. $backupDir . 'backup_auto_'.date('Y-m-d_H-i-s').'.sql', false);
     }
 }
 

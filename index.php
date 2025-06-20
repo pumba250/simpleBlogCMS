@@ -23,13 +23,17 @@ try {
 } catch (PDOException $e) {
     echo "Connection failed: " . $e->getMessage();
 }
+$templ = $config['templ'];
+$dbPrefix = $config['db_prefix'];
+$backupDir = $config['backup_dir'];
+$maxBackups = $config['max_backups'];
+$version = $config['version'];
 // Проверка необходимости создания резервной копии по расписанию
 if (isset($config['backup_schedule']) && $config['backup_schedule'] !== 'disabled') {
     require_once __DIR__ . '/admin/backup_db.php';
     checkScheduledBackup($pdo, $config);
 }
-$templ = $config['templ'];
-$dbPrefix = $config['db_prefix'];
+
 require 'class/Template.php';
 require 'class/User.php';
 require 'class/Contact.php';

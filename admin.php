@@ -425,7 +425,7 @@ function hasPermission($requiredRole, $currentRole) {
 					$_SESSION['admin_error'] = "Недостаточно прав";
 				} else {
 					$backup = 'backup_'.date('Y-m-d_H-i-s').'.sql';
-					$backupFile = dbBackup(__DIR__.'/admin/backups/'.$backup, false);
+					$backupFile = dbBackup(__DIR__.'/'. $backupDir . $backup, false);
 					if ($backupFile) {
 						$_SESSION['admin_message'] = "Резервная копия успешно создана: " . basename($backup);
 						logAction('Создание резервной копии', 'Файл: ' . basename($backup));
@@ -441,7 +441,7 @@ function hasPermission($requiredRole, $currentRole) {
 				if (!hasPermission(9, $currentUserRole)) {
 					$_SESSION['admin_error'] = "Недостаточно прав";
 				} else {
-					$file = __DIR__ . '/admin/backups/' . basename($_GET['file']);
+					$file = __DIR__ . '/'. $backupDir . basename($_GET['file']);
 					if (file_exists($file)) {
 						header('Content-Type: application/octet-stream');
 						header('Content-Disposition: attachment; filename="' . basename($file) . '"');
@@ -455,7 +455,7 @@ function hasPermission($requiredRole, $currentRole) {
 				if (!hasPermission(9, $currentUserRole)) {
 					$_SESSION['admin_error'] = "Недостаточно прав";
 				} else {
-					$file = __DIR__ . '/admin/backups/' . basename($_POST['file']);
+					$file = __DIR__ . '/'. $backupDir . basename($_POST['file']);
 					if (file_exists($file)) {
 						$command = "mysql --user={$config['db_user']} --password={$config['db_pass']} --host={$config['host']} {$config['database']} < {$file}";
 						system($command, $output);
@@ -474,7 +474,7 @@ function hasPermission($requiredRole, $currentRole) {
 				if (!hasPermission(9, $currentUserRole)) {
 					$_SESSION['admin_error'] = "Недостаточно прав";
 				} else {
-					$file = __DIR__ . '/admin/backups/' . basename($_POST['file']);
+					$file = __DIR__ . '/'. $backupDir . basename($_POST['file']);
 					if (file_exists($file)) {
 						unlink($file);
 						$_SESSION['admin_message'] = 'Резервная копия удалена';
@@ -653,7 +653,7 @@ try {
 			break;
 	
 		case 'backups':
-			$backupDir = __DIR__ . '/admin/backups/';
+			//$backupDir = __DIR__ . '/admin/backups/';
 			$backups = [];
 			
 			if (file_exists($backupDir)) {
