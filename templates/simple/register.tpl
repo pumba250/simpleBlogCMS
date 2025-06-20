@@ -1,5 +1,4 @@
-<?php include __DIR__ . '/header.tpl'; 
-session_start();
+<?php include __DIR__ . '/header.tpl';
 
 ?><div class="w3-card-4 w3-margin w3-white">
 <div id="contact" class="w3-container w3-center w3-padding-32">

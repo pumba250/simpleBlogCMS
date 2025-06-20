@@ -166,6 +166,7 @@
                 <li <?if ($section == 'blogs'):?>class="active"<?endif;?>><a href="?section=blogs">Записи блога</a></li>
                 <li <?if ($section == 'contacts'):?>class="active"<?endif;?>><a href="?section=contacts">Обратная связь</a></li>
                 <li <?if ($section == 'users'):?>class="active"<?endif;?>><a href="?section=users">Пользователи</a></li>
+				<li <?if ($section == 'backups'):?>class="active"<?endif;?>><a href="?section=backups">Резервные копии</a></li>
 				<li <?if ($section == 'comments'):?>class="active"<?endif;?>><a href="?section=comments">Комментарии</a></li>
                 <li <?if ($section == 'tags'):?>class="active"<?endif;?>><a href="?section=tags">Теги</a></li>
 				<li <?if ($section == 'logs'):?>class="active"<?endif;?>><a href="?section=logs">Логи действий</a></li>
@@ -187,8 +188,47 @@
             <?if (isset($admin_error)):?>
                 <div class="alert alert-error"><?=$admin_error;?></div>
             <?endif;?>
-            
-            <?if ($section == 'blogs'):?>
+            <?php if ($section == 'blogs' && $_GET['action'] == 'edit' && isset($editBlog)): ?>
+			
+					<div class="admin-edit-form">
+						<h2>Редактирование записи #<?=$editBlog['id'];?></h2>
+						
+						<form method="POST">
+							<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
+							<input type="hidden" name="action" value="update_blog">
+							<input type="hidden" name="id" value="<?=$editBlog['id'];?>">
+							
+							<div class="form-group">
+								<label>Заголовок:</label>
+								<input type="text" name="title" class="form-control" value="<?=htmlspecialchars($editBlog['title']);?>" required>
+							</div>
+							
+							<div class="form-group">
+								<label>Содержание:</label>
+								<textarea name="content" class="form-control" required><?=htmlspecialchars($editBlog['content']);?></textarea>
+							</div>
+							
+							<div class="form-group">
+								<label>Теги:</label>
+								<div class="tags-container">
+									<?php foreach ($allTags as $tag): ?>
+										<div class="tag-checkbox">
+											<input type="checkbox" name="tags[]" value="<?=$tag['id'];?>" 
+												   id="tag_<?=$tag['id'];?>"
+												   <?=in_array($tag['id'], $editBlog['tag_ids']) ? 'checked' : '';?>>
+											<label for="tag_<?=$tag['id'];?>"><?=htmlspecialchars($tag['name']);?></label>
+										</div>
+									<?php endforeach; ?>
+								</div>
+							</div>
+							
+							<div class="form-actions">
+								<button type="submit" class="btn btn-success">Сохранить изменения</button>
+								<a href="?section=blogs" class="btn btn-secondary">Отмена</a>
+							</div>
+						</form>
+					</div>
+            <? elseif ($section == 'blogs'):?>
                 <!-- Раздел управления записями блога -->
                 <h2>Управление записями</h2>
                 <button onclick="document.getElementById('add-blog-form').style.display='block'" class="btn btn-primary">Добавить запись</button>
@@ -246,7 +286,7 @@
                                 <?endforeach;?>
                             </td>
                             <td>
-                                <button onclick="showEditForm(<?=$blog['id'];?>, '<?=$blog['title'];?>', '<?=$blog['content'];?>', [<?foreach ($blog['tag_ids'] as $tag_id):echo $tag_id;endforeach;?>])" class="btn btn-primary">Редактировать</button>
+                                <a href="?section=blogs&action=edit&id=<?=$blog['id'];?>" class="btn btn-primary">Редактировать</a>
                                 <form method="POST" style="display:inline;">
                                     <input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
                                     <input type="hidden" name="action" value="delete_blog">
@@ -258,62 +298,7 @@
                         <?endforeach;?>
                     </tbody>
                 </table>
-                
-                <!-- Форма редактирования (скрыта по умолчанию) -->
-                <div id="edit-blog-form" style="display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 5px; box-shadow: 0 0 20px rgba(0,0,0,0.2); z-index: 1000; width: 80%; max-width: 800px;">
-                    <h3>Редактировать запись</h3>
-                    <form method="POST" id="edit-form">
-                        <input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
-                        <input type="hidden" name="action" value="edit_blog">
-                        <input type="hidden" name="id" id="edit-id">
-                        
-                        <div class="form-group">
-                            <label>Заголовок:</label>
-                            <input type="text" name="title" id="edit-title" class="form-control" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Содержание:</label>
-                            <textarea name="content" id="edit-content" class="form-control" required></textarea>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Теги:</label>
-                            <div id="edit-tags-container">
-                                <?foreach ($allTags as $tag):?>
-                                    <div>
-                                        <input type="checkbox" name="tags[]" value="<?=$tag['id'];?>" id="tag_<?=$tag['id'];?>">
-                                        <label for="tag_<?=$tag['id'];?>" class="checkbox-label"><?=$tag['name'];?></label>
-                                    </div>
-                                <?endforeach;?>
-                            </div>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-success">Сохранить</button>
-                        <button type="button" onclick="document.getElementById('edit-blog-form').style.display='none'" class="btn btn-danger">Отмена</button>
-                    </form>
-                </div>
-                
-                <script>
-                    function showEditForm(id, title, content, tagIds) {
-                        document.getElementById('edit-id').value = id;
-                        document.getElementById('edit-title').value = title;
-                        document.getElementById('edit-content').value = content;
-                        
-                        // Сбросить все чекбоксы
-                        let checkboxes = document.querySelectorAll('#edit-tags-container input[type="checkbox"]');
-                        checkboxes.forEach(cb => cb.checked = false);
-                        
-                        // Отметить выбранные теги
-                        tagIds.forEach(tagId => {
-                            let cb = document.querySelector(`#edit-tags-container input[value="${tagId}"]`);
-                            if (cb) cb.checked = true;
-                        });
-                        
-                        document.getElementById('edit-blog-form').style.display = 'block';
-                    }
-                </script>
-                
+				
             <?elseif ($section == 'contacts'):?>
                 <!-- Раздел обратной связи -->
                 <h2>Сообщения от пользователей</h2>
@@ -772,7 +757,6 @@ document.addEventListener('keydown', function(e) {
 							</ul>
 						<?php endif; ?>
 					</div>
-				</div>
 				<?php elseif ($section == 'server_info'): ?>
 					<div class="card">
 						<div class="card-header">
@@ -858,7 +842,72 @@ document.addEventListener('keydown', function(e) {
 							</div>
 						</div>
 					</div>
-					<?php endif; ?>
+				<?php elseif ($section == 'backups'): ?>
+					<div class="card mb-4">
+						<div class="card-header">
+							<h5>Управление резервными копиями</h5>
+						</div>
+						<div class="card-body">
+							<form method="post">
+								<input type="hidden" name="csrf_token" value="<?=$csrf_token?>">
+								<button type="submit" name="action" value="create_backup" class="btn btn-primary">
+									Создать резервную копию сейчас
+								</button>
+							</form>
+							
+							<h6 class="mt-4">Настройки автоматического резервного копирования</h6>
+							<form method="post">
+								<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
+								<div class="form-group">
+									<label>Максимальное количество резервных копий</label>
+									<input type="number" name="max_backups" value="<?=$max_backups;?>" min="1" class="form-control">
+								</div>
+								<div class="form-group">
+									<label>Расписание</label>
+									<select name="backup_schedule" class="form-control">
+										<option value="disabled" <?if ($backup_schedule == 'disabled'):?>selected<?endif; ?>>Отключено</option>
+										<option value="daily" <?if ($backup_schedule == 'daily'):?>selected<?endif; ?>>Ежедневно</option>
+										<option value="weekly" <?if ($backup_schedule == 'weekly'):?>selected<?endif; ?>>Еженедельно</option>
+										<option value="monthly" <?if ($backup_schedule == 'monthly'):?>selected<?endif; ?>>Ежемесячно</option>
+									</select>
+								</div>
+								<button type="submit" name="action" value="update_backup_settings" class="btn btn-primary">
+									Сохранить настройки
+								</button>
+							</form>
+							
+							<h6 class="mt-4">Список резервных копий</h6>
+							<table class="table">
+								<thead>
+									<tr>
+										<th>Имя файла</th>
+										<th>Дата создания</th>
+										<th>Размер</th>
+										<th>Действия</th>
+									</tr>
+								</thead>
+								<tbody>
+									<?foreach ($backups as $backup):?>
+										<tr>
+											<td><?=basename($backup);?></td>
+											<td><?=date('Y-m-d H:i:s', filemtime($backup));?></td>
+											<td><?=round(filesize($backup) / 1024, 2);?> KB</td>
+											<td>
+												<a href="?section=backups&action=download&file=<?=basename($backup);?>" class="btn btn-sm btn-success">Скачать</a>
+												<form method="post" style="display:inline">
+													<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
+													<input type="hidden" name="file" value="<?=basename($backup);?>">
+													<button type="submit" name="action" value="restore_backup" class="btn btn-sm btn-warning">Восстановить</button>
+													<button type="submit" name="action" value="delete_backup" class="btn btn-sm btn-danger">Удалить</button>
+												</form>
+											</td>
+										</tr>
+									<?endforeach;?>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				<?php endif; ?>
         </div>
     </div>
 </body>
