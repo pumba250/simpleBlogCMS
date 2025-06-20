@@ -45,7 +45,7 @@ CREATE TABLE `{PREFIX_}users` (
  `isadmin` tinyint(1) NOT NULL,
  `avatar` varchar(100) NOT NULL DEFAULT '/images/avatar_g.png',
  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
- `last_activity` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00'
+ `last_activity` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
  PRIMARY KEY (`id`),
  UNIQUE KEY `id` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
@@ -56,7 +56,7 @@ CREATE TABLE `{PREFIX_}admin_logs` (
   `action` varchar(50) NOT NULL,
   `details` text,
   `ip_address` varchar(45) NOT NULL,
-  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

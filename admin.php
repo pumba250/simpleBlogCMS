@@ -78,6 +78,9 @@ try {
     echo "Connection failed: " . $e->getMessage();
 }
 $dbPrefix = $config['db_prefix'] ?? '';
+$backupDir = $config['backup_dir'];
+$maxBackups = $config['max_backups'];
+$version = $config['version'];
 // Функция для логирования действий
 function logAction($action, $details = null) {
     global $pdo, $dbPrefix;
@@ -141,7 +144,7 @@ require 'class/User.php';
 require 'class/Contact.php';
 require 'class/News.php';
 require 'class/Comments.php';
-
+require_once 'admin/backup_db.php';
 // После создания других объектов добавить:
 $comments = new Comments($pdo);
 $template = new Template();
@@ -234,25 +237,29 @@ function hasPermission($requiredRole, $currentRole) {
 			}
                 break;
                 
-            case 'edit_blog':
-			if (!hasPermission(7, $currentUserRole)) {
-				$_SESSION['admin_error'] = ("Недостаточно прав");
-				logAction('Попытка редактирования записи блога', "Редактирование запрещено");
-			} else {
-                $id = (int)$_POST['id'];
-                $title = htmlspecialchars(trim($_POST['title']));
-                $content = htmlspecialchars(trim($_POST['content']));
-                $tags = isset($_POST['tags']) ? $_POST['tags'] : [];
-                
-                if ($news->updateBlog($id, $title, $content, $tags)) {
-                    logAction('Редактирование записи блога', "Запись ID $id отредактирована. Новый заголовок: $title");
-                    $_SESSION['admin_message'] = 'Запись успешно обновлена';
-                } else {
-                    logAction('Ошибка редактирования записи блога', "Не удалось отредактировать запись ID $id");
-                    $_SESSION['admin_error'] = 'Ошибка при обновлении записи';
-                }
-			}
-                break;
+            case 'update_blog':
+				if (!hasPermission(7, $currentUserRole)) {
+					$_SESSION['admin_error'] = "Недостаточно прав";
+					logAction('Попытка редактирования записи блога', "Редактирование запрещено");
+				} else {
+					$id = (int)$_POST['id'];
+					$title = htmlspecialchars(trim($_POST['title']));
+					$content = nl2br(trim($_POST['content']));
+					$tags = isset($_POST['tags']) ? $_POST['tags'] : [];
+					
+					if ($news->updateBlog($id, $title, $content, $tags)) {
+						logAction('Редактирование записи блога', "Запись ID $id отредактирована. Новый заголовок: $title");
+						$_SESSION['admin_message'] = 'Запись успешно обновлена';
+						header("Location: ?section=blogs");
+						exit;
+					} else {
+						logAction('Ошибка редактирования записи блога', "Не удалось отредактировать запись ID $id");
+						$_SESSION['admin_error'] = 'Ошибка при обновлении записи';
+						header("Location: ?section=blogs&action=edit&id=$id");
+						exit;
+					}
+				}
+				break;
                 
             case 'delete_blog':
 			if (!hasPermission(9, $currentUserRole)) {
@@ -277,7 +284,8 @@ function hasPermission($requiredRole, $currentRole) {
 			} else {
                 $title = htmlspecialchars(trim($_POST['title']));
                 $content = htmlspecialchars(trim($_POST['content']));
-                $tags = isset($_POST['tags']) ? $_POST['tags'] : [];
+				//$content = nl2br(trim($_POST['content']));
+                //$tags = isset($_POST['tags']) ? $_POST['tags'] : [];
                 
                 if ($news->addBlog($title, $content, $tags)) {
                     logAction('Добавление записи блога', "Добавлена новая запись: $title");
@@ -391,6 +399,7 @@ function hasPermission($requiredRole, $currentRole) {
                 }
 			}
                 header("Location: ?section=template_settings");
+				exit();
                 break;
 			
 			case 'delete_log':
@@ -411,13 +420,88 @@ function hasPermission($requiredRole, $currentRole) {
 					}
 				}
 				break;
-        }
-        
-        header("Location: " . $_SERVER['REQUEST_URI']);
-        exit;
-    }
-}
+			case 'create_backup':
+				if (!hasPermission(9, $currentUserRole)) {
+					$_SESSION['admin_error'] = "Недостаточно прав";
+				} else {
+					$backup = 'backup_'.date('Y-m-d_H-i-s').'.sql';
+					$backupFile = dbBackup(__DIR__.'/admin/backups/'.$backup, false);
+					if ($backupFile) {
+						$_SESSION['admin_message'] = "Резервная копия успешно создана: " . basename($backup);
+						logAction('Создание резервной копии', 'Файл: ' . basename($backup));
+					} else {
+						$_SESSION['admin_error'] = "Ошибка при создании резервной копии";
+						
+					}
+				}
+				header("Location: ?section=backups");
+				break;
+				
+			case 'download_backup':
+				if (!hasPermission(9, $currentUserRole)) {
+					$_SESSION['admin_error'] = "Недостаточно прав";
+				} else {
+					$file = __DIR__ . '/admin/backups/' . basename($_GET['file']);
+					if (file_exists($file)) {
+						header('Content-Type: application/octet-stream');
+						header('Content-Disposition: attachment; filename="' . basename($file) . '"');
+						readfile($file);
+						exit;
+					}
+				}
+				break;
 
+			case 'restore_backup':
+				if (!hasPermission(9, $currentUserRole)) {
+					$_SESSION['admin_error'] = "Недостаточно прав";
+				} else {
+					$file = __DIR__ . '/admin/backups/' . basename($_POST['file']);
+					if (file_exists($file)) {
+						$command = "mysql --user={$config['db_user']} --password={$config['db_pass']} --host={$config['host']} {$config['database']} < {$file}";
+						system($command, $output);
+						
+						if ($output === 0) {
+							$_SESSION['admin_message'] = 'База данных успешно восстановлена';
+							logAction('Восстановление БД', 'Из файла: ' . basename($file));
+						} else {
+							$_SESSION['admin_error'] = 'Ошибка при восстановлении';
+						}
+					}
+				}
+				break;
+
+			case 'delete_backup':
+				if (!hasPermission(9, $currentUserRole)) {
+					$_SESSION['admin_error'] = "Недостаточно прав";
+				} else {
+					$file = __DIR__ . '/admin/backups/' . basename($_POST['file']);
+					if (file_exists($file)) {
+						unlink($file);
+						$_SESSION['admin_message'] = 'Резервная копия удалена';
+						logAction('Удаление резервной копии', 'Файл: ' . basename($file));
+					} else {
+						$_SESSION['admin_error'] = 'Файл не найден';
+					}
+				}
+				break;
+
+			case 'update_backup_settings':
+				if (!hasPermission(9, $currentUserRole)) {
+					$_SESSION['admin_error'] = "Недостаточно прав";
+				} else {
+					$config['max_backups'] = (int)$_POST['max_backups'];
+					$config['backup_schedule'] = $_POST['backup_schedule'];
+					
+					// Сохраняем обновленный конфиг
+					file_put_contents(__DIR__ . '/config/config.php', "<?php\nreturn " . var_export($config, true) . ";\n");
+					
+					$_SESSION['admin_message'] = 'Настройки резервного копирования обновлены';
+					logAction('Изменение настроек бэкапа', 'Макс. копий: ' . $config['max_backups'] . ', Расписание: ' . $config['backup_schedule']);
+				}
+				break;
+		}
+	}
+}
 // Генерация CSRF-токена
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -425,6 +509,8 @@ if (empty($_SESSION['csrf_token'])) {
 
 // Определение раздела админки
 $section = isset($_GET['section']) ? $_GET['section'] : 'server_info';
+$action = isset($_GET['action']) ? $_GET['action'] : '';
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 try {
     // Подготовка данных для шаблона
@@ -446,12 +532,31 @@ try {
     // Загрузка данных в зависимости от раздела
     switch ($section) {
         case 'blogs':
-            $blogs = $news->getAllAdm(0, 0);
-            $allTags = $pdo->query("SELECT * FROM `{$dbPrefix}tags` ORDER by `name`")->fetchAll(PDO::FETCH_ASSOC);
-            
-            $template->assign('blogs', $blogs);
-            $template->assign('allTags', $allTags);
-            break;
+			if ($action === 'edit' && $id > 0) {
+				// Загрузка данных редактируемого блога
+				$editBlog = $news->getNewsById($id);
+				if (!$editBlog) {
+					$_SESSION['admin_error'] = 'Запись блога не найдена';
+					header("Location: ?section=blogs");
+					exit;
+				}
+				
+				// Загрузка тегов для этой записи
+				$editBlog['tag_ids'] = $news->getTagsByNewsId($id);
+				/*$stmt = $pdo->prepare("SELECT tag_id FROM {$dbPrefix}blogs_tags WHERE blogs_id = ?");
+				$stmt->execute([$id]);
+				$editBlog['tag_ids'] = $stmt->fetchAll(PDO::FETCH_COLUMN);*/
+				
+				$template->assign('editBlog', $editBlog);
+			}
+			
+			$blogs = $news->getAllAdm(0, 0);
+			$allTags = $pdo->query("SELECT * FROM `{$dbPrefix}tags` ORDER by `name`")->fetchAll(PDO::FETCH_ASSOC);
+			
+			$template->assign('blogs', $blogs);
+			$template->assign('allTags', $allTags);
+			
+			break;
             
         case 'comments':
 			$perPage = 15;
@@ -515,37 +620,54 @@ try {
             break;
 			
 		case 'server_info':
-    // Информация о сервере
-    $serverInfo = [
-        'Веб-сервер' => $_SERVER['SERVER_SOFTWARE'] ?? 'Неизвестно',
-        'PHP версия' => phpversion(),
-        'MySQL версия' => $pdo->query("SELECT version()")->fetchColumn(),
-        'ОС сервера' => php_uname(),
-        'Лимит памяти PHP' => ini_get('memory_limit'),
-        'Максимальное время выполнения' => ini_get('max_execution_time') . ' сек',
-    ];
-    
-    // Проверка прав доступа к файлам
-    $filePermissions = [
-        'config/config.php' => file_exists('config/config.php') ? substr(sprintf('%o', fileperms('config/config.php')), -4) : 'Не найден',
-        'install.php' => file_exists('install.php') ? substr(sprintf('%o', fileperms('install.php')), -4) : 'Не найден',
-        'admin.php' => substr(sprintf('%o', fileperms('admin.php')), -4),
-    ];
-    
-    // Проверка важных PHP модулей
-    $phpModules = [
-        'PDO' => extension_loaded('pdo') ? '✓' : '✗',
-        'PDO MySQL' => extension_loaded('pdo_mysql') ? '✓' : '✗',
-        'OpenSSL' => extension_loaded('openssl') ? '✓' : '✗',
-        'GD' => extension_loaded('gd') ? '✓' : '✗',
-		'Zlib' => extension_loaded('zlib') ? '✓' : '✗',
-        'MBString' => extension_loaded('mbstring') ? '✓' : '✗',
-    ];
-    
-    $template->assign('serverInfo', $serverInfo);
-    $template->assign('filePermissions', $filePermissions);
-    $template->assign('phpModules', $phpModules);
-    break;
+			// Информация о сервере
+			$serverInfo = [
+				'Веб-сервер' => $_SERVER['SERVER_SOFTWARE'] ?? 'Неизвестно',
+				'PHP версия' => phpversion(),
+				'MySQL версия' => $pdo->query("SELECT version()")->fetchColumn(),
+				'ОС сервера' => php_uname(),
+				'Лимит памяти PHP' => ini_get('memory_limit'),
+				'Максимальное время выполнения' => ini_get('max_execution_time') . ' сек',
+			];
+			
+			// Проверка прав доступа к файлам
+			$filePermissions = [
+				'config/config.php' => file_exists('config/config.php') ? substr(sprintf('%o', fileperms('config/config.php')), -4) : 'Не найден',
+				'install.php' => file_exists('install.php') ? substr(sprintf('%o', fileperms('install.php')), -4) : 'Не найден',
+				'admin.php' => substr(sprintf('%o', fileperms('admin.php')), -4),
+			];
+			
+			// Проверка важных PHP модулей
+			$phpModules = [
+				'PDO' => extension_loaded('pdo') ? '✓' : '✗',
+				'PDO MySQL' => extension_loaded('pdo_mysql') ? '✓' : '✗',
+				'Gzip' => extension_loaded('gzip') ? '✓' : '✗',
+				'GD' => extension_loaded('gd') ? '✓' : '✗',
+				'Zlib' => extension_loaded('zlib') ? '✓' : '✗',
+				'MBString' => extension_loaded('mbstring') ? '✓' : '✗',
+			];
+			
+			$template->assign('serverInfo', $serverInfo);
+			$template->assign('filePermissions', $filePermissions);
+			$template->assign('phpModules', $phpModules);
+			break;
+	
+		case 'backups':
+			$backupDir = __DIR__ . '/admin/backups/';
+			$backups = [];
+			
+			if (file_exists($backupDir)) {
+				$backups = glob($backupDir . 'backup_*.sql');
+				// Сортируем по дате (новые сверху)
+				usort($backups, function($a, $b) {
+					return filemtime($b) - filemtime($a);
+				});
+			}
+			
+			$template->assign('backups', $backups);
+			$template->assign('max_backups', $config['max_backups'] ?? 5);
+			$template->assign('backup_schedule', $config['backup_schedule'] ?? 'disabled');
+			break;
     }
     
     echo $template->render('admin/index.tpl');

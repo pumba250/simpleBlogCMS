@@ -23,6 +23,11 @@ try {
 } catch (PDOException $e) {
     echo "Connection failed: " . $e->getMessage();
 }
+// Проверка необходимости создания резервной копии по расписанию
+if (isset($config['backup_schedule']) && $config['backup_schedule'] !== 'disabled') {
+    require_once __DIR__ . '/admin/backup_db.php';
+    checkScheduledBackup($pdo, $config);
+}
 $templ = $config['templ'];
 $dbPrefix = $config['db_prefix'];
 require 'class/Template.php';
@@ -212,8 +217,8 @@ try {
 				$template->assign('version', $config['version']);
 				$template->assign('templ', $templ);
 				$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
-				$template->assign('metaDescription', $metaDescription);
-				$template->assign('metaKeywords', $metaKeywords);
+				$template->assign('metaDescription', 'Регистрация simpleBlog');
+				$template->assign('metaKeywords', '');
                 $template->assign('allTags', $news->GetAllTags());
 				$template->assign('user', $_SESSION['user'] ?? null);
                 $template->assign('pageTitle', 'Регистрация simpleBlog');
@@ -225,8 +230,8 @@ try {
 				$template->assign('powered', $config['powered']);
 				$template->assign('version', $config['version']);
 				$template->assign('templ', $templ);
-				$template->assign('metaDescription', $metaDescription);
-				$template->assign('metaKeywords', $metaKeywords);
+				$template->assign('metaDescription', 'Форма обратной связи simpleBlog');
+				$template->assign('metaKeywords', 'контакты, simpleBlog');
 				$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
                 $template->assign('allTags', $news->GetAllTags());
 				$template->assign('user', $_SESSION['user'] ?? null);
@@ -262,4 +267,4 @@ try {
     exit;
 }
 $finish = microtime(1);
-echo 'generation time: ' . round($finish - $start, 5) . ' сек';
+//echo 'generation time: ' . round($finish - $start, 5) . ' сек';

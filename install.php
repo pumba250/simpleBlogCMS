@@ -73,11 +73,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             PDO::ATTR_EMULATE_PREPARES => false
         ]);
 
-        try {
+        /*try {
             $pdo->exec("SELECT 1");
         } catch (PDOException $e) {
             die("Ошибка тестового запроса к БД: " . $e->getMessage());
-        }
+        }*/
 
         executeSqlFile('sql/schema.sql', $pdo, $dbPrefix);
         
@@ -85,14 +85,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             mkdir('config', 0755, true);
         }
         
-        $configContent = "<?php\n\nreturn [\n  'host' => '$dbHost',\n  'database' => '$dbName',\n  'db_user' => '$dbUser',\n  'db_pass' => '$dbPass',\n  'templ' => 'simple',\n  'db_prefix' => '$dbPrefix',\n  'powered' => 'simpleBlog',\n  'version' => 'v0.5',\n  ];";
+        $configContent = "<?php\n\nreturn [\n  'host' => '$dbHost',\n  'database' => '$dbName',\n  'db_user' => '$dbUser',\n  'db_pass' => '$dbPass',\n  'templ' => 'simple',\n  'db_prefix' => '$dbPrefix',\n  'max_backups' => 5,\n  'backup_schedule' => 'disabled',\n  'backup_dir' => 'admin/backups/',\n  'powered' => 'simpleBlog',\n  'version' => 'v0.6',\n  ];";
         
         if (file_put_contents('config/config.php', $configContent) === false) {
             throw new Exception("Не удалось записать конфигурационный файл");
         }
 
         echo "<p>Установка завершена успешно!<br>Не забудьте удалить install.php и папку sql!</p>";
-        echo '<meta http-equiv="refresh" content="3;URL=?action=register">';
+        echo '<meta http-equiv="refresh" content="3;URL=/?action=register">';
+		die;
     } catch (PDOException $e) {
         die("Ошибка подключения: " . $e->getMessage());
     } catch (Exception $e) {
