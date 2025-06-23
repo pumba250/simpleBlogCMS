@@ -8,15 +8,58 @@ class News {
 
 	public function getAllNews($limit, $offset) {
 		global $dbPrefix;
-		$stmt = $this->pdo->prepare("SELECT id, title, LEFT(content, 300) AS excerpt, content, created_at FROM {$dbPrefix}blogs ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
+		$stmt = $this->pdo->prepare("SELECT id, title, LEFT(content, 350) AS excerpt, content, created_at FROM {$dbPrefix}blogs ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
 		$stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
 		$stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
 		$stmt->execute();
 		return $stmt->fetchAll(PDO::FETCH_ASSOC);
 	}
-    /**
-     * Получить все записи блога (для админки)
-     */
+    
+	public function searchNews($query, $limit = 10, $offset = 0) {
+    global $dbPrefix;
+    
+    try {
+        $searchQuery = '%' . $query . '%';
+        $stmt = $this->pdo->prepare("
+            SELECT id, title, LEFT(content, 350) AS excerpt, created_at 
+            FROM {$dbPrefix}blogs 
+            WHERE title LIKE :query OR content LIKE :query
+            ORDER BY created_at DESC
+            LIMIT :limit OFFSET :offset
+        ");
+        
+        $stmt->bindParam(':query', $searchQuery, PDO::PARAM_STR);
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Search error: " . $e->getMessage());
+        return [];
+    }
+	}
+
+	public function countSearchResults($query) {
+		global $dbPrefix;
+		
+		try {
+			$searchQuery = '%' . $query . '%';
+			$stmt = $this->pdo->prepare("
+				SELECT COUNT(*) 
+				FROM {$dbPrefix}blogs 
+				WHERE title LIKE :query OR content LIKE :query
+			");
+			
+			$stmt->bindParam(':query', $searchQuery, PDO::PARAM_STR);
+			$stmt->execute();
+			
+			return $stmt->fetchColumn();
+		} catch (PDOException $e) {
+			error_log("Search count error: " . $e->getMessage());
+			return 0;
+		}
+	}
     public function getAllAdm($limit = 0, $offset = 0) {
 		global $dbPrefix;
         $limitClause = $limit > 0 ? "LIMIT $limit OFFSET $offset" : "";
