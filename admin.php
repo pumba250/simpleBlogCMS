@@ -9,21 +9,19 @@ function time_elapsed_string($datetime, $full = false) {
     $ago = new DateTime($datetime);
     $diff = $now->diff($ago);
     
-    // Вместо динамического свойства используем переменную
     $weeks = floor($diff->d / 7);
-    $days = $diff->d - $weeks * 7;
+    $days = $diff->d % 7;
     
     $string = [
-        'y' => 'год',
-        'm' => 'месяц',
-        'w' => 'неделю',
-        'd' => 'день',
-        'h' => 'час',
-        'i' => 'минуту',
-        's' => 'секунду',
+        'y' => ['год', 'года', 'лет'],
+        'm' => ['месяц', 'месяца', 'месяцев'],
+        'w' => ['неделя', 'недели', 'недель'],
+        'd' => ['день', 'дня', 'дней'],
+        'h' => ['час', 'часа', 'часов'],
+        'i' => ['минута', 'минуты', 'минут'],
+        's' => ['секунда', 'секунды', 'секунд'],
     ];
     
-    // Заменяем использование $diff->w и $diff->d
     $values = [
         'y' => $diff->y,
         'm' => $diff->m,
@@ -34,16 +32,35 @@ function time_elapsed_string($datetime, $full = false) {
         's' => $diff->s,
     ];
     
-    foreach ($string as $k => &$v) {
-        if ($values[$k]) {
-            $v = $values[$k] . ' ' . $v . ($values[$k] > 1 ? (in_array($k, ['y', 'm']) ? 'а' : (in_array($k, ['d', 'h']) ? 'а' : 'ы')) : '');
-        } else {
-            unset($string[$k]);
+    $result = [];
+    foreach ($string as $k => $v) {
+        if ($values[$k] > 0) {
+            $n = $values[$k];
+            $result[] = $n . ' ' . getNounPluralForm($n, $v[0], $v[1], $v[2]);
         }
     }
     
-    if (!$full) $string = array_slice($string, 0, 1);
-    return $string ? implode(', ', $string) . ' назад' : 'только что';
+    if (!$full) {
+        $result = array_slice($result, 0, 1);
+    }
+    
+    return $result ? implode(', ', $result) . ' назад' : 'только что';
+}
+
+// Функция для правильного склонения существительных
+function getNounPluralForm($number, $one, $two, $five) {
+    $number = abs($number) % 100;
+    if ($number > 10 && $number < 20) {
+        return $five;
+    }
+    $number %= 10;
+    if ($number > 1 && $number < 5) {
+        return $two;
+    }
+    if ($number == 1) {
+        return $one;
+    }
+    return $five;
 }
 /**
  * Возвращает цвет badge в зависимости от типа действия
@@ -151,16 +168,16 @@ $template = new Template();
 $user = new User($pdo);
 $contact = new Contact($pdo);
 $news = new News($pdo);
-function getRoleName($roleValue) {
-    switch((int)$roleValue) {
-        case 9: return 'Администратор';
-        case 7: return 'Модератор';
-        case 0: return 'Пользователь';
-        default: return 'Неизвестная роль';
-    }
-}
-$pageTitle = 'Админ-панель';
 
+$pageTitle = 'Админ-панель';
+function getRoleName($roleValue) {
+		switch((int)$roleValue) {
+			case 9: return 'Администратор';
+			case 7: return 'Модератор';
+			case 0: return 'Пользователь';
+			default: return 'Неизвестная роль';
+		}
+	}
 // Обработка POST-запросов
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Проверка CSRF-токена
@@ -177,7 +194,7 @@ function hasPermission($requiredRole, $currentRole) {
     // Обработка действий
     if (isset($_POST['action'])) {
         switch ($_POST['action']) {
-            case 'edit_comment':
+			case 'edit_comment':
 			if (!hasPermission(7, $currentUserRole)) {
 				$_SESSION['admin_error'] = ("Недостаточно прав");
 				logAction('Попытка редактирования комментария', "Редактирование комментария запрещено");
@@ -283,7 +300,7 @@ function hasPermission($requiredRole, $currentRole) {
 				logAction('Попытка добавления записи блога', "Добавление запрещено");
 			} else {
                 $title = htmlspecialchars(trim($_POST['title']));
-                $content = htmlspecialchars(trim($_POST['content']));
+                $content = nl2br(trim($_POST['content']));
 				//$content = nl2br(trim($_POST['content']));
                 //$tags = isset($_POST['tags']) ? $_POST['tags'] : [];
                 
@@ -531,7 +548,7 @@ try {
     
     // Загрузка данных в зависимости от раздела
     switch ($section) {
-        case 'blogs':
+		case 'blogs':
 			if ($action === 'edit' && $id > 0) {
 				// Загрузка данных редактируемого блога
 				$editBlog = $news->getNewsById($id);
@@ -582,6 +599,7 @@ try {
         case 'users':
             $users = $user->getAllUsers();
             $template->assign('users', $users);
+			$template->assign('roleName', $roleName);
             break;
             
         case 'tags':
