@@ -47,7 +47,19 @@ function testDatabaseConnection($host, $name, $user, $pass) {
         return false;
     }
 }
-
+function deleteInstallationFiles() {
+    // Удаляем текущий файл (install.php)
+    if (file_exists(__FILE__)) {
+        unlink(__FILE__);
+    }
+    
+    // Удаляем папку sql (если она существует)
+    $sqlDir = dirname(__FILE__) . '/sql';
+    if (file_exists($sqlDir) && is_dir($sqlDir)) {
+        array_map('unlink', glob("$sqlDir/*.*"));
+        rmdir($sqlDir);
+    }
+}
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
         die("Неверный CSRF-токен");
@@ -73,12 +85,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             PDO::ATTR_EMULATE_PREPARES => false
         ]);
 
-        /*try {
-            $pdo->exec("SELECT 1");
-        } catch (PDOException $e) {
-            die("Ошибка тестового запроса к БД: " . $e->getMessage());
-        }*/
-
         executeSqlFile('sql/schema.sql', $pdo, $dbPrefix);
         
         if (!file_exists('config')) {
@@ -91,7 +97,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             throw new Exception("Не удалось записать конфигурационный файл");
         }
 
-        echo "<p>Установка завершена успешно!<br>Не забудьте удалить install.php и папку sql!</p>";
+        echo "<p>Установка завершена успешно!</p>";
+        
+        if ($deleteFiles) {
+            echo "<p>Удаление установочных файлов...</p>";
+            deleteInstallationFiles();
+            echo "<p>Установочные файлы удалены.</p>";
+        } else {
+            echo "<p>Не забудьте удалить install.php и папку sql вручную!</p>";
+        }
         echo '<meta http-equiv="refresh" content="3;URL=/?action=register">';
 		die;
     } catch (PDOException $e) {
@@ -106,13 +120,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <html>
 <head>
     <title>Установка simpleBlog</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        label { display: inline-block; width: 180px; margin-bottom: 10px; }
+        input[type="text"], input[type="password"] { width: 300px; padding: 5px; }
+        .checkbox-label { width: auto; }
+        button { padding: 10px 20px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background: #45a049; }
+    </style>
 </head>
 <body>
     <h1>Установка simpleBlog</h1>
     <form method="POST">
         <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
         <label for="db_host">Хост БД:</label>
-        <input type="text" name="db_host" required pattern="[a-zA-Z0-9\.\-]+">
+        <input type="text" name="db_host" required pattern="[a-zA-Z0-9\.\-]+" value="localhost">
         <br>
         <label for="db_name">Имя БД:</label>
         <input type="text" name="db_name" required pattern="[a-zA-Z0-9_\-]+">
@@ -126,6 +148,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <label for="db_prefix">Префикс таблиц (необязательно):</label>
         <input type="text" name="db_prefix" placeholder="Например: myprefix_" pattern="[a-zA-Z0-9_]+">
         <br>
+        <label>
+            <input type="checkbox" name="delete_files" value="1" checked>
+            <span class="checkbox-label">Удалить установочные файлы после успешной установки?</span>
+        </label>
+        <br><br>
         <button type="submit">Установить</button>
     </form>
 </body>
