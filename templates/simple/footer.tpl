@@ -55,6 +55,22 @@
     </div>
   </div><hr>
   
+  <!-- Search -->
+<div class="w3-card w3-margin">
+    <div class="w3-container w3-padding">
+      <h4>Поиск</h4>
+    </div>
+    <div class="search-form">
+        <form action="/" method="get">
+			<input type="hidden" name="action" value="search">
+            <input type="text" name="search" placeholder="Поиск по статьям..." 
+                   value="<?php if (isset($_GET['search'])) echo htmlspecialchars($_GET['search']); ?>">
+            <button type="submit" class="w3-button w3-block w3-dark-grey">Найти</button>
+        </form>
+    </div>
+</div>
+<hr>
+  
   <!-- Posts -->
   <div class="w3-card w3-margin">
     <div class="w3-container w3-padding">
@@ -118,10 +134,9 @@
                 <button class="w3-button w3-black w3-disabled w3-padding-large w3-margin-bottom">След. &raquo;</button>
 	<?php endif; }?>
         </div>
-  <p align="center">Powered by <a href="https://www.w3schools.com/w3css/default.asp" target="_blank">w3.css</a> &copy; <?= date("Y") ?> <?= htmlspecialchars($_SERVER['SERVER_NAME']) ?>. Powered by <?= $powered ?>_<?= $version ?>. Все права защищены.</b><br>
+  <p align="center">Design by <a href="https://www.w3schools.com/w3css/default.asp" target="_blank">w3.css</a> &copy; <?= date("Y") ?> <?= htmlspecialchars($_SERVER['SERVER_NAME']) ?>. Powered by <?= $powered ?>_<?= $version ?>. Все права защищены.</b><br>
 
   </p>
 </footer>
 
 </body></html>
-<?unset($_SESSION['auth_error']);
