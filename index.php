@@ -45,6 +45,7 @@ $contact = new Contact($pdo);
 $news = new News($pdo);
 $comments = new Comments($pdo);
 $pageTitle = 'simpleBlog';
+
 try {
     // Обработка регистрации
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -111,6 +112,7 @@ try {
 		}
 	}
     // Обработка GET-запросов
+	$searchQuery = isset($_GET['search']) ? trim($_GET['search']) : '';
     if (!isset($_GET['action'])) {
         if (isset($_GET['id'])) {
     // Получаем одну новость по id
@@ -200,6 +202,47 @@ try {
     echo $template->render('home.tpl');
     } else {
         switch ($_GET['action']) {
+			case 'search':
+				if (!empty($searchQuery)) {
+				
+					// Обработка поиска
+					$pageTitle = 'Результаты поиска: ' . htmlspecialchars($searchQuery);
+					$metaDescription = 'Результаты поиска по запросу: ' . htmlspecialchars($searchQuery);
+					$metaKeywords = 'поиск, ' . htmlspecialchars($searchQuery);
+					
+					$limit = 6; // Количество результатов на странице
+					$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+					$offset = ($page - 1) * $limit;
+					
+					$searchResults = $news->searchNews($searchQuery, $limit, $offset);
+					$totalResults = $news->countSearchResults($searchQuery);
+					$totalPages = ceil($totalResults / $limit);
+					
+					$lastThreeNews = $news->getLastThreeNews();
+					
+					$template->assign('searchQuery', htmlspecialchars($searchQuery));
+					$template->assign('news', $searchResults);
+					$template->assign('totalPages', $totalPages);
+					$template->assign('currentPage', $page);
+					$template->assign('totalResults', $totalResults);
+					
+					// Остальные присваивания как в других случаях
+					$template->assign('captcha_image_url', '/class/captcha.php');
+					$template->assign('powered', $config['powered']);
+					$template->assign('version', $config['version']);
+					$template->assign('allTags', $news->GetAllTags());
+					$template->assign('metaDescription', $metaDescription);
+					$template->assign('metaKeywords', $metaKeywords);
+					$template->assign('lastThreeNews', $lastThreeNews);
+					$template->assign('user', $_SESSION['user'] ?? null);
+					$template->assign('comments', $comments);
+					$template->assign('templ', $templ);
+					$template->assign('pageTitle', $pageTitle);
+					
+					echo $template->render('search.tpl');
+					
+				}
+				break;
 			case 'login':
             // Загрузка страницы регистрации
                 $template->assign('lastThreeNews', $news->getLastThreeNews());
@@ -272,3 +315,4 @@ try {
 }
 $finish = microtime(1);
 //echo 'generation time: ' . round($finish - $start, 5) . ' сек';
+echo $searchQuery;
