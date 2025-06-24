@@ -1,5 +1,5 @@
 simpleBlog.
-PHP (7.4.33) + Mysql (5.7.44-48).
+PHP (7.4.33+) + Mysql (5.7.44-48).
 Installation:
 Place all files in the root directory.
 Run your.url
