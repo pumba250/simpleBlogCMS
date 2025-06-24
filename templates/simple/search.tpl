@@ -9,7 +9,7 @@
 			<?php foreach ($news as $item): ?>
 				<article class="news-item">
 					<h2><a href="?id=<?php echo $item['id']; ?>"><?php echo htmlspecialchars($item['title']); ?></a></h2>
-					<div class="news-excerpt"><?php echo htmlspecialchars($item['excerpt']); ?></div>
+					<div class="news-excerpt"><?php echo strip_tags($item['excerpt']); ?></div>
 					<div class="news-meta">
 						<time datetime="<?php echo $item['created_at']; ?>"><?php echo date('d.m.Y', strtotime($item['created_at'])); ?></time>
 					</div>
