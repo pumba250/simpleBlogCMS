@@ -39,16 +39,58 @@ require 'class/User.php';
 require 'class/Contact.php';
 require 'class/Comments.php';
 require 'class/News.php';
+require 'class/Vote.php';
 $template = new Template();
 $user = new User($pdo);
 $contact = new Contact($pdo);
 $news = new News($pdo);
 $comments = new Comments($pdo);
+$votes = new Votes($pdo);
 $pageTitle = 'simpleBlog';
 
 try {
     // Обработка регистрации
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			if (isset($_POST['user_text'])) {
+				$themeId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+				$userName = isset($_SESSION['user']['username']) ? $_SESSION['user']['username'] : $_POST['user_name'];
+				$userText = $_POST['user_text'];
+				
+				if ($themeId > 0 && !empty($userName) && !empty($userText)) {
+					$comments->addComment(0, 0, $themeId, $userName, $userText);
+					header("Location: ?id=" . $themeId);
+					exit;
+				}
+			}
+		if (isset($_POST['vote_article']) || isset($_POST['vote_comment'])) {
+			$newsId = isset($_POST['id']) ? (int)$_POST['id'] : (isset($_GET['id']) ? (int)$_GET['id'] : 0);
+			
+			if ($newsId === 0) {
+				die("Ошибка: не указан ID новости");
+			}
+			
+			// Проверяем существование новости
+			$newsItem = $news->getNewsById($newsId);
+			if (!$newsItem) {
+				die("Новость не найдена");
+			}
+			
+			// Обработка голосования за статью
+			if (isset($_POST['vote_article']) && isset($_SESSION['user']['id'])) {
+				$voteType = $_POST['vote_article'];
+				$votes->voteArticle($newsId, $voteType, $_SESSION['user']['id']);
+				header("Location: ?id=$newsId");
+				exit;
+			}
+			
+			// Обработка голосования за комментарий
+			if (isset($_POST['vote_comment']) && isset($_SESSION['user']['id'])) {
+				list($commentId, $voteType) = explode('_', $_POST['vote_comment']);
+				$votes->voteComment($commentId, $voteType, $_SESSION['user']['id']);
+				header("Location: ?id=$newsId");
+				exit;
+			}
+		}
         if ($_POST['action'] === 'register') {
             $user->register($_POST['username'], $_POST['password'], $_POST['email']);
             $pageTitle = 'Регистрация';
@@ -100,105 +142,98 @@ try {
             }
         }
     }
-	if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_text'])) {
-		$themeId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-		$userName = isset($_SESSION['user']['username']) ? $_SESSION['user']['username'] : $_POST['user_name'];
-		$userText = $_POST['user_text'];
-		
-		if ($themeId > 0 && !empty($userName) && !empty($userText)) {
-			$comments->addComment(0, 0, $themeId, $userName, $userText);
-			header("Location: ?id=" . $themeId);
-			exit;
-		}
-	}
+function getCommonTemplateVars($config, $news, $user = null) {
+    return [
+        'powered' => $config['powered'],
+        'version' => $config['version'],
+		'dbPrefix', $dbPrefix,
+        'templ' => $config['templ'],
+        'captcha_image_url' => '/class/captcha.php',
+        'allTags' => $news->GetAllTags(),
+        'lastThreeNews' => $news->getLastThreeNews(),
+        'user' => $user ?? null,
+        'comments' => $comments
+    ];
+}
     // Обработка GET-запросов
 	$searchQuery = isset($_GET['search']) ? trim($_GET['search']) : '';
     if (!isset($_GET['action'])) {
         if (isset($_GET['id'])) {
-    // Получаем одну новость по id
-    $newsId = (int)$_GET['id'];
-    $newsItem = $news->getNewsById($newsId); // Получаем одну новость
-	$pageTitle = htmlspecialchars($newsItem['title']) . ' | IT Блог';
-    $metaDescription = $news->generateMetaDescription($newsItem['content']);
-    $metaKeywords = $news->generateMetaKeywords($newsItem['title'], $newsItem['content']);
-    $lastThreeNews = $news->getLastThreeNews();
-	// Установите количество комментариев на страницу
-	$commentsPerPage = 10;
-	$currentCommentPage = isset($_GET['comment_page']) ? max(1, (int)$_GET['comment_page']) : 1;
-	$commentsOffset = ($currentCommentPage - 1) * $commentsPerPage;
+			// Получаем одну новость по id
+			$newsId = (int)$_GET['id'];
+			$newsItem = $news->getNewsById($newsId); // Получаем одну новость
+			$pageTitle = htmlspecialchars($newsItem['title']) . ' | IT Блог';
+			$metaDescription = $news->generateMetaDescription($newsItem['content']);
+			$metaKeywords = $news->generateMetaKeywords($newsItem['title'], $newsItem['content']);
+			$lastThreeNews = $news->getLastThreeNews();
+			// Количество комментариев на страницу
+			$commentsPerPage = 10;
+			$currentCommentPage = isset($_GET['comment_page']) ? max(1, (int)$_GET['comment_page']) : 1;
+			$commentsOffset = ($currentCommentPage - 1) * $commentsPerPage;
 
-	// Получаем комментарии с пагинацией
-	$commentsList = $comments->getComments($newsId, $commentsPerPage, $commentsOffset);
-	$totalComments = $comments->countComments($newsId);
-	$totalCommentPages = ceil($totalComments / $commentsPerPage);
+			// Получаем комментарии с пагинацией
+			$commentsList = $comments->getComments($newsId, $commentsPerPage, $commentsOffset);
+			$totalComments = $comments->countComments($newsId);
+			$totalCommentPages = ceil($totalComments / $commentsPerPage);
 
-	// Передаем данные в шаблон
-	$template->assign('commentsList', $commentsList);
-	$template->assign('totalCommentPages', $totalCommentPages);
-	$template->assign('currentCommentPage', $currentCommentPage);
-	// Передача данных тегов и заголовка в шаблон 
-	$template->assign('dbPrefix', $dbPrefix);
-	$template->assign('powered', $config['powered']);
-	$template->assign('version', $config['version']);
-	$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
-    $template->assign('allTags', $news->GetAllTags());
-	$template->assign('metaDescription', $metaDescription);
-	$template->assign('metaKeywords', $metaKeywords);
-    $template->assign('lastThreeNews', $lastThreeNews);
-    $template->assign('user', $_SESSION['user'] ?? null);
-	$template->assign('news', $news);
-	//$template->assign('comments', $comments);
-	$template->assign('templ', $templ);
-    $template->assign('pageTitle', $pageTitle); 
-} elseif (isset($_GET['tags'])) {
-        // Обработка тегов
-        $tag = htmlspecialchars($_GET['tags']);
-		$pageTitle = "Новости по тегу: " . $tag;
-		$metaDescription = "Все публикации по теме: " . $tag;
-		$metaKeywords = $tag . ', IT, блог, сети';
-        $newsByTags = $news->getNewsByTag($tag);
-        $lastThreeNews = $news->getLastThreeNews();
-        // Передача данных в шаблон
-		$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
-		$template->assign('powered', $config['powered']);
-		$template->assign('version', $config['version']);
-        $template->assign('allTags', $news->GetAllTags());
-		$template->assign('metaDescription', $metaDescription);
-		$template->assign('metaKeywords', $metaKeywords);
-        $template->assign('lastThreeNews', $lastThreeNews);
-        $template->assign('user', $_SESSION['user'] ?? null);
-        $template->assign('news', $newsByTags);
-	$template->assign('comments', $comments);
-	$template->assign('templ', $templ);
-        $template->assign('pageTitle', $pageTitle);
-    } else {
-    // Загрузка главной страницы
-    $pageTitle = 'Главная страница'; // Заголовок для главной страницы
-	$metaDescription = 'IT блог о настройке сетевого оборудования, MikroTik, RouterBoard и сетевой безопасности';
-	$metaKeywords = 'IT, блог, сети, mikrotik, routerboard, безопасность';
-    $limit = 6; // Количество новостей на странице
-    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-    $offset = ($page - 1) * $limit;
-    $allNews = $news->getAllNews($limit, $offset);
-    $totalNewsCount = $news->getTotalNewsCount();
-    $totalPages = ceil($totalNewsCount / $limit);
-    $lastThreeNews = $news->getLastThreeNews();
-    // Передача данных тегов и заголовка в шаблон
-	$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
-	$template->assign('powered', $config['powered']);
-	$template->assign('version', $config['version']);
-    $template->assign('allTags', $news->GetAllTags());
-	$template->assign('metaDescription', $metaDescription);
-	$template->assign('metaKeywords', $metaKeywords);
-    $template->assign('lastThreeNews', $lastThreeNews);
-    $template->assign('user', $_SESSION['user'] ?? null);
-    $template->assign('news', $allNews);
-	$template->assign('comments', $comments);
-	$template->assign('templ', $templ);
-    $template->assign('totalPages', $totalPages);
-    $template->assign('currentPage', $page);
-    $template->assign('pageTitle', $pageTitle);
-}
+			// Передаем данные в шаблон
+			$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+		$pageVars = [
+			'pageTitle' => $pageTitle,
+			'commentsList' => $commentsList,
+			'totalCommentPages' => $totalCommentPages,
+			'currentCommentPage' => $currentCommentPage,
+			'metaDescription' => $metaDescription,
+			'metaKeywords' => $metaKeywords,
+			'news' => $news,
+			'votes' => $votes,
+			];
+			$template->assignMultiple(array_merge($commonVars, $pageVars));
+			
+		} elseif (isset($_GET['tags'])) {
+			// Обработка тегов
+			$tag = htmlspecialchars($_GET['tags']);
+			$pageTitle = "Новости по тегу: " . $tag;
+			$metaDescription = "Все публикации по теме: " . $tag;
+			$metaKeywords = $tag . ', IT, блог, сети';
+			$newsByTags = $news->getNewsByTag($tag);
+			$lastThreeNews = $news->getLastThreeNews();
+			// Передача данных в шаблон
+			$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+		$pageVars = [
+			'pageTitle' => $pageTitle,
+			'metaDescription' => $metaDescription,
+			'metaKeywords' => $metaKeywords,
+			'news' => $newsByTags,
+			];
+			$template->assignMultiple(array_merge($commonVars, $pageVars));
+			
+		} else {
+			// Загрузка главной страницы
+			$pageTitle = 'Главная страница'; // Заголовок для главной страницы
+			$metaDescription = 'IT блог о настройке сетевого оборудования, MikroTik, RouterBoard и сетевой безопасности';
+			$metaKeywords = 'IT, блог, сети, mikrotik, routerboard, безопасность';
+			$limit = 6; // Количество новостей на странице
+			$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+			$offset = ($page - 1) * $limit;
+			$allNews = $news->getAllNews($limit, $offset);
+			$totalNewsCount = $news->getTotalNewsCount();
+			$totalPages = ceil($totalNewsCount / $limit);
+			$lastThreeNews = $news->getLastThreeNews();
+			
+			// Передача данных в шаблон
+			$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+		$pageVars = [
+			'pageTitle' => $pageTitle,
+			'metaDescription' => $metaDescription,
+			'metaKeywords' => $metaKeywords,
+			'news' => $allNews,
+			'totalPages' => $totalPages,
+			'currentPage' => $page,
+			'votes' => $votes,
+			];
+			$template->assignMultiple(array_merge($commonVars, $pageVars));
+		}
     echo $template->render('home.tpl');
     } else {
         switch ($_GET['action']) {
@@ -209,7 +244,6 @@ try {
 					$pageTitle = 'Результаты поиска: ' . htmlspecialchars($searchQuery);
 					$metaDescription = 'Результаты поиска по запросу: ' . htmlspecialchars($searchQuery);
 					$metaKeywords = 'поиск, ' . htmlspecialchars($searchQuery);
-					
 					$limit = 6; // Количество результатов на странице
 					$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 					$offset = ($page - 1) * $limit;
@@ -220,82 +254,62 @@ try {
 					
 					$lastThreeNews = $news->getLastThreeNews();
 					
-					$template->assign('searchQuery', htmlspecialchars($searchQuery));
-					$template->assign('news', $searchResults);
-					$template->assign('totalPages', $totalPages);
-					$template->assign('currentPage', $page);
-					$template->assign('totalResults', $totalResults);
-					
-					// Остальные присваивания как в других случаях
-					$template->assign('captcha_image_url', '/class/captcha.php');
-					$template->assign('powered', $config['powered']);
-					$template->assign('version', $config['version']);
-					$template->assign('allTags', $news->GetAllTags());
-					$template->assign('metaDescription', $metaDescription);
-					$template->assign('metaKeywords', $metaKeywords);
-					$template->assign('lastThreeNews', $lastThreeNews);
-					$template->assign('user', $_SESSION['user'] ?? null);
-					$template->assign('comments', $comments);
-					$template->assign('templ', $templ);
-					$template->assign('pageTitle', $pageTitle);
-					
+					$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+				$pageVars = [
+					'pageTitle' => $pageTitle,
+					'searchQuery' => htmlspecialchars($searchQuery),
+					'news' => $searchResults,
+					'totalPages' => $totalPages,
+					'currentPage' => $page,
+					'totalResults' => $totalResults,
+					'metaDescription' => $metaDescription,
+					'metaKeywords' => $metaKeywords,
+					];
+					$template->assignMultiple(array_merge($commonVars, $pageVars));
 					echo $template->render('search.tpl');
 					
 				}
 				break;
 			case 'login':
-            // Загрузка страницы регистрации
-                $template->assign('lastThreeNews', $news->getLastThreeNews());
-				$template->assign('powered', $config['powered']);
-				$template->assign('version', $config['version']);
-				$template->assign('templ', $templ);
-				$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
-				$template->assign('metaDescription', $metaDescription);
-				$template->assign('metaKeywords', $metaKeywords);
-                $template->assign('allTags', $news->GetAllTags());
-				$template->assign('user', $_SESSION['user'] ?? null);
-                $template->assign('pageTitle', 'Авторизация simpleBlog');
-				    echo $template->render('login.tpl');
+				$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+				$pageVars = [
+				'pageTitle' => 'Авторизация simpleBlog',
+				'metaDescription' => $metaDescription,
+				'metaKeywords' => $metaKeywords,
+				];
+				$template->assignMultiple(array_merge($commonVars, $pageVars));
+				echo $template->render('login.tpl');
                 break;
             case 'register':
-                // Загрузка страницы регистрации
-                $template->assign('lastThreeNews', $news->getLastThreeNews());
-				$template->assign('powered', $config['powered']);
-				$template->assign('version', $config['version']);
-				$template->assign('templ', $templ);
-				$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
-				$template->assign('metaDescription', 'Регистрация simpleBlog');
-				$template->assign('metaKeywords', '');
-                $template->assign('allTags', $news->GetAllTags());
-				$template->assign('user', $_SESSION['user'] ?? null);
-                $template->assign('pageTitle', 'Регистрация simpleBlog');
-				    echo $template->render('register.tpl');
+                $commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+				$pageVars = [
+				'pageTitle' => 'Регистрация simpleBlog',
+				'metaDescription' => 'Регистрация simpleBlog',
+				'metaKeywords' => '',
+				];
+				$template->assignMultiple(array_merge($commonVars, $pageVars));
+				echo $template->render('register.tpl');
                 break;
             case 'contact':
-                // Загрузка формы обратной связи
-                $template->assign('lastThreeNews', $news->getLastThreeNews());
-				$template->assign('powered', $config['powered']);
-				$template->assign('version', $config['version']);
-				$template->assign('templ', $templ);
-				$template->assign('metaDescription', 'Форма обратной связи simpleBlog');
-				$template->assign('metaKeywords', 'контакты, simpleBlog');
-				$template->assign('captcha_image_url', '/class/captcha.php'); // путь к скрипту капчи
-                $template->assign('allTags', $news->GetAllTags());
-				$template->assign('user', $_SESSION['user'] ?? null);
-                $template->assign('pageTitle', 'Форма обратной связи simpleBlog');
-				    echo $template->render('contact.tpl');
+                $commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+				$pageVars = [
+				'pageTitle' => 'Форма обратной связи simpleBlog',
+				'metaDescription' => 'Форма обратной связи simpleBlog',
+				'metaKeywords' => 'контакты, simpleBlog',
+				];
+				$template->assignMultiple(array_merge($commonVars, $pageVars));
+				echo $template->render('contact.tpl');
                 break;
             default:
                 // Обработка 404 ошибки
                 header($_SERVER["SERVER_PROTOCOL"] . " 404 Not Found");
-				$template->assign('powered', $config['powered']);
-				$template->assign('version', $config['version']);
-				$template->assign('templ', $templ);
-				$template->assign('metaDescription', 'Страница не найдена');
-				$template->assign('metaKeywords', '404, страница не найдена');
-                $template->assign('pageTitle', '404 - Страница не найдена simpleBlog');
-				$template->assign('lastThreeNews', $news->getLastThreeNews());
-				$template->assign('allTags', $news->GetAllTags());
+				$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+				$pageVars = [
+				'pageTitle' => '404 Страница не найдена',
+				'metaDescription' => 'Страница не найдена',
+				'metaKeywords' => '404, страница не найдена',
+				];
+				$template->assignMultiple(array_merge($commonVars, $pageVars));
                 echo $template->render('404.tpl');
                 exit;
         }
@@ -304,12 +318,13 @@ try {
     // Обработка ошибки 500
     error_log($e->getMessage()); // Логирование ошибки
     header($_SERVER["SERVER_PROTOCOL"] . " 500 Internal Server Error");
-	$template->assign('powered', $config['powered']);
-	$template->assign('version', $config['version']);
-	$template->assign('templ', $templ);
-	$template->assign('metaDescription', 'Внутренняя ошибка сервера');
-	$template->assign('metaKeywords', '500, ошибка сервера');
-    $template->assign('pageTitle', '500 - Внутренняя ошибка сервера simpleBlog');
+	$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+	$pageVars = [
+	'pageTitle' => '500 Внутренняя ошибка сервера',
+	'metaDescription' => 'Внутренняя ошибка сервера',
+	'metaKeywords' => '500, ошибка сервера',
+	];
+	$template->assignMultiple(array_merge($commonVars, $pageVars));
     echo $template->render('500.tpl');
     exit;
 }

@@ -11,23 +11,48 @@ class Template {
             throw new Exception("Директория с шаблонами не найдена: {$this->templateDir}");
         }
     }
-    
+    public function assignMultiple(array $vars): void {
+        foreach ($vars as $key => $value) {
+            $this->assign($key, $value);
+        }
+    }
     public function assign($key, $value) {
         $this->variables[$key] = $value;
     }
     
-    public function render($templateFile) {
-        $templatePath = $this->templateDir . '/' . $templateFile;
-        if (!file_exists($templatePath)) {
-            throw new Exception("Файл шаблона не найден: {$templateFile}");
-        }
-        
-        extract($this->variables);
-        
-        ob_start();
-        include $templatePath;
-        return ob_get_clean();
+/**
+ * Рендерит шаблон с передачей переменных
+ * 
+ * @param string $templateFile Имя файла шаблона (относительно templateDir)
+ * @param array $additionalVars Дополнительные переменные для этого рендеринга
+ * @return string
+ * @throws Exception Если файл шаблона не найден или ошибка рендеринга
+ */
+public function render(string $templateFile, array $additionalVars = []): string
+{
+    $templatePath = $this->templateDir . '/' . ltrim($templateFile, '/');
+    
+    if (!file_exists($templatePath)) {
+        throw new \RuntimeException("Template file not found: {$templatePath}");
     }
+    
+    // Объединяем общие переменные с дополнительными
+    $vars = array_merge($this->variables, $additionalVars);
+    
+    // Извлекаем переменные в текущую область видимости
+    extract($vars, EXTR_SKIP);
+    
+    // Буферизация вывода
+    ob_start();
+    try {
+        include $templatePath;
+    } catch (\Throwable $e) {
+        ob_end_clean(); // Очищаем буфер в случае ошибки
+        throw new \RuntimeException("Error rendering template {$templateFile}: " . $e->getMessage(), 0, $e);
+    }
+    
+    return ob_get_clean();
+}
     
     public function setTemplateDir($dir) {
         $this->templateDir = $dir;
