@@ -3,79 +3,7 @@ $start = microtime(1);
 session_start();
 require 'class/Lang.php';
 Lang::init();
-/**
- * Возвращает строку с временем, прошедшим с указанной даты
- */
-function time_elapsed_string($datetime, $full = false) {
-    $now = new DateTime;
-    $ago = new DateTime($datetime);
-    $diff = $now->diff($ago);
-    
-    $weeks = floor($diff->d / 7);
-    $days = $diff->d % 7;
-    
-    $string = [
-        'y' => ['год', 'года', 'лет'],
-        'm' => ['месяц', 'месяца', 'месяцев'],
-        'w' => ['неделя', 'недели', 'недель'],
-        'd' => ['день', 'дня', 'дней'],
-        'h' => ['час', 'часа', 'часов'],
-        'i' => ['минута', 'минуты', 'минут'],
-        's' => ['секунда', 'секунды', 'секунд'],
-    ];
-    
-    $values = [
-        'y' => $diff->y,
-        'm' => $diff->m,
-        'w' => $weeks,
-        'd' => $days,
-        'h' => $diff->h,
-        'i' => $diff->i,
-        's' => $diff->s,
-    ];
-    
-    $result = [];
-    foreach ($string as $k => $v) {
-        if ($values[$k] > 0) {
-            $n = $values[$k];
-            $result[] = $n . ' ' . getNounPluralForm($n, $v[0], $v[1], $v[2]);
-        }
-    }
-    
-    if (!$full) {
-        $result = array_slice($result, 0, 1);
-    }
-    
-    return $result ? implode(', ', $result) . ' назад' : 'только что';
-}
 
-// Функция для правильного склонения существительных
-function getNounPluralForm($number, $one, $two, $five) {
-    $number = abs($number) % 100;
-    if ($number > 10 && $number < 20) {
-        return $five;
-    }
-    $number %= 10;
-    if ($number > 1 && $number < 5) {
-        return $two;
-    }
-    if ($number == 1) {
-        return $one;
-    }
-    return $five;
-}
-/**
- * Возвращает цвет badge в зависимости от типа действия
- */
-function getLogBadgeColor($action) {
-    $action = strtolower($action);
-    if (strpos($action, 'удал') !== false) return 'danger';
-    if (strpos($action, 'добав') !== false || strpos($action, 'созда') !== false) return 'success';
-    if (strpos($action, 'опытк') !== false || strpos($action, 'измен') !== false) return 'warning';
-    if (strpos($action, 'ошибка') !== false) return 'danger';
-    if (strpos($action, 'вход') !== false || strpos($action, 'выход') !== false) return 'info';
-    return 'secondary';
-}
 // Проверка конфигурации и установки
 if (!file_exists('config/config.php')) {
     header('Location: install.php');
@@ -163,6 +91,7 @@ require 'class/User.php';
 require 'class/Contact.php';
 require 'class/News.php';
 require 'class/Comments.php';
+require 'class/Parse.php';
 require_once 'admin/backup_db.php';
 // После создания других объектов добавить:
 $comments = new Comments($pdo);
@@ -170,8 +99,9 @@ $template = new Template();
 $user = new User($pdo);
 $contact = new Contact($pdo);
 $news = new News($pdo);
+$parse = new parse();
 
-$pageTitle = 'Админ-панель';
+$pageTitle = Lang::get('admin_page', 'admin');
 function getRoleName($roleValue) {
 		switch((int)$roleValue) {
 			case 9: return Lang::get('admin', 'admin');
@@ -189,15 +119,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 	$currentUserRole = $_SESSION['user']['isadmin'] ?? 0;
 
-// Функция проверки прав
-function hasPermission($requiredRole, $currentRole) {
-    return $currentRole >= $requiredRole;
-}
     // Обработка действий
     if (isset($_POST['action'])) {
         switch ($_POST['action']) {
 			case 'edit_comment':
-			if (!hasPermission(7, $currentUserRole)) {
+			if (!$user->hasPermission(7, $currentUserRole)) {
 				$_SESSION['admin_error'] = ("Недостаточно прав");
 				logAction('Попытка редактирования комментария', "Редактирование комментария запрещено");
 			} else {
@@ -224,7 +150,7 @@ function hasPermission($requiredRole, $currentRole) {
                 break;
                 
             case 'delete_comment':
-			if (!hasPermission(9, $currentUserRole)) {
+			if (!$user->hasPermission(9, $currentUserRole)) {
 				$_SESSION['admin_error'] = ("Недостаточно прав");
 				logAction('Попытка удаления комментария', "Удаление комментария запрещено");
 			} else {
@@ -240,7 +166,7 @@ function hasPermission($requiredRole, $currentRole) {
                 break;
                 
             case 'toggle_comment':
-			if (!hasPermission(7, $currentUserRole)) {
+			if (!$user->hasPermission(7, $currentUserRole)) {
 				$_SESSION['admin_error'] = ("Недостаточно прав");
 				logAction('Попытка изменения статуса комментария', "Изменение статуса запрещено");
 			} else {
@@ -255,9 +181,30 @@ function hasPermission($requiredRole, $currentRole) {
                 }
 			}
                 break;
+			case 'edit_settings':
+				// Обработка сохранения настроек
+					if (!$user->hasPermission(9, $currentUserRole)) {
+						$_SESSION['admin_error'] = "Недостаточно прав";
+						logAction('Попытка изменения системных настроек', "Изменение запрещено");
+					} else {
+						// Обновляем конфигурацию
+						$config['metaKeywords'] = trim($_POST['metaKeywords']);
+						$config['metaDescription'] = trim($_POST['metaDescription']);
+						$config['blocks_for_reg'] = isset($_POST['blocks_for_reg']) ? true : false;
+						
+						// Сохраняем обновленный конфиг
+						file_put_contents(__DIR__ . '/config/config.php', "<?php\nreturn " . var_export($config, true) . ";\n");
+						
+						$_SESSION['admin_message'] = 'Настройки системы успешно сохранены';
+						logAction('Изменение системных настроек', 'Обновлены основные настройки системы');
+						
+						header("Location: ?section=system_settings");
+						exit;
+					}
+				break;
                 
             case 'update_blog':
-				if (!hasPermission(7, $currentUserRole)) {
+				if (!$user->hasPermission(7, $currentUserRole)) {
 					$_SESSION['admin_error'] = "Недостаточно прав";
 					logAction('Попытка редактирования записи блога', "Редактирование запрещено");
 				} else {
@@ -281,7 +228,7 @@ function hasPermission($requiredRole, $currentRole) {
 				break;
                 
             case 'delete_blog':
-			if (!hasPermission(9, $currentUserRole)) {
+			if (!$user->hasPermission(9, $currentUserRole)) {
 				$_SESSION['admin_error'] = ("Недостаточно прав");
 				logAction('Попытка удаления записи блога', "Удаление запрещено");
 			} else {
@@ -297,7 +244,7 @@ function hasPermission($requiredRole, $currentRole) {
                 break;
                 
             case 'add_blog':
-			if (!hasPermission(7, $currentUserRole)) {
+			if (!$user->hasPermission(7, $currentUserRole)) {
 				$_SESSION['admin_error'] = ("Недостаточно прав");
 				logAction('Попытка добавления записи блога', "Добавление запрещено");
 			} else {
@@ -317,7 +264,7 @@ function hasPermission($requiredRole, $currentRole) {
                 break;
                 
             case 'delete_contact':
-			if (!hasPermission(9, $currentUserRole)) {
+			if (!$user->hasPermission(9, $currentUserRole)) {
 				$_SESSION['admin_error'] = ("Недостаточно прав");
 				logAction('Попытка удаления сообщения', "Удаление запрещено");
 			} else {
@@ -333,7 +280,7 @@ function hasPermission($requiredRole, $currentRole) {
                 break;
                 
             case 'edit_user':
-			if (!hasPermission(9, $currentUserRole)) {
+			if (!$user->hasPermission(9, $currentUserRole)) {
 				$_SESSION['admin_error'] = ("Недостаточно прав");
 				logAction('Попытка редактирования пользователя', "Редактирование запрещено");
 			} else {
@@ -354,7 +301,7 @@ function hasPermission($requiredRole, $currentRole) {
                 break;
                 
             case 'delete_user':
-			if (!hasPermission(9, $currentUserRole)) {
+			if (!$user->hasPermission(9, $currentUserRole)) {
 				$_SESSION['admin_error'] = ("Недостаточно прав");
 				logAction('Попытка удаления пользователя', "Удаление запрещено");
 			} else {
@@ -370,7 +317,7 @@ function hasPermission($requiredRole, $currentRole) {
                 break;
                 
             case 'add_tag':
-			if (!hasPermission(7, $currentUserRole)) {
+			if (!$user->hasPermission(7, $currentUserRole)) {
 				$_SESSION['admin_error'] = ("Недостаточно прав");
 				logAction('Попытка добавления тега', "Добавление запрещено");
 			} else {
@@ -386,7 +333,7 @@ function hasPermission($requiredRole, $currentRole) {
                 break;
                 
             case 'delete_tag':
-			if (!hasPermission(9, $currentUserRole)) {
+			if (!$user->hasPermission(9, $currentUserRole)) {
 				$_SESSION['admin_error'] = ("Недостаточно прав");
 				logAction('Попытка удаления тега', "Удаление запрещено");
 			} else {
@@ -402,7 +349,7 @@ function hasPermission($requiredRole, $currentRole) {
                 break;
                 
             case 'change_template':
-			if (!hasPermission(9, $currentUserRole)) {
+			if (!$user->hasPermission(9, $currentUserRole)) {
 				$_SESSION['admin_error'] = ("Недостаточно прав");
 				logAction('Попытка смены шаблона', "Смена шаблона запрещена");
 			} else {
@@ -422,7 +369,7 @@ function hasPermission($requiredRole, $currentRole) {
                 break;
 			
 			case 'delete_log':
-				if (!hasPermission(9, $currentUserRole)) {
+				if (!$user->hasPermission(9, $currentUserRole)) {
 					$_SESSION['admin_error'] = "Недостаточно прав";
 					logAction('Попытка удаления лога', "Удаление лога запрещено");
 				} else {
@@ -440,7 +387,7 @@ function hasPermission($requiredRole, $currentRole) {
 				}
 				break;
 			case 'create_backup':
-				if (!hasPermission(9, $currentUserRole)) {
+				if (!$user->hasPermission(9, $currentUserRole)) {
 					$_SESSION['admin_error'] = "Недостаточно прав";
 				} else {
 					$backup = 'backup_'.date('Y-m-d_H-i-s').'.sql';
@@ -457,7 +404,7 @@ function hasPermission($requiredRole, $currentRole) {
 				break;
 				
 			case 'download_backup':
-				if (!hasPermission(9, $currentUserRole)) {
+				if (!$user->hasPermission(9, $currentUserRole)) {
 					$_SESSION['admin_error'] = "Недостаточно прав";
 				} else {
 					$file = __DIR__ . '/'. $backupDir . basename($_GET['file']);
@@ -471,7 +418,7 @@ function hasPermission($requiredRole, $currentRole) {
 				break;
 
 			case 'restore_backup':
-				if (!hasPermission(9, $currentUserRole)) {
+				if (!$user->hasPermission(9, $currentUserRole)) {
 					$_SESSION['admin_error'] = "Недостаточно прав";
 				} else {
 					$file = __DIR__ . '/'. $backupDir . basename($_POST['file']);
@@ -490,7 +437,7 @@ function hasPermission($requiredRole, $currentRole) {
 				break;
 
 			case 'delete_backup':
-				if (!hasPermission(9, $currentUserRole)) {
+				if (!$user->hasPermission(9, $currentUserRole)) {
 					$_SESSION['admin_error'] = "Недостаточно прав";
 				} else {
 					$file = __DIR__ . '/'. $backupDir . basename($_POST['file']);
@@ -505,7 +452,7 @@ function hasPermission($requiredRole, $currentRole) {
 				break;
 
 			case 'update_backup_settings':
-				if (!hasPermission(9, $currentUserRole)) {
+				if (!$user->hasPermission(9, $currentUserRole)) {
 					$_SESSION['admin_error'] = "Недостаточно прав";
 				} else {
 					$config['max_backups'] = (int)$_POST['max_backups'];
@@ -576,7 +523,9 @@ try {
 			$template->assign('allTags', $allTags);
 			
 			break;
-            
+        case 'system_settings':
+			$template->assign('currentSettings', $config);
+			break;
         case 'comments':
 			$perPage = 15;
 			$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
@@ -637,6 +586,7 @@ try {
             $template->assign('totalLogs', $totalLogs);
             $template->assign('currentPage', $page);
             $template->assign('perPage', $limit);
+			$template->assign('parse', $parse);
             break;
 			
 		case 'server_info':

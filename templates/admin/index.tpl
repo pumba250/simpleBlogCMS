@@ -163,6 +163,7 @@
         <div class="admin-sidebar">
             <h2 style="padding: 0 20px;"><?= Lang::get('menu', 'admin') ?></h2>
             <ul class="admin-menu">
+				<li <?if ($section == 'system_settings'):?>class="active"<?endif;?>><a href="?section=system_settings"><?= Lang::get('system_settings', 'admin') ?></a></li>
                 <li <?if ($section == 'blogs'):?>class="active"<?endif;?>><a href="?section=blogs"><?= Lang::get('blogs', 'admin') ?></a></li>
                 <li <?if ($section == 'contacts'):?>class="active"<?endif;?>><a href="?section=contacts"><?= Lang::get('contacts', 'admin') ?></a></li>
                 <li <?if ($section == 'users'):?>class="active"<?endif;?>><a href="?section=users"><?= Lang::get('users', 'admin') ?></a></li>
@@ -205,9 +206,37 @@
 							
 							<div class="form-group">
 								<label><?= Lang::get('blog_content', 'admin') ?>:</label>
-								<textarea name="content" class="form-control" required><?=htmlspecialchars($editBlog['content']);?></textarea>
+								  <div class="btn-toolbar mb-2" role="toolbar">
+									<div class="btn-group me-2" role="group">
+									  <button type="button" class="btn btn-sm btn-secondary" onclick="insertHideTag()">
+										<i class="bi bi-eye-slash"></i> <?= Lang::get('insert_hide', 'admin') ?>
+									  </button>
+									</div>
+								  </div>
+								<textarea id="content" name="content" class="form-control" required><?=htmlspecialchars($editBlog['content']);?></textarea>
 							</div>
-							
+<script>
+function insertHideTag() {
+  const textarea = document.getElementById('content');
+  const startPos = textarea.selectionStart;
+  const endPos = textarea.selectionEnd;
+  const selectedText = textarea.value.substring(startPos, endPos);
+  
+  // Если текст выделен - оборачиваем его в [hide], если нет - вставляем шаблон
+  const insertText = selectedText 
+    ? `[hide]${selectedText}[/hide]` 
+    : '[hide]Ваш скрытый текст здесь[/hide]';
+  
+  textarea.value = textarea.value.substring(0, startPos) + 
+                   insertText + 
+                   textarea.value.substring(endPos);
+  
+  // Устанавливаем курсор после вставки
+  const newCursorPos = startPos + insertText.length;
+  textarea.setSelectionRange(newCursorPos, newCursorPos);
+  textarea.focus();
+}
+</script>
 							<div class="form-group">
 								<label><?= Lang::get('blog_tags', 'admin') ?>:</label>
 								<div class="tags-container">
@@ -246,9 +275,37 @@
                         
                         <div class="form-group">
                             <label><?= Lang::get('blog_content', 'admin') ?>:</label>
-                            <textarea name="content" class="form-control" required></textarea>
+							<div class="btn-toolbar mb-2" role="toolbar">
+								<div class="btn-group me-2" role="group">
+								  <button type="button" class="btn btn-sm btn-secondary" onclick="insertHideTag()">
+									<i class="bi bi-eye-slash"></i> <?= Lang::get('insert_hide', 'admin') ?>
+								  </button>
+								</div>
+							  </div>
+                            <textarea id="content" name="content" class="form-control" required></textarea>
                         </div>
-                        
+<script>
+function insertHideTag() {
+  const textarea = document.getElementById('content');
+  const startPos = textarea.selectionStart;
+  const endPos = textarea.selectionEnd;
+  const selectedText = textarea.value.substring(startPos, endPos);
+  
+  // Если текст выделен - оборачиваем его в [hide], если нет - вставляем шаблон
+  const insertText = selectedText 
+    ? `[hide]${selectedText}[/hide]` 
+    : '[hide]Ваш скрытый текст здесь[/hide]';
+  
+  textarea.value = textarea.value.substring(0, startPos) + 
+                   insertText + 
+                   textarea.value.substring(endPos);
+  
+  // Устанавливаем курсор после вставки
+  const newCursorPos = startPos + insertText.length;
+  textarea.setSelectionRange(newCursorPos, newCursorPos);
+  textarea.focus();
+}
+</script>
                         <div class="form-group">
                             <label><?= Lang::get('blog_tags', 'admin') ?>:</label>
                             <?foreach ($allTags as $tag):?>
@@ -683,12 +740,12 @@ document.addEventListener('keydown', function(e) {
 														<?php endif; ?>
 													</strong>
 													<small class="text-muted" title="<?= date('d.m.Y H:i:s', strtotime($log['created_at'])) ?>">
-														<?= time_elapsed_string($log['created_at']) ?>
+														<?= $parse->time_elapsed_string($log['created_at']) ?>
 													</small>
 										</td>
 										<td>
 												<div class="text-break">
-													<span class="badge bg-<?= getLogBadgeColor($log['action']) ?>">
+													<span class="badge bg-<?= $parse->getLogBadgeColor($log['action']) ?>">
 														<?= htmlspecialchars($log['action']) ?>
 													</span>
 													<?php if (!empty($log['details'])): ?>
@@ -905,6 +962,45 @@ document.addEventListener('keydown', function(e) {
 									<?endforeach;?>
 								</tbody>
 							</table>
+						</div>
+					</div>
+				<?php elseif ($section == 'system_settings'): ?>
+					<div class="card">
+						<div class="card-header">
+							<h3><?= Lang::get('system_settings', 'admin') ?></h3>
+						</div>
+						<div class="card-body">
+							<form method="POST">
+								<input type="hidden" name="csrf_token" value="<?=$csrf_token?>">
+								<input type="hidden" name="action" value="edit_settings">
+								
+								<div class="form-group">
+									<label><?= Lang::get('meta_keywords', 'admin') ?>:</label>
+									<input type="text" name="metaKeywords" class="form-control" value="<?=htmlspecialchars($currentSettings['metaKeywords'] ?? '')?>">
+									<small class="text-muted"><?= Lang::get('meta_keywords_desc', 'admin') ?></small>
+								</div>
+								
+								<div class="form-group">
+									<label><?= Lang::get('meta_description', 'admin') ?>:</label>
+									<textarea name="metaDescription" class="form-control" rows="3"><?=htmlspecialchars($currentSettings['metaDescription'] ?? '')?></textarea>
+									<small class="text-muted"><?= Lang::get('meta_description_desc', 'admin') ?></small>
+								</div>
+								
+								<div class="form-group">
+									<div class="form-check">
+										<input type="checkbox" name="blocks_for_reg" id="blocks_for_reg" class="form-check-input" <?=($currentSettings['blocks_for_reg'] ?? false) ? 'checked' : ''?>>
+										<label for="blocks_for_reg" class="form-check-label"><?= Lang::get('blocks_for_reg', 'admin') ?></label>
+										<small class="text-muted d-block"><?= Lang::get('blocks_for_reg_desc', 'admin') ?></small>
+									</div>
+								</div>
+								
+								<div class="form-group">
+									<label><?= Lang::get('current_version', 'admin') ?>:</label>
+									<input type="text" class="form-control" value="<?=htmlspecialchars($currentSettings['version'] ?? '')?>" readonly>
+								</div>
+								
+								<button type="submit" class="btn btn-primary"><?= Lang::get('save_changes', 'admin') ?></button>
+							</form>
 						</div>
 					</div>
 				<?php endif; ?>

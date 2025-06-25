@@ -10,7 +10,10 @@ class User {
         $stmt = $this->pdo->query("SELECT id, username, email, isadmin, created_at FROM {$dbPrefix}users ORDER BY created_at DESC");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-    
+    // Функция проверки прав
+	public function hasPermission($requiredRole, $currentRole) {
+		return $currentRole >= $requiredRole;
+	}
     /**
      * Обновить пользователя
      */

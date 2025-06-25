@@ -365,34 +365,88 @@ class News {
 			 return $news;
 	}
 
-	public function generateMetaDescription($content, $length = 160) {
-		$content = strip_tags($content);
-		$content = preg_replace('/\s+/', ' ', $content);
-		$content = trim($content);
+	// Функция для генерации metaDescription
+	public function generateMetaDescription($content, $type = 'default', $additionalData = []) {
+		global $config;
+		$defaultDescription = $config['metaDescription'];
 		
-		if (mb_strlen($content) > $length) {
-			$content = mb_substr($content, 0, $length - 3) . '...';
+		switch ($type) {
+			case 'article':
+				// Для статьи берем первые 160 символов контента
+				$cleanContent = strip_tags($content);
+				return mb_substr($cleanContent, 0, 160) . '...';
+				
+			case 'tag':
+				return 'Все публикации по теме: ' . htmlspecialchars($additionalData['tag']);
+				
+			case 'search':
+				return 'Результаты поиска по запросу: ' . htmlspecialchars($additionalData['query']);
+				
+			case 'login':
+				return 'Форма авторизации '.$config['metaDescription'];
+				
+			case 'register':
+				return 'Форма регистрации нового пользователя '.$config['metaDescription'];
+				
+			case 'contact':
+				return 'Контактная форма для связи с администрацией '.$config['metaDescription'];
+				
+			case 'error404':
+				return 'Страница не найдена';
+				
+			case 'error500':
+				return 'Внутренняя ошибка сервера';
+				
+			default:
+				return $defaultDescription;
 		}
-		
-		return $content;
 	}
 
-	public function generateMetaKeywords($title, $content, $maxKeywords = 15) {
-		$text = $title . ' ' . $content;
-		$text = strip_tags($text);
-		$text = mb_strtolower($text);
+	// Функция для генерации metaKeywords
+	public function generateMetaKeywords($content, $type = 'home', $additionalData = []) {
+		global $config;
+		$defaultKeywords = $config['metaKeywords'];
 		
-		$words = preg_split('/\s+/', preg_replace('/[^a-zA-Zа-яА-Я0-9\s]/u', '', $text));
-		
-		$stopWords = ['и', 'в', 'на', 'с', 'по', 'для', 'не', 'что', 'это', 'как'];
-		$words = array_diff($words, $stopWords);
-		
-		$wordCounts = array_count_values($words);
-		arsort($wordCounts);
-		
-		$keywords = array_slice(array_keys($wordCounts), 0, $maxKeywords);
-		
-		return implode(', ', $keywords);
+		switch ($type) {
+			case 'article':
+				// Для статьи берем слова из заголовка и первые 20 слов контента
+				$titleWords = explode(' ', $additionalData['title']);
+				$cleanContent = strip_tags($content);
+				$contentWords = explode(' ', $cleanContent);
+				$allWords = array_merge($titleWords, array_slice($contentWords, 0, 20));
+				
+				// Удаляем слишком короткие слова и дубликаты
+				$filteredWords = array_filter($allWords, function($word) {
+					return mb_strlen($word) > 3;
+				});
+				
+				$uniqueWords = array_unique($filteredWords);
+				return implode(', ', array_slice($uniqueWords, 0, 15));
+				
+			case 'tag':
+				return htmlspecialchars($additionalData['tag']) . ', '.$config['metaKeywords'];
+				
+			case 'search':
+				return 'поиск, ' . htmlspecialchars($additionalData['query']);
+				
+			case 'login':
+				return 'авторизация, вход, '.$config['metaKeywords'];
+				
+			case 'register':
+				return 'регистрация, создать аккаунт, '.$config['metaKeywords'];
+				
+			case 'contact':
+				return 'контакты, обратная связь, '.$config['metaKeywords'];
+				
+			case 'error404':
+				return '404, страница не найдена';
+				
+			case 'error500':
+				return '500, ошибка сервера';
+				
+			default:
+				return $defaultKeywords;
+		}
 	}
 
 }

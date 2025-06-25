@@ -148,5 +148,98 @@ class parse {
 
 		return $output;
 	}
+	public static function userblocks($content, $config, $user = null) {
+        if (empty($config['blocks_for_reg'])) {
+            return $content;
+        }
+
+        return preg_replace_callback(
+			"#\[hide\](.*?)\[/hide\]#is",
+			function($matches) use ($user) {
+				if (is_array($user)) {
+					return $matches[1];
+				}
+				return '<div class="w3-hide-container w3-round">
+  <span class="w3-hide-message">' . 
+					   Lang::get('not_logged') . 
+					   '</span>
+</div>';
+			},
+			$content
+		);
+    }
+/**
+ * Возвращает строку с временем, прошедшим с указанной даты
+ */
+public function time_elapsed_string($datetime, $full = false) {
+    $now = new DateTime;
+    $ago = new DateTime($datetime);
+    $diff = $now->diff($ago);
+    
+    $weeks = floor($diff->d / 7);
+    $days = $diff->d % 7;
+    
+    $string = [
+        'y' => ['год', 'года', 'лет'],
+        'm' => ['месяц', 'месяца', 'месяцев'],
+        'w' => ['неделя', 'недели', 'недель'],
+        'd' => ['день', 'дня', 'дней'],
+        'h' => ['час', 'часа', 'часов'],
+        'i' => ['минута', 'минуты', 'минут'],
+        's' => ['секунда', 'секунды', 'секунд'],
+    ];
+    
+    $values = [
+        'y' => $diff->y,
+        'm' => $diff->m,
+        'w' => $weeks,
+        'd' => $days,
+        'h' => $diff->h,
+        'i' => $diff->i,
+        's' => $diff->s,
+    ];
+    
+    $result = [];
+    foreach ($string as $k => $v) {
+        if ($values[$k] > 0) {
+            $n = $values[$k];
+            $result[] = $n . ' ' . $this->getNounPluralForm($n, $v[0], $v[1], $v[2]);
+        }
+    }
+    
+    if (!$full) {
+        $result = array_slice($result, 0, 1);
+    }
+    
+    return $result ? implode(', ', $result) . ' назад' : 'только что';
+}
+
+// Функция для правильного склонения существительных
+public function getNounPluralForm($number, $one, $two, $five) {
+    $number = abs($number) % 100;
+    if ($number > 10 && $number < 20) {
+        return $five;
+    }
+    $number %= 10;
+    if ($number > 1 && $number < 5) {
+        return $two;
+    }
+    if ($number == 1) {
+        return $one;
+    }
+    return $five;
+}
+/**
+ * Возвращает цвет badge в зависимости от типа действия
+ */
+public function getLogBadgeColor($action) {
+    $action = strtolower($action);
+    if (strpos($action, 'удал') !== false) return 'danger';
+    if (strpos($action, 'добав') !== false || strpos($action, 'созда') !== false) return 'success';
+    if (strpos($action, 'опытк') !== false || strpos($action, 'измен') !== false) return 'warning';
+    if (strpos($action, 'ошибка') !== false) return 'danger';
+    if (strpos($action, 'вход') !== false || strpos($action, 'выход') !== false) return 'info';
+    return 'secondary';
+}
 }
 ?>

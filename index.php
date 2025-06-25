@@ -157,7 +157,7 @@ function getCommonTemplateVars($config, $news, $user = null) {
     return [
         'powered' => $config['powered'],
         'version' => $config['version'],
-		'dbPrefix', $dbPrefix,
+		'dbPrefix' => $dbPrefix,
         'templ' => $config['templ'],
         'captcha_image_url' => '/class/captcha.php',
         'allTags' => $news->GetAllTags(),
@@ -166,6 +166,7 @@ function getCommonTemplateVars($config, $news, $user = null) {
         'comments' => $comments
     ];
 }
+
     // Обработка GET-запросов
 	$searchQuery = isset($_GET['search']) ? trim($_GET['search']) : '';
     if (!isset($_GET['action'])) {
@@ -173,15 +174,17 @@ function getCommonTemplateVars($config, $news, $user = null) {
 			// Получаем одну новость по id
 			$newsId = (int)$_GET['id'];
 			$newsItem = $news->getNewsById($newsId); // Получаем одну новость
-			foreach ($newsItem as &$item) {
-				if (isset($item['content'])) {
-					$item['content'] = $parse->truncateHTML($item['content']);
-				}
-			}
-			unset($item);
+			// Обрабатываем контент
+			$newsItem['content'] = $parse->userblocks($newsItem['content'], $config, $_SESSION['user'] ?? null);
+			$newsItem['content'] = $parse->truncateHTML($newsItem['content']);
 			$pageTitle = htmlspecialchars($newsItem['title']) . ' | IT Блог';
-			$metaDescription = $news->generateMetaDescription($newsItem['content']);
-			$metaKeywords = $news->generateMetaKeywords($newsItem['title'], $newsItem['content']);
+			$metaDescription = $news->generateMetaDescription($newsItem['content'], 'article', [
+				'title' => $newsItem['title']
+			]);
+			
+			$metaKeywords = $news->generateMetaKeywords($newsItem['content'], 'article', [
+				'title' => $newsItem['title']
+			]);
 			$lastThreeNews = $news->getLastThreeNews();
 			// Количество комментариев на страницу
 			$commentsPerPage = 10;
@@ -202,7 +205,7 @@ function getCommonTemplateVars($config, $news, $user = null) {
 			'currentCommentPage' => $currentCommentPage,
 			'metaDescription' => $metaDescription,
 			'metaKeywords' => $metaKeywords,
-			'news' => $news,
+			'newsItem' => $newsItem,
 			'votes' => $votes,
 			];
 			$template->assignMultiple(array_merge($commonVars, $pageVars));
@@ -211,11 +214,21 @@ function getCommonTemplateVars($config, $news, $user = null) {
 			// Обработка тегов
 			$tag = htmlspecialchars($_GET['tags']);
 			$pageTitle = "Новости по тегу: " . $tag;
-			$metaDescription = "Все публикации по теме: " . $tag;
-			$metaKeywords = $tag . ', IT, блог, сети';
+			$metaDescription = $news->generateMetaDescription('', 'tag', [
+				'tag' => $tag
+			]);
+			
+			$metaKeywords = $news->generateMetaKeywords('', 'tag', [
+				'tag' => $tag
+			]);
 			$newsByTags = $news->getNewsByTag($tag);
 			foreach ($newsByTags as &$item) {
 				if (isset($item['excerpt'])) {
+					$item['excerpt'] = $parse->userblocks(
+						$item['excerpt'],
+						$config,
+						$_SESSION['user'] ?? null  // Передаем данные пользователя
+					);
 					$item['excerpt'] = $parse->truncateHTML($item['excerpt']);
 				}
 			}
@@ -235,14 +248,17 @@ function getCommonTemplateVars($config, $news, $user = null) {
 		} else {
 			// Загрузка главной страницы
 			$pageTitle = 'Главная страница'; // Заголовок для главной страницы
-			$metaDescription = 'IT блог о настройке сетевого оборудования, MikroTik, RouterBoard и сетевой безопасности';
-			$metaKeywords = 'IT, блог, сети, mikrotik, routerboard, безопасность';
 			$limit = 6; // Количество новостей на странице
 			$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 			$offset = ($page - 1) * $limit;
 			$allNews = $news->getAllNews($limit, $offset);
 			foreach ($allNews as &$item) {
 				if (isset($item['excerpt'])) {
+					$item['excerpt'] = $parse->userblocks(
+						$item['excerpt'],
+						$config,
+						$_SESSION['user'] ?? null  // Передаем данные пользователя
+					);
 					$item['excerpt'] = $parse->truncateHTML($item['excerpt']);
 				}
 			}
@@ -255,8 +271,8 @@ function getCommonTemplateVars($config, $news, $user = null) {
 			$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 		$pageVars = [
 			'pageTitle' => $pageTitle,
-			'metaDescription' => $metaDescription,
-			'metaKeywords' => $metaKeywords,
+			'metaDescription' => $config['metaDescription'],
+			'metaKeywords' => $config['metaKeywords'],
 			'news' => $allNews,
 			'totalPages' => $totalPages,
 			'currentPage' => $page,
@@ -272,8 +288,13 @@ function getCommonTemplateVars($config, $news, $user = null) {
 				
 					// Обработка поиска
 					$pageTitle = 'Результаты поиска: ' . htmlspecialchars($searchQuery);
-					$metaDescription = 'Результаты поиска по запросу: ' . htmlspecialchars($searchQuery);
-					$metaKeywords = 'поиск, ' . htmlspecialchars($searchQuery);
+					$metaDescription = $news->generateMetaDescription('', 'search', [
+						'query' => $searchQuery
+					]);
+					
+					$metaKeywords = $news->generateMetaKeywords('', 'search', [
+						'query' => $searchQuery
+					]);
 					$limit = 6; // Количество результатов на странице
 					$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 					$offset = ($page - 1) * $limit;
@@ -301,6 +322,8 @@ function getCommonTemplateVars($config, $news, $user = null) {
 				}
 				break;
 			case 'login':
+				$metaDescription = $news->generateMetaDescription('', 'login');
+				$metaKeywords = $news->generateMetaKeywords('', 'login');
 				$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
 				'pageTitle' => 'Авторизация simpleBlog',
@@ -311,21 +334,25 @@ function getCommonTemplateVars($config, $news, $user = null) {
 				echo $template->render('login.tpl');
                 break;
             case 'register':
+				$metaDescription = $news->generateMetaDescription('', 'register');
+				$metaKeywords = $news->generateMetaKeywords('', 'register');
                 $commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
 				'pageTitle' => 'Регистрация simpleBlog',
-				'metaDescription' => 'Регистрация simpleBlog',
-				'metaKeywords' => '',
+				'metaDescription' => $metaDescription,
+				'metaKeywords' => $metaKeywords,
 				];
 				$template->assignMultiple(array_merge($commonVars, $pageVars));
 				echo $template->render('register.tpl');
                 break;
             case 'contact':
+				$metaDescription = $news->generateMetaDescription('', 'contact');
+				$metaKeywords = $news->generateMetaKeywords('', 'contact');
                 $commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
 				'pageTitle' => 'Форма обратной связи simpleBlog',
-				'metaDescription' => 'Форма обратной связи simpleBlog',
-				'metaKeywords' => 'контакты, simpleBlog',
+				'metaDescription' => $metaDescription,
+				'metaKeywords' => $metaKeywords,
 				];
 				$template->assignMultiple(array_merge($commonVars, $pageVars));
 				echo $template->render('contact.tpl');
@@ -333,11 +360,13 @@ function getCommonTemplateVars($config, $news, $user = null) {
             default:
                 // Обработка 404 ошибки
                 header($_SERVER["SERVER_PROTOCOL"] . " 404 Not Found");
+				$metaDescription = $news->generateMetaDescription('', 'error404');
+				$metaKeywords = $news->generateMetaKeywords('', 'error404');
 				$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
 				'pageTitle' => '404 Страница не найдена',
-				'metaDescription' => 'Страница не найдена',
-				'metaKeywords' => '404, страница не найдена',
+				'metaDescription' => $metaDescription,
+				'metaKeywords' => $metaKeywords,
 				];
 				$template->assignMultiple(array_merge($commonVars, $pageVars));
                 echo $template->render('404.tpl');
@@ -348,11 +377,13 @@ function getCommonTemplateVars($config, $news, $user = null) {
     // Обработка ошибки 500
     error_log($e->getMessage()); // Логирование ошибки
     header($_SERVER["SERVER_PROTOCOL"] . " 500 Internal Server Error");
+	$metaDescription = $news->generateMetaDescription('', 'error500');
+    $metaKeywords = $news->generateMetaKeywords('', 'error500');
 	$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 	$pageVars = [
 	'pageTitle' => '500 Внутренняя ошибка сервера',
-	'metaDescription' => 'Внутренняя ошибка сервера',
-	'metaKeywords' => '500, ошибка сервера',
+	'metaDescription' => $metaDescription,
+	'metaKeywords' => $metaKeywords,
 	];
 	$template->assignMultiple(array_merge($commonVars, $pageVars));
     echo $template->render('500.tpl');
