@@ -1,10 +1,10 @@
 <?php include __DIR__ . '/header.tpl';?>
 <div class="w3-card-4 w3-margin w3-white">
 	<div class="search-results">
-		<h1>Результаты поиска: "<?php echo htmlspecialchars($searchQuery); ?>"</h1>
+		<h1><?= Lang::get('result') ?>: "<?php echo htmlspecialchars($searchQuery); ?>"</h1>
 		
 		<?php if ($totalResults > 0): ?>
-			<p>Найдено статей: <?php echo $totalResults; ?></p>
+			<p><?= Lang::get('found') ?>: <?php echo $totalResults; ?></p>
 			
 			<?php foreach ($news as $item): ?>
 				<article class="news-item">
@@ -28,7 +28,7 @@
 				</div>
 			<?php endif; ?>
 		<?php else: ?>
-			<p>По вашему запросу ничего не найдено.</p>
+			<p><?= Lang::get('noresult') ?></p>
 		<?php endif; ?>
 	</div>
 </div>

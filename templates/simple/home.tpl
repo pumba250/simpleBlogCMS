@@ -1,13 +1,10 @@
 <?php include __DIR__ . '/header.tpl'; 
-/* Blog entry */
-// Проверяем, есть ли параметр id в GET-запросе
 if (isset($_GET['id'])) {
-    // Получаем одну новость по id
     $newsId = (int)$_GET['id'];
-    $newsItem = $news->getNewsById($newsId); // Получаем одну новость
-    $articleRating = $votes->getArticleRating($newsId); // Получаем рейтинг статьи
+    $newsItem = $news->getNewsById($newsId); 
+    $articleRating = $votes->getArticleRating($newsId);
 
-    if ($newsItem): // Если новость найдена
+    if ($newsItem):
 ?>
     <div class="w3-card-4 w3-margin w3-white">
         <div class="w3-container">
@@ -15,11 +12,10 @@ if (isset($_GET['id'])) {
             <h5><span class="w3-opacity"><?= htmlspecialchars($newsItem['created_at']) ?></span></h5>
         </div>
         <div class="w3-container">
-            <p><?= ($newsItem['content']) ?></p> <!-- Полное содержание -->
+            <p><?= ($newsItem['content']) ?></p> 
             
-            <!-- Блок голосования за статью -->
             <div class="w3-panel w3-light-grey w3-padding">
-                <p>Оцените статью:</p>
+                <p><?= Lang::get('voteart') ?>:</p>
                 <div class="w3-bar">
                     <form method="post" action="?id=<?= $newsItem['id'] ?>" class="w3-bar-item">
 						<input type="hidden" name="id" value="<?= $newsId ?>">
@@ -41,21 +37,20 @@ if (isset($_GET['id'])) {
             <div class="w3-row">
                 <div class="w3-col m8 s12">
                     <p><a href="?"><button class="w3-button w3-padding-large w3-white w3-border"><b>
-                        Вернуться »
+                        <?= Lang::get('back') ?> »
                     </b></button></a></p>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Блок комментариев -->
     <div class="w3-card-4 w3-margin w3-white">
         <div class="w3-container">
-            <h3><b>Комментарии:</b></h3>
+            <h3><b><?= Lang::get('comments') ?>:</b></h3>
         </div>
         <div class="w3-container">
             <?php if (empty($commentsList)): ?>
-                <p>Нет комментариев.</p>
+                <p><?= Lang::get('nocomments') ?>.</p>
             <?php else: ?>
                 <?php foreach ($commentsList as $comment): 
                     $commentRating = $votes->getCommentRating($comment['id']);
@@ -68,7 +63,6 @@ if (isset($_GET['id'])) {
                                 <p><?= htmlspecialchars($comment['user_text']) ?></p>
                             </div>
                             <div class="w3-col m2">
-                                <!-- Блок голосования за комментарий -->
                                 <div class="w3-right">
                                     <form method="post" action="?id=<?= $newsId ?>" class="w3-bar-item">
                                         <input type="hidden" name="vote_comment" value="<?= $comment['id'] ?>_plus">
@@ -90,7 +84,6 @@ if (isset($_GET['id'])) {
                     </div>
                 <?php endforeach; ?>
                 
-                <!-- Пагинация -->
                 <?php if ($totalCommentPages > 1): ?>
                     <div class="w3-center w3-padding">
                         <div class="w3-bar">
@@ -112,24 +105,23 @@ if (isset($_GET['id'])) {
             
             <hr>
             
-            <!-- Форма добавления комментария -->
             <?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_text'])): 
                 $userName = isset($user['username']) ? $user['username'] : trim($_POST['user_name']);
                 $userText = trim($_POST['user_text']);
                 if (!empty($userName) && !empty($userText)) {
                     $comments->addComment(0, 0, $newsId, $userName, $userText);
-                    echo '<p class="w3-panel w3-green">Ваш комментарий был добавлен.</p>';
+                    echo '<p class="w3-panel w3-green">'. Lang::get('commadded').'</p>';
                 } else {
-                    echo '<p class="w3-panel w3-red">Имя и комментарий не могут быть пустыми.</p>';
+                    echo '<p class="w3-panel w3-red">'. Lang::get('commerror').'</p>';
                 }
             endif; ?>
             
             <form method="post">
                 <?php if (!isset($user['username'])): ?>
-                    <input class="w3-input w3-border" type="text" name="user_name" required placeholder="Ваше имя"><br>
+                    <input class="w3-input w3-border" type="text" name="user_name" required placeholder="<?= Lang::get('name') ?>"><br>
                 <?php endif; ?>
-                <textarea class="w3-input w3-border" style="height: 80px;" name="user_text" required placeholder="Ваш комментарий"></textarea><br>
-                <button class="w3-button w3-padding-large w3-white w3-border" type="submit"><b>Отправить</b></button>
+                <textarea class="w3-input w3-border" style="height: 80px;" name="user_text" required placeholder="<?= Lang::get('comment') ?>"></textarea><br>
+                <button class="w3-button w3-padding-large w3-white w3-border" type="submit"><b><?= Lang::get('submit') ?></b></button>
             </form>
         </div>
     </div>
@@ -168,7 +160,7 @@ if (isset($_GET['id'])) {
                 <div class="w3-row">
                     <div class="w3-col m8 s12">
                         <p><a href="?id=<?= $newsItem['id'] ?>"><button class="w3-button w3-padding-large w3-white w3-border"><b>
-                            Читать дальше »
+                            <?= Lang::get('read_more') ?> »
                         </b></button></a></p>
                     </div>
                 </div>

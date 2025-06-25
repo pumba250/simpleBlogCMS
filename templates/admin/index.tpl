@@ -161,25 +161,25 @@
 <body>
     <div class="admin-container">
         <div class="admin-sidebar">
-            <h2 style="padding: 0 20px;">Меню</h2>
+            <h2 style="padding: 0 20px;"><?= Lang::get('menu', 'admin') ?></h2>
             <ul class="admin-menu">
-                <li <?if ($section == 'blogs'):?>class="active"<?endif;?>><a href="?section=blogs">Записи блога</a></li>
-                <li <?if ($section == 'contacts'):?>class="active"<?endif;?>><a href="?section=contacts">Обратная связь</a></li>
-                <li <?if ($section == 'users'):?>class="active"<?endif;?>><a href="?section=users">Пользователи</a></li>
-				<li <?if ($section == 'backups'):?>class="active"<?endif;?>><a href="?section=backups">Резервные копии</a></li>
-				<li <?if ($section == 'comments'):?>class="active"<?endif;?>><a href="?section=comments">Комментарии</a></li>
-                <li <?if ($section == 'tags'):?>class="active"<?endif;?>><a href="?section=tags">Теги</a></li>
-				<li <?if ($section == 'logs'):?>class="active"<?endif;?>><a href="?section=logs">Логи действий</a></li>
-                <li <?if ($section == 'template_settings'):?>class="active"<?endif;?>><a href="?section=template_settings">Шаблоны</a></li>
-                <li><a href="/">На сайт</a></li>
-                <li><a href="?logout">Выйти</a></li>
+                <li <?if ($section == 'blogs'):?>class="active"<?endif;?>><a href="?section=blogs"><?= Lang::get('blogs', 'admin') ?></a></li>
+                <li <?if ($section == 'contacts'):?>class="active"<?endif;?>><a href="?section=contacts"><?= Lang::get('contacts', 'admin') ?></a></li>
+                <li <?if ($section == 'users'):?>class="active"<?endif;?>><a href="?section=users"><?= Lang::get('users', 'admin') ?></a></li>
+				<li <?if ($section == 'backups'):?>class="active"<?endif;?>><a href="?section=backups"><?= Lang::get('backups', 'admin') ?></a></li>
+				<li <?if ($section == 'comments'):?>class="active"<?endif;?>><a href="?section=comments"><?= Lang::get('comments', 'admin') ?></a></li>
+                <li <?if ($section == 'tags'):?>class="active"<?endif;?>><a href="?section=tags"><?= Lang::get('tags', 'admin') ?></a></li>
+				<li <?if ($section == 'logs'):?>class="active"<?endif;?>><a href="?section=logs"><?= Lang::get('admlogs', 'admin') ?></a></li>
+                <li <?if ($section == 'template_settings'):?>class="active"<?endif;?>><a href="?section=template_settings"><?= Lang::get('templates', 'admin') ?></a></li>
+                <li><a href="/"><?= Lang::get('go_main', 'admin') ?></a></li>
+                <li><a href="?logout"><?= Lang::get('log_out', 'admin') ?></a></li>
             </ul>
         </div>
         
         <div class="admin-content">
             <div class="admin-header">
                 <h1><? echo $pageTitle;?></h1>
-                <p>Добро пожаловать, <? echo $user['username'];?>!</p>
+                <p><?= Lang::get('welcome', 'admin') ?>, <? echo $user['username'];?>!</p>
             </div>
             
             <?if (isset($admin_message)):?>
@@ -191,7 +191,7 @@
             <?php if ($section == 'blogs' && $_GET['action'] == 'edit' && isset($editBlog)): ?>
 			
 					<div class="admin-edit-form">
-						<h2>Редактирование записи #<?=$editBlog['id'];?></h2>
+						<h2><?= Lang::get('edit_blog', 'admin') ?> #<?=$editBlog['id'];?></h2>
 						
 						<form method="POST">
 							<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
@@ -199,17 +199,17 @@
 							<input type="hidden" name="id" value="<?=$editBlog['id'];?>">
 							
 							<div class="form-group">
-								<label>Заголовок:</label>
+								<label><?= Lang::get('blog_title', 'admin') ?>:</label>
 								<input type="text" name="title" class="form-control" value="<?=htmlspecialchars($editBlog['title']);?>" required>
 							</div>
 							
 							<div class="form-group">
-								<label>Содержание:</label>
+								<label><?= Lang::get('blog_content', 'admin') ?>:</label>
 								<textarea name="content" class="form-control" required><?=htmlspecialchars($editBlog['content']);?></textarea>
 							</div>
 							
 							<div class="form-group">
-								<label>Теги:</label>
+								<label><?= Lang::get('blog_tags', 'admin') ?>:</label>
 								<div class="tags-container">
 									<?php foreach ($allTags as $tag): ?>
 										<div class="tag-checkbox">
@@ -223,34 +223,34 @@
 							</div>
 							
 							<div class="form-actions">
-								<button type="submit" class="btn btn-success">Сохранить изменения</button>
-								<a href="?section=blogs" class="btn btn-secondary">Отмена</a>
+								<button type="submit" class="btn btn-success"><?= Lang::get('save_changes', 'admin') ?></button>
+								<a href="?section=blogs" class="btn btn-secondary"><?= Lang::get('cancel', 'admin') ?></a>
 							</div>
 						</form>
 					</div>
             <? elseif ($section == 'blogs'):?>
                 <!-- Раздел управления записями блога -->
-                <h2>Управление записями</h2>
-                <button onclick="document.getElementById('add-blog-form').style.display='block'" class="btn btn-primary">Добавить запись</button>
+                <h2><?= Lang::get('control', 'admin') ?> <?= Lang::get('records', 'admin') ?></h2>
+                <button onclick="document.getElementById('add-blog-form').style.display='block'" class="btn btn-primary"><?= Lang::get('add_record', 'admin') ?></button>
                 
                 <div id="add-blog-form" style="display:none; margin: 20px 0; padding: 20px; background: white; border-radius: 5px;">
-                    <h3>Добавить новую запись</h3>
+                    <h3><?= Lang::get('add_record', 'admin') ?></h3>
                     <form method="POST">
                         <input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
                         <input type="hidden" name="action" value="add_blog">
                         
                         <div class="form-group">
-                            <label>Заголовок:</label>
+                            <label><?= Lang::get('blog_title', 'admin') ?>:</label>
                             <input type="text" name="title" class="form-control" required>
                         </div>
                         
                         <div class="form-group">
-                            <label>Содержание:</label>
+                            <label><?= Lang::get('blog_content', 'admin') ?>:</label>
                             <textarea name="content" class="form-control" required></textarea>
                         </div>
                         
                         <div class="form-group">
-                            <label>Теги:</label>
+                            <label><?= Lang::get('blog_tags', 'admin') ?>:</label>
                             <?foreach ($allTags as $tag):?>
                                 <div>
                                     <input type="checkbox" name="tags[]" value="<?echo $tag['id'];?>" id="tag_<?echo $tag['id'];?>_new">
@@ -259,8 +259,8 @@
                             <?endforeach;?>
                         </div>
                         
-                        <button type="submit" class="btn btn-success">Сохранить</button>
-                        <button type="button" onclick="document.getElementById('add-blog-form').style.display='none'" class="btn btn-danger">Отмена</button>
+                        <button type="submit" class="btn btn-success"><?= Lang::get('save_changes', 'admin') ?></button>
+                        <button type="button" onclick="document.getElementById('add-blog-form').style.display='none'" class="btn btn-danger"><?= Lang::get('cancel', 'admin') ?></button>
                     </form>
                 </div>
                 
@@ -268,10 +268,10 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Заголовок</th>
-                            <th>Дата создания</th>
-                            <th>Теги</th>
-                            <th>Действия</th>
+                            <th><?= Lang::get('blog_title', 'admin') ?></th>
+                            <th><?= Lang::get('created_at', 'admin') ?></th>
+                            <th><?= Lang::get('blog_tags', 'admin') ?></th>
+                            <th><?= Lang::get('actions', 'admin') ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -286,12 +286,12 @@
                                 <?endforeach;?>
                             </td>
                             <td>
-                                <a href="?section=blogs&action=edit&id=<?=$blog['id'];?>" class="btn btn-primary">Редактировать</a>
+                                <a href="?section=blogs&action=edit&id=<?=$blog['id'];?>" class="btn btn-primary"><?= Lang::get('edit', 'admin') ?></a>
                                 <form method="POST" style="display:inline;">
                                     <input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
                                     <input type="hidden" name="action" value="delete_blog">
                                     <input type="hidden" name="id" value="<?=$blog['id'];?>">
-                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Вы уверены?')">Удалить</button>
+                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Вы уверены?')"><?= Lang::get('delete', 'admin') ?></button>
                                 </form>
                             </td>
                         </tr>
@@ -301,17 +301,17 @@
 				
             <?elseif ($section == 'contacts'):?>
                 <!-- Раздел обратной связи -->
-                <h2>Сообщения от пользователей</h2>
+                <h2><?= Lang::get('feedback', 'admin') ?></h2>
                 
                 <table class="admin-table">
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Имя</th>
-                            <th>Email</th>
-                            <th>Сообщение</th>
-                            <th>Дата</th>
-                            <th>Действия</th>
+                            <th><?= Lang::get('name', 'admin') ?></th>
+                            <th><?= Lang::get('email', 'admin') ?></th>
+                            <th><?= Lang::get('message', 'admin') ?></th>
+                            <th><?= Lang::get('created_at', 'admin') ?></th>
+                            <th><?= Lang::get('actions', 'admin') ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -323,12 +323,12 @@
                             <td><?=$contact['message'];?></td>
                             <td><?=$contact['created_at'];?></td>
                             <td>
-                                <button onclick="alert('<?=$contact['message'];?>')" class="btn btn-primary">Просмотр</button>
+                                <button onclick="alert('<?=$contact['message'];?>')" class="btn btn-primary"><?= Lang::get('view', 'admin') ?></button>
                                 <form method="POST" style="display:inline;">
                                     <input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
                                     <input type="hidden" name="action" value="delete_contact">
                                     <input type="hidden" name="id" value="<?=$contact['id'];?>">
-                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Вы уверены?')">Удалить</button>
+                                    <button type="submit" class="btn btn-danger" onclick="return confirm('<?= Lang::get('delete_confirm', 'admin') ?>')"><?= Lang::get('delete', 'admin') ?></button>
                                 </form>
                             </td>
                         </tr>
@@ -338,17 +338,17 @@
                 
             <?elseif ($section == 'users'):?>
                 <!-- Раздел пользователей -->
-                <h2>Управление пользователями</h2>
+                <h2><?= Lang::get('control', 'admin') ?> <?= Lang::get('user', 'admin') ?></h2>
                 
                 <table class="admin-table">
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Логин</th>
-                            <th>Email</th>
-                            <th>Роль</th>
-                            <th>Дата регистрации</th>
-                            <th>Действия</th>
+                            <th><?= Lang::get('name', 'admin') ?></th>
+                            <th><?= Lang::get('email', 'admin') ?></th>
+                            <th><?= Lang::get('role', 'admin') ?></th>
+                            <th><?= Lang::get('reg_date', 'admin') ?></th>
+                            <th><?= Lang::get('actions', 'admin') ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -363,14 +363,14 @@
                             <td>
                                 <!-- Кнопка редактирования в таблице пользователей -->
 <button onclick="showUserEditForm(<?=$user['id'];?>, '<?=htmlspecialchars($user['username'], ENT_QUOTES);?>', '<?=htmlspecialchars($user['email'], ENT_QUOTES);?>', <?=(int)$user['isadmin'];?>)" class="btn btn-primary btn-sm">
-    <i class="fas fa-edit"></i> Редактировать
+    <i class="fas fa-edit"></i> <?= Lang::get('edit', 'admin') ?>
 </button>
                                 <?if ($user['id'] != $_SESSION['user_id']):?>
                                     <form method="POST" style="display:inline;">
                                         <input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
                                         <input type="hidden" name="action" value="delete_user">
                                         <input type="hidden" name="id" value="<?=$user['id'];?>">
-                                        <button type="submit" class="btn btn-danger" onclick="return confirm('Вы уверены?')">Удалить</button>
+                                        <button type="submit" class="btn btn-danger" onclick="return confirm('<?= Lang::get('delete_confirm', 'admin') ?>')"><?= Lang::get('delete', 'admin') ?></button>
                                     </form>
                                 <?endif;?>
                             </td>
@@ -383,7 +383,7 @@
 <div id="edit-user-form" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; padding:25px; border-radius:8px; box-shadow:0 0 15px rgba(0,0,0,0.2); z-index:1050; width:450px; max-width:95%;">
     <button onclick="closeEditForm()" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:1.2rem; cursor:pointer;">&times;</button>
     
-    <h4 style="margin-top:0; margin-bottom:20px;">Редактировать пользователя</h4>
+    <h4 style="margin-top:0; margin-bottom:20px;"><?= Lang::get('edit_user', 'admin') ?></h4>
     
     <form method="POST" id="edit-user-form-content">
         <input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
@@ -391,33 +391,33 @@
         <input type="hidden" name="id" id="edit-user-id">
         
         <div style="margin-bottom:15px;">
-            <label style="display:block; margin-bottom:5px; font-weight:500;">Логин:</label>
+            <label style="display:block; margin-bottom:5px; font-weight:500;"><?= Lang::get('name', 'admin') ?>:</label>
             <input type="text" name="username" id="edit-username" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;" required>
         </div>
         
         <div style="margin-bottom:15px;">
-            <label style="display:block; margin-bottom:5px; font-weight:500;">Email:</label>
+            <label style="display:block; margin-bottom:5px; font-weight:500;"><?= Lang::get('email', 'admin') ?>:</label>
             <input type="email" name="email" id="edit-email" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px;" required>
         </div>
         
         <div style="margin-bottom:20px;">
-            <label style="display:block; margin-bottom:8px; font-weight:500;">Роль:</label>
+            <label style="display:block; margin-bottom:8px; font-weight:500;"><?= Lang::get('role', 'admin') ?>:</label>
             <div style="display:flex; gap:10px;">
                 <label style="flex:1; text-align:center;">
-                    <input type="radio" name="isadmin" value="0" style="margin-right:5px;"> Пользователь
+                    <input type="radio" name="isadmin" value="0" style="margin-right:5px;"> <?= Lang::get('ruser', 'admin') ?>
                 </label>
                 <label style="flex:1; text-align:center;">
-                    <input type="radio" name="isadmin" value="7" style="margin-right:5px;"> Модератор
+                    <input type="radio" name="isadmin" value="7" style="margin-right:5px;"> <?= Lang::get('moder', 'admin') ?>
                 </label>
                 <label style="flex:1; text-align:center;">
-                    <input type="radio" name="isadmin" value="9" style="margin-right:5px;"> Админ
+                    <input type="radio" name="isadmin" value="9" style="margin-right:5px;"> <?= Lang::get('admin', 'admin') ?>
                 </label>
             </div>
         </div>
         
         <div style="display:flex; justify-content:flex-end; gap:10px;">
-            <button type="button" onclick="closeEditForm()" style="padding:8px 15px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer;">Отмена</button>
-            <button type="submit" style="padding:8px 15px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer;">Сохранить</button>
+            <button type="button" onclick="closeEditForm()" style="padding:8px 15px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer;"><?= Lang::get('cancel', 'admin') ?></button>
+            <button type="submit" style="padding:8px 15px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer;"><?= Lang::get('save_changes', 'admin') ?></button>
         </div>
     </form>
 </div>
@@ -476,10 +476,10 @@ document.addEventListener('keydown', function(e) {
 </script>
             <?elseif ($section == 'template_settings'):?>
                 <!-- Раздел тегов -->
-                <h2>Управление Шаблонами</h2>
+                <h2><?= Lang::get('control', 'admin') ?> <?= Lang::get('template', 'admin') ?></h2>
 				
 				<div class="current-template">
-					<h3>Текущий шаблон: <?= htmlspecialchars($currentTemplate) ?></h3>
+					<h3><?= Lang::get('curent_template', 'admin') ?>: <?= htmlspecialchars($currentTemplate) ?></h3>
 				</div>
 
 				<div class="templates-grid">
@@ -487,13 +487,13 @@ document.addEventListener('keydown', function(e) {
 					<div class="template-card <?= $templateName === $currentTemplate ? 'active' : '' ?>">
 						<h4><?= htmlspecialchars(ucfirst($templateName)) ?></h4>
 						<?php if ($templateName === $currentTemplate): ?>
-							<span class="badge">Активен</span>
+							<span class="badge"><?= Lang::get('active_template', 'admin') ?></span>
 						<?php else: ?>
 							<form method="post">
 								<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
 								<input type="hidden" name="action" value="change_template">
 								<input type="hidden" name="template" value="<?= htmlspecialchars($templateName) ?>">
-								<button type="submit" class="btn">Активировать</button>
+								<button type="submit" class="btn"><?= Lang::get('activate_template', 'admin') ?></button>
 							</form>
 						<?php endif; ?>
 					</div>
@@ -502,24 +502,24 @@ document.addEventListener('keydown', function(e) {
 
             <?elseif ($section == 'tags'):?>
                 <!-- Раздел тегов -->
-                <h2>Управление тегами</h2>
+                <h2><?= Lang::get('control', 'admin') ?> <?= Lang::get('tag', 'admin') ?></h2>
                 
                 <div style="margin-bottom: 20px;">
-                    <button onclick="document.getElementById('add-tag-form').style.display='block'" class="btn btn-primary">Добавить тег</button>
+                    <button onclick="document.getElementById('add-tag-form').style.display='block'" class="btn btn-primary"><?= Lang::get('add_tag', 'admin') ?></button>
                     
                     <div id="add-tag-form" style="display:none; margin-top: 20px; padding: 20px; background: white; border-radius: 5px;">
-                        <h3>Добавить новый тег</h3>
+                        <h3><?= Lang::get('add_tag', 'admin') ?></h3>
                         <form method="POST">
                             <input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
                             <input type="hidden" name="action" value="add_tag">
                             
                             <div class="form-group">
-                                <label>Название тега:</label>
+                                <label><?= Lang::get('name_tag', 'admin') ?>:</label>
                                 <input type="text" name="name" class="form-control" required>
                             </div>
                             
-                            <button type="submit" class="btn btn-success">Сохранить</button>
-                            <button type="button" onclick="document.getElementById('add-tag-form').style.display='none'" class="btn btn-danger">Отмена</button>
+                            <button type="submit" class="btn btn-success"><?= Lang::get('save_changes', 'admin') ?></button>
+                            <button type="button" onclick="document.getElementById('add-tag-form').style.display='none'" class="btn btn-danger"><?= Lang::get('cancel', 'admin') ?></button>
                         </form>
                     </div>
                 </div>
@@ -528,8 +528,8 @@ document.addEventListener('keydown', function(e) {
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Название</th>
-                            <th>Действия</th>
+                            <th><?= Lang::get('name_tag', 'admin') ?></th>
+                            <th><?= Lang::get('actions', 'admin') ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -542,7 +542,7 @@ document.addEventListener('keydown', function(e) {
                                     <input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
                                     <input type="hidden" name="action" value="delete_tag">
                                     <input type="hidden" name="id" value="<?=$tag['id'];?>">
-                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Вы уверены? Удаление тега также удалит все его связи с записями.')">Удалить</button>
+                                    <button type="submit" class="btn btn-danger" onclick="return confirm('<?= Lang::get('delete_confirm', 'admin') ?>')"><?= Lang::get('delete', 'admin') ?></button>
                                 </form>
                             </td>
                         </tr>
@@ -551,19 +551,19 @@ document.addEventListener('keydown', function(e) {
                 </table>
             <?elseif ($section == 'comments'):?>
 				<!-- Раздел комментариев -->
-				<h2>Управление комментариями <span class="badge"><?=$pendingCount;?> на модерации</span></h2>
+				<h2><?= Lang::get('control', 'admin') ?> <?= Lang::get('comm', 'admin') ?> <span class="badge"><?=$pendingCount;?> <?= Lang::get('on_moderate', 'admin') ?></span></h2>
 				
 				<table class="admin-table">
 					<thead>
 						<tr>
 							<th>ID</th>
-							<th>Пост</th>
-							<th>Пользователь</th>
-							<th>Текст</th>
-							<th>Дата</th>
-							<th>Рейтинг (+/-)</th>
-							<th>Статус</th>
-							<th>Действия</th>
+							<th><?= Lang::get('blog_title', 'admin') ?></th>
+							<th><?= Lang::get('ruser', 'admin') ?></th>
+							<th><?= Lang::get('blog_content', 'admin') ?></th>
+							<th><?= Lang::get('created_at', 'admin') ?></th>
+							<th><?= Lang::get('rating', 'admin') ?> (+/-)</th>
+							<th><?= Lang::get('status', 'admin') ?></th>
+							<th><?= Lang::get('actions', 'admin') ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -577,26 +577,26 @@ document.addEventListener('keydown', function(e) {
 							<td><?=$comment['plus'];?>/<?=$comment['minus'];?></td>
 							<td>
 								<?if ($comment['moderation']):?>
-									<span class="badge" style="background: #28a745;">Одобрен</span>
+									<span class="badge" style="background: #28a745;"><?= Lang::get('approved', 'admin') ?></span>
 								<?else:?>
-									<span class="badge" style="background: #ffc107;">На модерации</span>
+									<span class="badge" style="background: #ffc107;"><?= Lang::get('on_moderate', 'admin') ?></span>
 								<?endif;?>
 							</td>
 							<td>
-								<button onclick="showCommentEditForm(<?=$comment['id'];?>, '<?=htmlspecialchars($comment['user_text'], ENT_QUOTES);?>', <?=$comment['moderation'];?>)" class="btn btn-primary">Ред.</button>
+								<button onclick="showCommentEditForm(<?=$comment['id'];?>, '<?=htmlspecialchars($comment['user_text'], ENT_QUOTES);?>', <?=$comment['moderation'];?>)" class="btn btn-primary"><?= Lang::get('edit', 'admin') ?></button>
 								<form method="POST" style="display:inline;">
 									<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
 									<input type="hidden" name="action" value="toggle_comment">
 									<input type="hidden" name="id" value="<?=$comment['id'];?>">
 									<button type="submit" class="btn <?=$comment['moderation'] ? 'btn-warning' : 'btn-success';?>">
-										<?=$comment['moderation'] ? 'Скрыть' : 'Одобрить';?>
+										<?=$comment['moderation'] ? Lang::get('hide', 'admin') : Lang::get('approve', 'admin');?>
 									</button>
 								</form>
 								<form method="POST" style="display:inline;">
 									<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
 									<input type="hidden" name="action" value="delete_comment">
 									<input type="hidden" name="id" value="<?=$comment['id'];?>">
-									<button type="submit" class="btn btn-danger" onclick="return confirm('Удалить этот комментарий?')">Удалить</button>
+									<button type="submit" class="btn btn-danger" onclick="return confirm('<?= Lang::get('delete_confirm', 'admin') ?>')"><?= Lang::get('delete', 'admin') ?></button>
 								</form>
 							</td>
 						</tr>
@@ -606,13 +606,13 @@ document.addEventListener('keydown', function(e) {
 <?if ($totalPages > 1):?>
     <div class="admin-pagination">
         <?if ($currentPage > 1):?>
-            <a href="?section=comments&page=<?=$currentPage-1;?>">← Предыдущая</a>
+            <a href="?section=comments&page=<?=$currentPage-1;?>">← <?= Lang::get('prev', 'admin') ?></a>
         <?endif;?>
         
-        Страница <?=$currentPage;?> из <?=$totalPages;?>
+        <?= Lang::get('page', 'admin') ?> <?=$currentPage;?> <?= Lang::get('from', 'admin') ?> <?=$totalPages;?>
         
         <?if ($currentPage < $totalPages):?>
-            <a href="?section=comments&page=<?=$currentPage+1;?>">Следующая →</a>
+            <a href="?section=comments&page=<?=$currentPage+1;?>"><?= Lang::get('next', 'admin') ?> →</a>
         <?endif;?>
     </div>
 <?endif;?>
@@ -649,15 +649,15 @@ document.addEventListener('keydown', function(e) {
 					}
 				</script>
 			<?php elseif ($section == 'logs'): ?>
-				<h2>Логи административных действий</h2><span class="badge bg-primary">Всего записей: <?= $totalLogs ?></span>
+				<h2><?= Lang::get('admlogs', 'admin') ?></h2><span class="badge bg-primary"><?= Lang::get('total_records', 'admin') ?>: <?= $totalLogs ?></span>
 					<table class="admin-table">
                     <thead>
                         <tr>
                             <th></th>
-							<th>Пользователь</th>
-                            <th>Действия</th>
-                            <th>Доп.инфо</th>
-							<th>Действия</th>
+							<th><?= Lang::get('ruser', 'admin') ?></th>
+                            <th><?= Lang::get('actions', 'admin') ?></th>
+                            <th><?= Lang::get('info', 'admin') ?></th>
+							<th><?= Lang::get('actions', 'admin') ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -677,9 +677,9 @@ document.addEventListener('keydown', function(e) {
 											
 													<strong>
 														<?php if (!empty($log['user_id'])): ?>
-															<?= htmlspecialchars($log['username'] ?? 'Система') ?>
+															<?= htmlspecialchars($log['username'] ?? Lang::get('system', 'admin')) ?>
 														<?php else: ?>
-															Система
+															<?= Lang::get('system', 'admin') ?>
 														<?php endif; ?>
 													</strong>
 													<small class="text-muted" title="<?= date('d.m.Y H:i:s', strtotime($log['created_at'])) ?>">
@@ -709,8 +709,8 @@ document.addEventListener('keydown', function(e) {
 												<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
 												<input type="hidden" name="action" value="delete_log">
 												<input type="hidden" name="id" value="<?=$log['id']?>">
-												<button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Вы уверены, что хотите удалить эту запись лога?')">
-													<i class="bi bi-trash"></i> Удалить
+												<button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('<?= Lang::get('delete_confirm', 'admin') ?>')">
+													<i class="bi bi-trash"></i> <?= Lang::get('delete', 'admin') ?>
 												</button>
 											</form>
 										</td>
@@ -760,14 +760,14 @@ document.addEventListener('keydown', function(e) {
 				<?php elseif ($section == 'server_info'): ?>
 					<div class="card">
 						<div class="card-header">
-							<h3 class="card-title">Информация о сервере</h3>
+							<h3 class="card-title"><?= Lang::get('server_info', 'admin') ?></h3>
 						</div>
 						<div class="card-body">
 							<div class="row">
 								<div class="col-md-6">
 									<div class="card">
 										<div class="card-header bg-primary">
-											<h4 class="card-title">Основная информация</h4>
+											<h4 class="card-title"><?= Lang::get('server_info', 'admin') ?></h4>
 										</div>
 										<div class="card-body p-0">
 											<table class="admin-table">
@@ -787,7 +787,7 @@ document.addEventListener('keydown', function(e) {
 								<div class="col-md-6">
 									<div class="card">
 										<div class="card-header bg-info">
-											<h4 class="card-title">Права доступа к файлам</h4>
+											<h4 class="card-title"><?= Lang::get('file_perm', 'admin') ?></h4>
 										</div>
 										<div class="card-body p-0">
 											<table class="admin-table">
@@ -797,15 +797,15 @@ document.addEventListener('keydown', function(e) {
 														<td width="40%"><strong><?= $file ?></strong></td>
 														<td>
 														<?php if ($file == 'install.php' && $perms == 'Не найден'): ?>
-															<span class="badge bg-success" title="Файл удален, что рекомендуется для безопасности">
-																<i class="fas fa-check"></i> Удален
+															<span class="badge bg-success" title="<?= Lang::get('file_delete', 'admin') ?>">
+																<i class="fas fa-check"></i> <?= Lang::get('fdelete', 'admin') ?>
 															</span>
 														<?php else: ?>
 															<span class="badge bg-<?= ($perms == '0644' || $perms == '0444') ? 'success' : 'warning' ?>">
 																<?= $perms ?>
 															</span>
 															<?php if (($file == 'config/config.php') && $perms != '0644' && $perms != '0444'): ?>
-															<small class="text-danger">(Рекомендуется 0644)</small>
+															<small class="text-danger">(<?= Lang::get('perm', 'admin') ?> 0644)</small>
 															<?php endif; ?>
 															<?php endif; ?>
 															
@@ -819,7 +819,7 @@ document.addEventListener('keydown', function(e) {
 									
 									<div class="card mt-4">
 										<div class="card-header bg-secondary">
-											<h4 class="card-title">PHP модули</h4>
+											<h4 class="card-title">PHP <?= Lang::get('modules', 'admin') ?></h4>
 										</div>
 										<div class="card-body p-0">
 											<table class="admin-table">
@@ -845,45 +845,45 @@ document.addEventListener('keydown', function(e) {
 				<?php elseif ($section == 'backups'): ?>
 					<div class="card mb-4">
 						<div class="card-header">
-							<h5>Управление резервными копиями</h5>
+							<h5><?= Lang::get('control', 'admin') ?> <?= Lang::get('backup', 'admin') ?></h5>
 						</div>
 						<div class="card-body">
 							<form method="post">
 								<input type="hidden" name="csrf_token" value="<?=$csrf_token?>">
 								<button type="submit" name="action" value="create_backup" class="btn btn-primary">
-									Создать резервную копию сейчас
+									<?= Lang::get('create_backup', 'admin') ?>
 								</button>
 							</form>
 							
-							<h6 class="mt-4">Настройки автоматического резервного копирования</h6>
+							<h6 class="mt-4"><?= Lang::get('setting_backup', 'admin') ?></h6>
 							<form method="post">
 								<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
 								<div class="form-group">
-									<label>Максимальное количество резервных копий</label>
+									<label><?= Lang::get('max_backups', 'admin') ?></label>
 									<input type="number" name="max_backups" value="<?=$max_backups;?>" min="1" class="form-control">
 								</div>
 								<div class="form-group">
-									<label>Расписание</label>
+									<label><?= Lang::get('backup_schedule', 'admin') ?></label>
 									<select name="backup_schedule" class="form-control">
-										<option value="disabled" <?if ($backup_schedule == 'disabled'):?>selected<?endif; ?>>Отключено</option>
-										<option value="daily" <?if ($backup_schedule == 'daily'):?>selected<?endif; ?>>Ежедневно</option>
-										<option value="weekly" <?if ($backup_schedule == 'weekly'):?>selected<?endif; ?>>Еженедельно</option>
-										<option value="monthly" <?if ($backup_schedule == 'monthly'):?>selected<?endif; ?>>Ежемесячно</option>
+										<option value="disabled" <?if ($backup_schedule == 'disabled'):?>selected<?endif; ?>><?= Lang::get('disable', 'admin') ?></option>
+										<option value="daily" <?if ($backup_schedule == 'daily'):?>selected<?endif; ?>><?= Lang::get('daily', 'admin') ?></option>
+										<option value="weekly" <?if ($backup_schedule == 'weekly'):?>selected<?endif; ?>><?= Lang::get('weekly', 'admin') ?></option>
+										<option value="monthly" <?if ($backup_schedule == 'monthly'):?>selected<?endif; ?>><?= Lang::get('monthly', 'admin') ?></option>
 									</select>
 								</div>
 								<button type="submit" name="action" value="update_backup_settings" class="btn btn-primary">
-									Сохранить настройки
+									<?= Lang::get('save_changes', 'admin') ?>
 								</button>
 							</form>
 							
-							<h6 class="mt-4">Список резервных копий</h6>
+							<h6 class="mt-4"><?= Lang::get('list_backups', 'admin') ?></h6>
 							<table class="table">
 								<thead>
 									<tr>
-										<th>Имя файла</th>
-										<th>Дата создания</th>
-										<th>Размер</th>
-										<th>Действия</th>
+										<th><?= Lang::get('file_name', 'admin') ?></th>
+										<th><?= Lang::get('created_at', 'admin') ?></th>
+										<th><?= Lang::get('filesize', 'admin') ?></th>
+										<th><?= Lang::get('actions', 'admin') ?></th>
 									</tr>
 								</thead>
 								<tbody>
@@ -893,12 +893,12 @@ document.addEventListener('keydown', function(e) {
 											<td><?=date('Y-m-d H:i:s', filemtime($backup));?></td>
 											<td><?=round(filesize($backup) / 1024, 2);?> KB</td>
 											<td>
-												<a href="?section=backups&action=download&file=<?=basename($backup);?>" class="btn btn-sm btn-success">Скачать</a>
+												<a href="?section=backups&action=download&file=<?=basename($backup);?>" class="btn btn-sm btn-success"><?= Lang::get('download_file', 'admin') ?></a>
 												<form method="post" style="display:inline">
 													<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
 													<input type="hidden" name="file" value="<?=basename($backup);?>">
-													<button type="submit" name="action" value="restore_backup" class="btn btn-sm btn-warning">Восстановить</button>
-													<button type="submit" name="action" value="delete_backup" class="btn btn-sm btn-danger">Удалить</button>
+													<button type="submit" name="action" value="restore_backup" class="btn btn-sm btn-warning"><?= Lang::get('restore_backup', 'admin') ?></button>
+													<button type="submit" name="action" value="delete_backup" class="btn btn-sm btn-danger"><?= Lang::get('delete', 'admin') ?></button>
 												</form>
 											</td>
 										</tr>

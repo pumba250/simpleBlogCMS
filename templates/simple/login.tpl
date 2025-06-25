@@ -2,7 +2,7 @@
 
 <div class="card auth-card">
     <div class="card-header">
-        <h2><i class="fas fa-sign-in-alt"></i> Вход в систему</h2>
+        <h2><i class="fas fa-sign-in-alt"></i> <?= Lang::get('login') ?></h2>
     </div>
     
     <div class="card-body">
@@ -17,20 +17,20 @@
                 <input type="hidden" name="action" value="login">
                 
                 <div class="form-group">
-                    <label for="username"><i class="fas fa-user"></i> Имя пользователя</label>
+                    <label for="username"><i class="fas fa-user"></i> <?= Lang::get('username') ?></label>
                     <input type="text" id="username" name="username" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="password"><i class="fas fa-lock"></i> Пароль</label>
+                    <label for="password"><i class="fas fa-lock"></i> <?= Lang::get('password') ?></label>
                     <input type="password" id="password" name="password" required>
                 </div>
                 
                 <div class="form-group">
-                    <label><i class="fas fa-shield-alt"></i> Капча</label>
+                    <label><i class="fas fa-shield-alt"></i> <?= Lang::get('captcha') ?></label>
                     <div class="captcha-container">
-                        <img src="<?= $captcha_image_url ?>" alt="Капча">
-                        <input type="text" name="captcha" required placeholder="Введите ответ">
+                        <img src="<?= $captcha_image_url ?>" alt="<?= Lang::get('captcha') ?>">
+                        <input type="text" name="captcha" required placeholder="<?= Lang::get('answer') ?>">
                     </div>
                 </div>
                 
@@ -38,17 +38,17 @@
                     <label class="checkbox-container">
                         <input type="checkbox" name="remember" checked>
                         <span class="checkmark"></span>
-                        Запомнить меня
+                        <?= Lang::get('remember') ?>
                     </label>
                     
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-sign-in-alt"></i> Войти
+                        <i class="fas fa-sign-in-alt"></i> <?= Lang::get('loginuser') ?>
                     </button>
                 </div>
             </form>
         
         <div class="auth-links">
-            Нет аккаунта? <a href="/?action=register">Зарегистрируйтесь</a>
+            <?= Lang::get('nologin') ?> <a href="/?action=register"><?= Lang::get('doreg') ?></a>
         </div>
     </div>
 </div>
