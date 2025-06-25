@@ -178,7 +178,7 @@
         
         <div class="admin-content">
             <div class="admin-header">
-                <h1><? echo $pageTitle;?></h1>
+                <h1><?= Lang::get('admin_page', 'admin') ?></h1>
                 <p><?= Lang::get('welcome', 'admin') ?>, <? echo $user['username'];?>!</p>
             </div>
             
@@ -291,7 +291,7 @@
                                     <input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
                                     <input type="hidden" name="action" value="delete_blog">
                                     <input type="hidden" name="id" value="<?=$blog['id'];?>">
-                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Вы уверены?')"><?= Lang::get('delete', 'admin') ?></button>
+                                    <button type="submit" class="btn btn-danger" onclick="return confirm('<?= Lang::get('delete_confirm', 'admin') ?>')"><?= Lang::get('delete', 'admin') ?></button>
                                 </form>
                             </td>
                         </tr>
@@ -618,24 +618,24 @@ document.addEventListener('keydown', function(e) {
 <?endif;?>
 				<!-- Форма редактирования комментария -->
 				<div id="edit-comment-form" style="display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 5px; box-shadow: 0 0 20px rgba(0,0,0,0.2); z-index: 1000; width: 80%; max-width: 800px;">
-					<h3>Редактировать комментарий</h3>
+					<h3><?= Lang::get('edit_comm', 'admin') ?></h3>
 					<form method="POST" id="edit-comment-form-content">
 						<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
 						<input type="hidden" name="action" value="edit_comment">
 						<input type="hidden" name="id" id="edit-comment-id">
 						
 						<div class="form-group">
-							<label>Текст комментария:</label>
+							<label><?= Lang::get('text_comm', 'admin') ?>:</label>
 							<textarea name="user_text" id="edit-comment-text" class="form-control" rows="8" required></textarea>
 						</div>
 						
 						<div class="form-group">
 							<input type="checkbox" name="moderation" id="edit-comment-moderation">
-							<label for="edit-comment-moderation" class="checkbox-label">Одобрен</label>
+							<label for="edit-comment-moderation" class="checkbox-label"><?= Lang::get('approved', 'admin') ?></label>
 						</div>
 						
-						<button type="submit" class="btn btn-success">Сохранить</button>
-						<button type="button" onclick="document.getElementById('edit-comment-form').style.display='none'" class="btn btn-danger">Отмена</button>
+						<button type="submit" class="btn btn-success"><?= Lang::get('save_changes', 'admin') ?></button>
+						<button type="button" onclick="document.getElementById('edit-comment-form').style.display='none'" class="btn btn-danger"><?= Lang::get('cancel', 'admin') ?></button>
 					</form>
 				</div>
 
