@@ -391,4 +391,4 @@ function getCommonTemplateVars($config, $news, $user = null) {
 }
 $finish = microtime(1);
 //echo 'generation time: ' . round($finish - $start, 5) . ' сек';
-echo $searchQuery;
+//echo $searchQuery;
