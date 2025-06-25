@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             mkdir('config', 0755, true);
         }
         
-        $configContent = "<?php\n\nreturn [\n  'host' => '$dbHost',\n  'database' => '$dbName',\n  'db_user' => '$dbUser',\n  'db_pass' => '$dbPass',\n  'templ' => 'simple',\n  'db_prefix' => '$dbPrefix',\n  'max_backups' => 5,\n  'backup_schedule' => 'disabled',\n  'backup_dir' => 'admin/backups/',\n  'powered' => 'simpleBlog',\n  'version' => 'v0.6.2',\n  ];";
+        $configContent = "<?php\n\nreturn [\n  'host' => '$dbHost',\n  'database' => '$dbName',\n  'db_user' => '$dbUser',\n  'db_pass' => '$dbPass',\n  'templ' => 'simple',\n  'db_prefix' => '$dbPrefix',\n  'max_backups' => 5,\n  'backup_schedule' => 'disabled',\n  'backup_dir' => 'admin/backups/',\n  'powered' => 'simpleBlog',\n  'version' => 'v0.6.3',\n  ];";
         
         if (file_put_contents('config/config.php', $configContent) === false) {
             throw new Exception("Не удалось записать конфигурационный файл");

@@ -8,7 +8,7 @@ class News {
 
 	public function getAllNews($limit, $offset) {
 		global $dbPrefix;
-		$stmt = $this->pdo->prepare("SELECT id, title, LEFT(content, 350) AS excerpt, content, created_at FROM {$dbPrefix}blogs ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
+		$stmt = $this->pdo->prepare("SELECT id, title, LEFT(content, 320) AS excerpt, content, created_at FROM {$dbPrefix}blogs ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
 		$stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
 		$stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
 		$stmt->execute();
@@ -21,7 +21,7 @@ class News {
     try {
         $searchQuery = '%' . $query . '%';
         $stmt = $this->pdo->prepare("
-            SELECT id, title, LEFT(content, 350) AS excerpt, created_at 
+            SELECT id, title, LEFT(content, 320) AS excerpt, created_at 
             FROM {$dbPrefix}blogs 
             WHERE title LIKE :query OR content LIKE :query
             ORDER BY created_at DESC
@@ -352,7 +352,7 @@ class News {
 		}
 
 		$stmt = $this->pdo->prepare("
-			SELECT b.id, b.title, LEFT(b.content, 300) AS excerpt, b.content, b.created_at
+			SELECT b.id, b.title, LEFT(b.content, 320) AS excerpt, b.content, b.created_at
 			FROM {$dbPrefix}blogs b
 			JOIN {$dbPrefix}blogs_tags bt ON b.id = bt.blogs_id
 			WHERE bt.tag_id = ?

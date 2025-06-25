@@ -1,6 +1,15 @@
 <?php
 $start = microtime(1);
 session_start();
+require 'class/Lang.php';
+Lang::init();
+
+// Обработка смены языка
+if (isset($_GET['lang'])) {
+    Lang::setLanguage($_GET['lang']);
+    header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?'));
+    exit;
+}
 if (!ob_start("ob_gzhandler")) {
     ob_start();
 }
@@ -40,12 +49,14 @@ require 'class/Contact.php';
 require 'class/Comments.php';
 require 'class/News.php';
 require 'class/Vote.php';
+require 'class/Parse.php';
 $template = new Template();
 $user = new User($pdo);
 $contact = new Contact($pdo);
 $news = new News($pdo);
 $comments = new Comments($pdo);
 $votes = new Votes($pdo);
+$parse = new parse();
 $pageTitle = 'simpleBlog';
 
 try {
@@ -162,6 +173,12 @@ function getCommonTemplateVars($config, $news, $user = null) {
 			// Получаем одну новость по id
 			$newsId = (int)$_GET['id'];
 			$newsItem = $news->getNewsById($newsId); // Получаем одну новость
+			foreach ($newsItem as &$item) {
+				if (isset($item['content'])) {
+					$item['content'] = $parse->truncateHTML($item['content']);
+				}
+			}
+			unset($item);
 			$pageTitle = htmlspecialchars($newsItem['title']) . ' | IT Блог';
 			$metaDescription = $news->generateMetaDescription($newsItem['content']);
 			$metaKeywords = $news->generateMetaKeywords($newsItem['title'], $newsItem['content']);
@@ -197,6 +214,12 @@ function getCommonTemplateVars($config, $news, $user = null) {
 			$metaDescription = "Все публикации по теме: " . $tag;
 			$metaKeywords = $tag . ', IT, блог, сети';
 			$newsByTags = $news->getNewsByTag($tag);
+			foreach ($newsByTags as &$item) {
+				if (isset($item['excerpt'])) {
+					$item['excerpt'] = $parse->truncateHTML($item['excerpt']);
+				}
+			}
+			unset($item);
 			$lastThreeNews = $news->getLastThreeNews();
 			// Передача данных в шаблон
 			$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
@@ -205,6 +228,7 @@ function getCommonTemplateVars($config, $news, $user = null) {
 			'metaDescription' => $metaDescription,
 			'metaKeywords' => $metaKeywords,
 			'news' => $newsByTags,
+			'votes' => $votes,
 			];
 			$template->assignMultiple(array_merge($commonVars, $pageVars));
 			
@@ -217,6 +241,12 @@ function getCommonTemplateVars($config, $news, $user = null) {
 			$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 			$offset = ($page - 1) * $limit;
 			$allNews = $news->getAllNews($limit, $offset);
+			foreach ($allNews as &$item) {
+				if (isset($item['excerpt'])) {
+					$item['excerpt'] = $parse->truncateHTML($item['excerpt']);
+				}
+			}
+			unset($item);
 			$totalNewsCount = $news->getTotalNewsCount();
 			$totalPages = ceil($totalNewsCount / $limit);
 			$lastThreeNews = $news->getLastThreeNews();

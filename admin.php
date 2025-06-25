@@ -1,6 +1,8 @@
 <?php
 $start = microtime(1);
 session_start();
+require 'class/Lang.php';
+Lang::init();
 /**
  * Возвращает строку с временем, прошедшим с указанной даты
  */
