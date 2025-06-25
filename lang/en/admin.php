@@ -41,6 +41,8 @@ return [
 'rating'=>'Rating',
 'status'=>'Status',
 'approve'=>'Approved',
+'approve'=>'Approve',
+'hide'=>'Hide',
 'add_record' => 'Add new record',
 'actions' => 'Actions',
 'created_at' => 'Creation date',
