@@ -4,11 +4,19 @@ session_start();
 require 'class/Lang.php';
 Lang::init();
 
-// Обработка смены языка
 if (isset($_GET['lang'])) {
-    Lang::setLanguage($_GET['lang']);
+	/* 
+	$allowed_langs = ['ru', 'en', 'es', 'de'];
+	$lang = in_array($_GET['lang'], $allowed_langs) ? $_GET['lang'] : 'ru';
+	*/
+	$lang = in_array($_GET['lang'], ['ru', 'en']) ? $_GET['lang'] : 'ru';
+    Lang::setLanguage($lang);
+	$_SESSION['lang'] = $lang;
     header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?'));
     exit;
+}
+if (!empty($_SESSION['lang'])) {
+    Lang::setLanguage($_SESSION['lang']);
 }
 if (!ob_start("ob_gzhandler")) {
     ob_start();
