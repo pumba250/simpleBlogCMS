@@ -174,10 +174,10 @@ $news = new News($pdo);
 $pageTitle = 'Админ-панель';
 function getRoleName($roleValue) {
 		switch((int)$roleValue) {
-			case 9: return 'Администратор';
-			case 7: return 'Модератор';
-			case 0: return 'Пользователь';
-			default: return 'Неизвестная роль';
+			case 9: return Lang::get('admin', 'admin');
+			case 7: return Lang::get('moder', 'admin');
+			case 0: return Lang::get('ruser', 'admin');
+			default: return Lang::get('unknownrole', 'admin');
 		}
 	}
 // Обработка POST-запросов
