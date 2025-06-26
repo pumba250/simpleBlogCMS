@@ -5,7 +5,7 @@ require 'class/Lang.php';
 Lang::init();
 
 if (isset($_GET['lang'])) {
-	/* 
+	/*
 	$allowed_langs = ['ru', 'en', 'es', 'de'];
 	$lang = in_array($_GET['lang'], $allowed_langs) ? $_GET['lang'] : 'ru';
 	*/
@@ -112,9 +112,6 @@ try {
 		}
         if ($_POST['action'] === 'register') {
             $user->register($_POST['username'], $_POST['password'], $_POST['email']);
-            $pageTitle = 'Регистрация';
-			$metaDescription = 'Форма регистрации нового пользователя в IT блоге';
-			$metaKeywords = 'регистрация, создать аккаунт, IT блог';
         }
         // Обработка авторизации
         if (isset($_POST['action']) && $_POST['action'] === 'login') {
@@ -130,7 +127,7 @@ try {
 				$userData = $user->login($username, $password);
 				if ($userData) {
 					$_SESSION['user'] = $userData;
-					sleep(2);
+					sleep(1);
 					header("Location: /");
 					exit;
 				} else {
@@ -147,9 +144,6 @@ try {
 		}
         // Обработка обратной связи
         if ($_POST['action'] === 'contact') {
-			$pageTitle = 'Форма обратной связи';
-			$metaDescription = 'Контактная форма для связи с администрацией IT блога';
-			$metaKeywords = 'контакты, обратная связь, IT блог';
             if (isset($_POST['captcha']) && $_POST['captcha'] == $_SESSION['captcha_answer']) {
                 if ($contact->saveMessage($_POST['name'], $_POST['email'], $_POST['message'])) {
                     $errors[] = "Сообщение успешно отправлено!";
@@ -184,7 +178,7 @@ function getCommonTemplateVars($config, $news, $user = null) {
 			$newsItem = $news->getNewsById($newsId); // Получаем одну новость
 			// Обрабатываем контент
 			$newsItem['content'] = $parse->userblocks($newsItem['content'], $config, $_SESSION['user'] ?? null);
-			$newsItem['content'] = $parse->truncateHTML($newsItem['content']);
+			$newsItem['content'] = $parse->truncateHTML($newsItem['content'], 100000);
 			$pageTitle = htmlspecialchars($newsItem['title']) . ' | IT Блог';
 			$metaDescription = $news->generateMetaDescription($newsItem['content'], 'article', [
 				'title' => $newsItem['title']

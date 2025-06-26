@@ -7,8 +7,9 @@ class User {
     }
     public function getAllUsers() {
 	global $dbPrefix;
-        $stmt = $this->pdo->query("SELECT id, username, email, isadmin, created_at FROM {$dbPrefix}users ORDER BY created_at DESC");
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = $this->pdo->prepare("SELECT id, username, email, isadmin, created_at FROM {$dbPrefix}users ORDER BY created_at DESC");
+        $stmt->execute();
+		return $stmt->fetchAll();
     }
     // Функция проверки прав
 	public function hasPermission($requiredRole, $currentRole) {

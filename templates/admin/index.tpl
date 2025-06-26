@@ -259,7 +259,7 @@ function insertHideTag() {
 					</div>
             <? elseif ($section == 'blogs'):?>
                 <!-- Раздел управления записями блога -->
-                <h2><?= Lang::get('control', 'admin') ?> <?= Lang::get('records', 'admin') ?></h2>
+                <h2><?= Lang::get('control', 'admin') ?> <?= Lang::get('records', 'admin') ?>. <?= Lang::get('news_count', 'admin') ?>: <?= $newsCount ?></h2> 
                 <button onclick="document.getElementById('add-blog-form').style.display='block'" class="btn btn-primary"><?= Lang::get('add_record', 'admin') ?></button>
                 
                 <div id="add-blog-form" style="display:none; margin: 20px 0; padding: 20px; background: white; border-radius: 5px;">
@@ -996,7 +996,7 @@ document.addEventListener('keydown', function(e) {
 								
 								<div class="form-group">
 									<label><?= Lang::get('current_version', 'admin') ?>:</label>
-									<input type="text" class="form-control" value="<?=htmlspecialchars($currentSettings['version'] ?? '')?>" readonly>
+									<b>simpleBlog_<?=htmlspecialchars($currentSettings['version'] ?? '')?></b>
 								</div>
 								
 								<button type="submit" class="btn btn-primary"><?= Lang::get('save_changes', 'admin') ?></button>

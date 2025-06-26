@@ -515,10 +515,11 @@ try {
 				
 				$template->assign('editBlog', $editBlog);
 			}
-			
+			$newsCount = $news->getTotalNewsCount();
 			$blogs = $news->getAllAdm(0, 0);
 			$allTags = $pdo->query("SELECT * FROM `{$dbPrefix}tags` ORDER by `name`")->fetchAll(PDO::FETCH_ASSOC);
 			
+			$template->assign('newsCount', $newsCount);
 			$template->assign('blogs', $blogs);
 			$template->assign('allTags', $allTags);
 			
@@ -595,7 +596,7 @@ try {
 				'Веб-сервер' => $_SERVER['SERVER_SOFTWARE'] ?? 'Неизвестно',
 				'PHP версия' => phpversion(),
 				'MySQL версия' => $pdo->query("SELECT version()")->fetchColumn(),
-				'ОС сервера' => php_uname(),
+				'ОС сервера' => PHP_OS,
 				'Лимит памяти PHP' => ini_get('memory_limit'),
 				'Максимальное время выполнения' => ini_get('max_execution_time') . ' сек',
 			];

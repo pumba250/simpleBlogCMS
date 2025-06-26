@@ -17,8 +17,12 @@ class Template {
         }
     }
     public function assign($key, $value) {
-        $this->variables[$key] = $value;
-    }
+		if (is_string($value)) {
+			$this->variables[$key] = htmlspecialchars($value, ENT_QUOTES | ENT_HTML5, 'UTF-8', false);
+		} else {
+			$this->variables[$key] = $value;
+		}
+	}
     
 /**
  * Рендерит шаблон с передачей переменных

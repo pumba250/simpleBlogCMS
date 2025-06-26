@@ -88,15 +88,15 @@ if (isset($_GET['id'])) {
                     <div class="w3-center w3-padding">
                         <div class="w3-bar">
                             <?php if ($currentCommentPage > 1): ?>
-                                <a href="?id=<?= $newsId ?>&comment_page=<?= $currentCommentPage-1 ?>" class="w3-button">&laquo;</a>
+                                <a href="?id=<?= urlencode($newsId) ?>&comment_page=<?= urlencode($currentCommentPage-1) ?>" class="w3-button">&laquo;</a>
                             <?php endif; ?>
                             
                             <?php for ($page = 1; $page <= $totalCommentPages; $page++): ?>
-                                <a href="?id=<?= $newsId ?>&comment_page=<?= $page ?>" class="w3-button <?= ($page == $currentCommentPage) ? 'w3-green' : '' ?>"><?= $page ?></a>
+                                <a href="?id=<?= urlencode($newsId) ?>&comment_page=<?= urlencode($page) ?>" class="w3-button <?= ($page == $currentCommentPage) ? 'w3-green' : '' ?>"><?= $page ?></a>
                             <?php endfor; ?>
                             
                             <?php if ($currentCommentPage < $totalCommentPages): ?>
-                                <a href="?id=<?= $newsId ?>&comment_page=<?= $currentCommentPage+1 ?>" class="w3-button">&raquo;</a>
+                                <a href="?id=<?= urlencode($newsId) ?>&comment_page=<?= urlencode($currentCommentPage+1) ?>" class="w3-button">&raquo;</a>
                             <?php endif; ?>
                         </div>
                     </div>

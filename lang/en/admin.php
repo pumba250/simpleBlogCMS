@@ -92,4 +92,5 @@ return [
 'blocks_for_reg' => 'Text block for registered users',
 'blocks_for_reg_desc' => 'If enabled, guests will not see what is inside the [hide]*[/hide] block',
 'current_version' => 'Current system version',
+'news_count'=>'Total entries',
 ];
