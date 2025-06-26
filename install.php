@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             mkdir('config', 0755, true);
         }
         
-        $configContent = "<?php\n\nreturn [\n  'host' => '$dbHost',\n  'database' => '$dbName',\n  'db_user' => '$dbUser',\n  'db_pass' => '$dbPass',\n  'templ' => 'simple',\n  'db_prefix' => '$dbPrefix',\n 'csrf_token_name' => 'csrf_token',\n  'max_backups' => 5,\n  'backup_schedule' => 'disabled',\n  'backup_dir' => 'admin/backups/',\n 'blocks_for_reg' => true,\n  'metaKeywords' => 'блог, simpleblog, php, система блогов, ведение блога, статьи, публикации, комментарии, теги, категории, CMS, контент, авторские статьи, тексты, записи, новости, личный блог, корпоративный блог',\n  'metaDescription' => 'SimpleBlog - простой и удобный блог на PHP. Публикуйте статьи, общайтесь с читателями через комментарии, используйте теги для категоризации контента.',\n  'powered' => 'simpleBlog',\n  'version' => 'v0.6.5',\n  ];";
+        $configContent = "<?php\n\nreturn [\n  'host' => '$dbHost',\n  'database' => '$dbName',\n  'db_user' => '$dbUser',\n  'db_pass' => '$dbPass',\n  'templ' => 'simple',\n  'db_prefix' => '$dbPrefix',\n 'csrf_token_name' => 'csrf_token',\n  'max_backups' => 5,\n  'backup_schedule' => 'disabled',\n  'backup_dir' => 'admin/backups/',\n 'blocks_for_reg' => true,\n  'metaKeywords' => 'Здесь ключевые слова, через запятую (,)',\n  'metaDescription' => 'Здесь описание вашего сайта',\n  'powered' => 'simpleBlog',\n  'version' => 'v0.6.5',\n  ];";
         
         if (file_put_contents('config/config.php', $configContent) === false) {
             throw new Exception("Не удалось записать конфигурационный файл");
