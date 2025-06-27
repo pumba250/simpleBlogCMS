@@ -975,7 +975,7 @@ document.addEventListener('keydown', function(e) {
 								<input type="hidden" name="action" value="edit_settings">
 								<div class="form-group">
 									<label><?= Lang::get('home_title', 'admin') ?>:</label>
-									<input type="text" name="metaKeywords" class="form-control" value="<?=htmlspecialchars($currentSettings['home_title'] ?? '')?>">
+									<input type="text" name="home_title" class="form-control" value="<?=htmlspecialchars($currentSettings['home_title'] ?? '')?>">
 									<small class="text-muted"><?= Lang::get('home_title_desc', 'admin') ?></small>
 								</div>
 								<div class="form-group">
