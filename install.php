@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             mkdir('config', 0755, true);
         }
         
-        $configContent = "<?php\n\nreturn [\n  'host' => '$dbHost',\n  'database' => '$dbName',\n  'db_user' => '$dbUser',\n  'db_pass' => '$dbPass',\n 'home_title' => 'Заголовок вашего сайта',\n  'templ' => 'simple',\n  'db_prefix' => '$dbPrefix',\n 'csrf_token_name' => 'csrf_token',\n  'max_backups' => 5,\n  'backup_schedule' => 'disabled',\n  'backup_dir' => 'admin/backups/',\n 'blocks_for_reg' => true,\n  'metaKeywords' => 'Здесь ключевые слова, через запятую (,)',\n  'metaDescription' => 'Здесь описание вашего сайта',\n  'powered' => 'simpleBlog',\n  'version' => 'v0.6.6',\n  ];";
+        $configContent = "<?php\n\nreturn [\n  'host' => '$dbHost',\n  'database' => '$dbName',\n  'db_user' => '$dbUser',\n  'db_pass' => '$dbPass',\n 'home_title' => 'Заголовок вашего сайта',\n  'templ' => 'simple',\n  'db_prefix' => '$dbPrefix',\n 'csrf_token_name' => 'csrf_token',\n  'max_backups' => 5,\n  'backup_schedule' => 'disabled',\n  'backup_dir' => 'admin/backups/',\n 'blocks_for_reg' => true,\n  'metaKeywords' => 'Здесь ключевые слова, через запятую (,)',\n  'metaDescription' => 'Здесь описание вашего сайта',\n 'mail_from' => 'no-reply@yourdomain.com',\n 'mail_from_name' => 'SimpleBlog Notifications',\n 'powered' => 'simpleBlog',\n  'version' => 'v0.6.7',\n  ];";
         
         if (file_put_contents('config/config.php', $configContent) === false) {
             throw new Exception("Не удалось записать конфигурационный файл");

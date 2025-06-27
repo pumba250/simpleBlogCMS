@@ -43,7 +43,7 @@ class User {
         }
     }
     public function register($username, $password, $email) {
-	global $dbPrefix;
+	global $dbPrefix, $config, $template, $Lang;
     $query = $this->pdo->query("SELECT COUNT(*) FROM {$dbPrefix}users");
     $userCount = $query->fetchColumn();
 
@@ -62,6 +62,28 @@ class User {
 
     $stmt = $this->pdo->prepare("INSERT INTO {$dbPrefix}users (username, password, email, isadmin) VALUES (?, ?, ?, ?)");
 	flash('Регистрация успешна, авторизуйтесь!');
+	try {
+        // Инициализация Mailer
+        Mailer::init($config);
+        
+        // Получаем текст письма
+        $subject = Lang::get('register_subject', 'core') ?? 'Регистрация на сайте';
+        $message = "Добро пожаловать, <strong>".htmlspecialchars($username)."</strong>!<br><br>"
+                 . "Вы успешно зарегистрировались на сайте <strong>"
+                 . htmlspecialchars($config['home_title'])."</strong>.<br><br>"
+                 . "Ваш логин: <strong>".htmlspecialchars($username)."</strong><br>"
+                 . "Дата регистрации: ".date('d.m.Y H:i');
+        
+        // Отправка письма
+        if (!Mailer::send($email, $subject, $message)) {
+            error_log("Failed to send registration email to: ".$email);
+            throw new Exception("Не удалось отправить письмо подтверждения");
+        }
+        
+    } catch (Exception $e) {
+        error_log("Registration email error: ".$e->getMessage());
+        // Можно продолжить регистрацию даже если письмо не отправилось
+    }
     return $stmt->execute([$username, $hash, $email, $isAdmin]);
 }
 

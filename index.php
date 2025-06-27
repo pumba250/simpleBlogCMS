@@ -58,8 +58,11 @@ require 'class/Comments.php';
 require 'class/News.php';
 require 'class/Vote.php';
 require 'class/Parse.php';
+require 'class/Mailer.php';
+
+// Инициализация объектов
 $template = new Template();
-$user = new User($pdo);
+$user = new User($pdo, $template);
 $contact = new Contact($pdo);
 $news = new News($pdo);
 $comments = new Comments($pdo);
@@ -113,6 +116,8 @@ try {
 		}
         if ($_POST['action'] === 'register') {
             $user->register($_POST['username'], $_POST['password'], $_POST['email']);
+			header("Location: /");
+			exit;
         }
         // Обработка авторизации
         if (isset($_POST['action']) && $_POST['action'] === 'login') {

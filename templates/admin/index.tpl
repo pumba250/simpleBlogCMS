@@ -991,6 +991,17 @@ document.addEventListener('keydown', function(e) {
 								</div>
 								
 								<div class="form-group">
+									<label><?= Lang::get('mail_from', 'admin') ?>:</label>
+									<input type="text" name="mail_from" class="form-control" value="<?=htmlspecialchars($currentSettings['mail_from'] ?? '')?>">
+									<small class="text-muted"><?= Lang::get('mail_from_desc', 'admin') ?></small>
+								</div>
+								<div class="form-group">
+									<label><?= Lang::get('mail_from_name', 'admin') ?>:</label>
+									<input type="text" name="mail_from_name" class="form-control" value="<?=htmlspecialchars($currentSettings['mail_from_name'] ?? '')?>">
+									<small class="text-muted"><?= Lang::get('mail_from_name_desc', 'admin') ?></small>
+								</div>
+								
+								<div class="form-group">
 									<div class="form-check">
 										<input type="checkbox" name="blocks_for_reg" id="blocks_for_reg" class="form-check-input" <?=($currentSettings['blocks_for_reg'] ?? false) ? 'checked' : ''?>>
 										<label for="blocks_for_reg" class="form-check-label"><?= Lang::get('blocks_for_reg', 'admin') ?></label>

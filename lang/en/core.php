@@ -56,4 +56,5 @@ return [
 	'backup_upd'=>'Backup settings updated',
 	'invalid_file_type' => 'Invalid file type',
 	'file_download_error' => 'Error while including file',
+	'register_subject' => 'Register on the site',
 ];

@@ -188,6 +188,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					} else {
 						// Обновляем конфигурацию
 						$config['home_title'] = trim($_POST['home_title']);
+						$config['mail_from'] = trim($_POST['mail_from']);
+						$config['mail_from_name'] = trim($_POST['mail_from_name']);
 						$config['metaKeywords'] = trim($_POST['metaKeywords']);
 						$config['metaDescription'] = trim($_POST['metaDescription']);
 						$config['blocks_for_reg'] = isset($_POST['blocks_for_reg']) ? true : false;
