@@ -950,7 +950,7 @@ document.addEventListener('keydown', function(e) {
 											<td><?=date('Y-m-d H:i:s', filemtime($backup));?></td>
 											<td><?=round(filesize($backup) / 1024, 2);?> KB</td>
 											<td>
-												<a href="?section=backups&action=download&file=<?=basename($backup);?>" class="btn btn-sm btn-success"><?= Lang::get('download_file', 'admin') ?></a>
+												<a href="?section=backups&action=download_backup&file=<?=basename($backup);?>" class="btn btn-sm btn-success"><?= Lang::get('download_file', 'admin') ?></a>
 												<form method="post" style="display:inline">
 													<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
 													<input type="hidden" name="file" value="<?=basename($backup);?>">
@@ -973,7 +973,11 @@ document.addEventListener('keydown', function(e) {
 							<form method="POST">
 								<input type="hidden" name="csrf_token" value="<?=$csrf_token?>">
 								<input type="hidden" name="action" value="edit_settings">
-								
+								<div class="form-group">
+									<label><?= Lang::get('home_title', 'admin') ?>:</label>
+									<input type="text" name="metaKeywords" class="form-control" value="<?=htmlspecialchars($currentSettings['home_title'] ?? '')?>">
+									<small class="text-muted"><?= Lang::get('home_title_desc', 'admin') ?></small>
+								</div>
 								<div class="form-group">
 									<label><?= Lang::get('meta_keywords', 'admin') ?>:</label>
 									<input type="text" name="metaKeywords" class="form-control" value="<?=htmlspecialchars($currentSettings['metaKeywords'] ?? '')?>">
@@ -990,7 +994,7 @@ document.addEventListener('keydown', function(e) {
 									<div class="form-check">
 										<input type="checkbox" name="blocks_for_reg" id="blocks_for_reg" class="form-check-input" <?=($currentSettings['blocks_for_reg'] ?? false) ? 'checked' : ''?>>
 										<label for="blocks_for_reg" class="form-check-label"><?= Lang::get('blocks_for_reg', 'admin') ?></label>
-										<small class="text-muted d-block"><?= Lang::get('blocks_for_reg_desc', 'admin') ?></small>
+										<small class="text-muted"><?= Lang::get('blocks_for_reg_desc', 'admin') ?></small>
 									</div>
 								</div>
 								

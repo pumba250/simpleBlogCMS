@@ -26,7 +26,7 @@ if (!file_exists('config/config.php')) {
 	die;
 }
 if (file_exists('install.php')) {
-	echo '<p style="color: red; text-align: center;">Удалите файл install.php и директорию sql</p>';
+	echo '<p style="color: red; text-align: center;">'.Lang::get('delete_install', 'core').'</p>';
 	die;
 }
 $config = require 'config/config.php';
@@ -65,7 +65,8 @@ $news = new News($pdo);
 $comments = new Comments($pdo);
 $votes = new Votes($pdo);
 $parse = new parse();
-$pageTitle = 'simpleBlog';
+$baseTitle = $config['home_title']; // Базовое название сайта
+$pageTitle = $baseTitle; // Значение по умолчанию
 
 try {
     // Обработка регистрации
@@ -85,13 +86,13 @@ try {
 			$newsId = isset($_POST['id']) ? (int)$_POST['id'] : (isset($_GET['id']) ? (int)$_GET['id'] : 0);
 			
 			if ($newsId === 0) {
-				die("Ошибка: не указан ID новости");
+				die(Lang::get('not_id', 'core'));
 			}
 			
 			// Проверяем существование новости
 			$newsItem = $news->getNewsById($newsId);
 			if (!$newsItem) {
-				die("Новость не найдена");
+				die(Lang::get('not_news', 'core'));
 			}
 			
 			// Обработка голосования за статью
@@ -120,9 +121,9 @@ try {
 			$password = $_POST['password'] ?? '';
 			
 			if (!$captchaValid) {
-				$_SESSION['auth_error'] = "Неправильный ответ на капчу. Попробуйте еще раз.";
+				$_SESSION['auth_error'] = Lang::get('not_answer', 'core');
 			} elseif (empty($username) || empty($password)) {
-				$_SESSION['auth_error'] = "Заполните все поля";
+				$_SESSION['auth_error'] = Lang::get('all_field', 'core');
 			} else {
 				$userData = $user->login($username, $password);
 				if ($userData) {
@@ -131,7 +132,7 @@ try {
 					header("Location: /");
 					exit;
 				} else {
-					$_SESSION['auth_error'] = "Неверный логин или пароль";
+					$_SESSION['auth_error'] = Lang::get('not_login', 'core');
 				}
 			}
 			
@@ -146,12 +147,12 @@ try {
         if ($_POST['action'] === 'contact') {
             if (isset($_POST['captcha']) && $_POST['captcha'] == $_SESSION['captcha_answer']) {
                 if ($contact->saveMessage($_POST['name'], $_POST['email'], $_POST['message'])) {
-                    $errors[] = "Сообщение успешно отправлено!";
+                    $errors[] = Lang::get('msg_send', 'core');
                 } else {
-                    $errors[] = "Произошла ошибка при отправке сообщения.";
+                    $errors[] = Lang::get('msg_error', 'core');
                 }
             } else {
-                $errors[] = "Неправильный ответ на капчу. Попробуйте еще раз.";
+                $errors[] = Lang::get('not_answer', 'core');
             }
         }
     }
@@ -179,7 +180,7 @@ function getCommonTemplateVars($config, $news, $user = null) {
 			// Обрабатываем контент
 			$newsItem['content'] = $parse->userblocks($newsItem['content'], $config, $_SESSION['user'] ?? null);
 			$newsItem['content'] = $parse->truncateHTML($newsItem['content'], 100000);
-			$pageTitle = htmlspecialchars($newsItem['title']) . ' | IT Блог';
+			$pageTitle = htmlspecialchars($newsItem['title']) . ' | ' . $baseTitle;
 			$metaDescription = $news->generateMetaDescription($newsItem['content'], 'article', [
 				'title' => $newsItem['title']
 			]);
@@ -215,7 +216,7 @@ function getCommonTemplateVars($config, $news, $user = null) {
 		} elseif (isset($_GET['tags'])) {
 			// Обработка тегов
 			$tag = htmlspecialchars($_GET['tags']);
-			$pageTitle = "Новости по тегу: " . $tag;
+			$pageTitle = Lang::get('tag_news', 'core') . htmlspecialchars($_GET['tags']) . ' | ' . $baseTitle;
 			$metaDescription = $news->generateMetaDescription('', 'tag', [
 				'tag' => $tag
 			]);
@@ -249,7 +250,7 @@ function getCommonTemplateVars($config, $news, $user = null) {
 			
 		} else {
 			// Загрузка главной страницы
-			$pageTitle = 'Главная страница'; // Заголовок для главной страницы
+			$pageTitle = Lang::get('home_page', 'main') . ' | ' . $baseTitle;
 			$limit = 6; // Количество новостей на странице
 			$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 			$offset = ($page - 1) * $limit;
@@ -289,7 +290,7 @@ function getCommonTemplateVars($config, $news, $user = null) {
 				if (!empty($searchQuery)) {
 				
 					// Обработка поиска
-					$pageTitle = 'Результаты поиска: ' . htmlspecialchars($searchQuery);
+					$pageTitle = Lang::get('search_results', 'core') . htmlspecialchars($searchQuery) . ' | ' . $baseTitle;
 					$metaDescription = $news->generateMetaDescription('', 'search', [
 						'query' => $searchQuery
 					]);
@@ -324,11 +325,12 @@ function getCommonTemplateVars($config, $news, $user = null) {
 				}
 				break;
 			case 'login':
+				$pageTitle = Lang::get('auth', 'core') . ' | ' . $baseTitle;
 				$metaDescription = $news->generateMetaDescription('', 'login');
 				$metaKeywords = $news->generateMetaKeywords('', 'login');
 				$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
-				'pageTitle' => 'Авторизация simpleBlog',
+				'pageTitle' => Lang::get('auth', 'core'),
 				'metaDescription' => $metaDescription,
 				'metaKeywords' => $metaKeywords,
 				];
@@ -336,11 +338,12 @@ function getCommonTemplateVars($config, $news, $user = null) {
 				echo $template->render('login.tpl');
                 break;
             case 'register':
+				$pageTitle = Lang::get('register', 'core') . ' | ' . $baseTitle;
 				$metaDescription = $news->generateMetaDescription('', 'register');
 				$metaKeywords = $news->generateMetaKeywords('', 'register');
                 $commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
-				'pageTitle' => 'Регистрация simpleBlog',
+				'pageTitle' => Lang::get('register', 'core'),
 				'metaDescription' => $metaDescription,
 				'metaKeywords' => $metaKeywords,
 				];
@@ -348,11 +351,12 @@ function getCommonTemplateVars($config, $news, $user = null) {
 				echo $template->render('register.tpl');
                 break;
             case 'contact':
+				$pageTitle = Lang::get('contact', 'core') . ' | ' . $baseTitle;
 				$metaDescription = $news->generateMetaDescription('', 'contact');
 				$metaKeywords = $news->generateMetaKeywords('', 'contact');
                 $commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
-				'pageTitle' => 'Форма обратной связи simpleBlog',
+				'pageTitle' => Lang::get('contact', 'core'),
 				'metaDescription' => $metaDescription,
 				'metaKeywords' => $metaKeywords,
 				];
@@ -361,12 +365,13 @@ function getCommonTemplateVars($config, $news, $user = null) {
                 break;
             default:
                 // Обработка 404 ошибки
-                header($_SERVER["SERVER_PROTOCOL"] . " 404 Not Found");
+                header($_SERVER["SERVER_PROTOCOL"] . Lang::get('error404', 'core'));
+				$pageTitle = Lang::get('error404', 'core') . ' | ' . $baseTitle;
 				$metaDescription = $news->generateMetaDescription('', 'error404');
 				$metaKeywords = $news->generateMetaKeywords('', 'error404');
 				$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
-				'pageTitle' => '404 Страница не найдена',
+				'pageTitle' => Lang::get('error404', 'core'),
 				'metaDescription' => $metaDescription,
 				'metaKeywords' => $metaKeywords,
 				];
@@ -378,12 +383,13 @@ function getCommonTemplateVars($config, $news, $user = null) {
 } catch (Exception $e) {
     // Обработка ошибки 500
     error_log($e->getMessage()); // Логирование ошибки
-    header($_SERVER["SERVER_PROTOCOL"] . " 500 Internal Server Error");
+    header($_SERVER["SERVER_PROTOCOL"] . Lang::get('error500', 'core'));
+	$pageTitle = Lang::get('error500', 'core') . ' | ' . $baseTitle;
 	$metaDescription = $news->generateMetaDescription('', 'error500');
     $metaKeywords = $news->generateMetaKeywords('', 'error500');
 	$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 	$pageVars = [
-	'pageTitle' => '500 Внутренняя ошибка сервера',
+	'pageTitle' => Lang::get('error500', 'core'),
 	'metaDescription' => $metaDescription,
 	'metaKeywords' => $metaKeywords,
 	];

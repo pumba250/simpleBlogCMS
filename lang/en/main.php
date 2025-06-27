@@ -1,6 +1,7 @@
 <?php
 return [
 'welcome' => 'Welcome to simpleBlog',
+'home_page'=>'Home page',
 'read_more' => 'Read more',
 'comments' => 'Comments',
 'nocomments' => 'No comments',

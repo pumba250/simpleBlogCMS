@@ -1,6 +1,7 @@
 <?php
 return [
     'welcome' => 'Welcome to simpleBlog',
+	'home_page'=>'Главная страница',
     'read_more' => 'Читать дальше',
     'comments' => 'Комментарии',
 	'nocomments' => 'Нет комментариев',
