@@ -23,6 +23,19 @@ class Template {
 			$this->variables[$key] = $value;
 		}
 	}
+	public function getCommonTemplateVars($config, $news, $user = null) {
+		return [
+			'powered' => $config['powered'],
+			'version' => $config['version'],
+			'dbPrefix' => $dbPrefix,
+			'templ' => $config['templ'],
+			'captcha_image_url' => '/class/captcha.php',
+			'allTags' => $news->GetAllTags(),
+			'lastThreeNews' => $news->getLastThreeNews(),
+			'user' => $user ?? null,
+			'comments' => $comments
+		];
+	}
     
 /**
  * Рендерит шаблон с передачей переменных

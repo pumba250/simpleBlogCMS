@@ -1,4 +1,19 @@
 <?php
+/**
+ * User management class - handles authentication, registration, permissions and profile operations
+ * 
+ * @package    SimpleBlog
+ * @subpackage Core
+ * @version    0.6.8
+ * @author     pumba250
+ * @license    MIT License
+ * @copyright  2023 SimpleBlog
+ * 
+ * @method bool hasPermission(int $requiredRole, int $currentRole) Check user access level
+ * @method bool register(string $username, string $password, string $email) Process new user registration
+ * @method bool verifyEmail(string $token) Confirm email address validity
+ * @method bool sendPasswordReset(string $email) Initiate password recovery
+ */
 class User {
     private $pdo;
 
@@ -43,49 +58,146 @@ class User {
         }
     }
     public function register($username, $password, $email) {
-	global $dbPrefix, $config, $template, $Lang;
-    $query = $this->pdo->query("SELECT COUNT(*) FROM {$dbPrefix}users");
-    $userCount = $query->fetchColumn();
+        global $dbPrefix, $config;
+        $query = $this->pdo->query("SELECT COUNT(*) FROM {$dbPrefix}users");
+        $userCount = $query->fetchColumn();
 
-    $hash = password_hash($password, PASSWORD_BCRYPT);
+        $hash = password_hash($password, PASSWORD_BCRYPT);
+        $isAdmin = ($userCount == 0) ? 9 : 0;
+        $verificationToken = bin2hex(random_bytes(32));
 
-    $isAdmin = ($userCount == 0) ? 9 : 0;
+        $stmtCheck = $this->pdo->prepare("SELECT COUNT(*) FROM {$dbPrefix}users WHERE username = ? OR email = ?");
+        $stmtCheck->execute([$username, $email]);
+        $exists = $stmtCheck->fetchColumn();
 
-    $stmtCheck = $this->pdo->prepare("SELECT COUNT(*) FROM {$dbPrefix}users WHERE username = ? OR email = ?");
-    $stmtCheck->execute([$username, $email]);
-    $exists = $stmtCheck->fetchColumn();
+        if ($exists) {
+            flash(Lang::get('user_exists', 'core'));
+            return false;
+        }
 
-    if ($exists) {
-        flash('Имя пользователя или email уже заняты'); // Логика обработки ошибки: имя пользователя или email уже заняты
-        return false; // Можно выбросить исключение или вернуть ошибку
-    }
-
-    $stmt = $this->pdo->prepare("INSERT INTO {$dbPrefix}users (username, password, email, isadmin) VALUES (?, ?, ?, ?)");
-	flash('Регистрация успешна, авторизуйтесь!');
-	try {
-        // Инициализация Mailer
-        Mailer::init($config);
+        $stmt = $this->pdo->prepare("INSERT INTO {$dbPrefix}users (username, password, email, isadmin, verification_token) VALUES (?, ?, ?, ?, ?)");
         
-        // Получаем текст письма
-        $subject = Lang::get('register_subject', 'core') ?? 'Регистрация на сайте';
-        $message = "Добро пожаловать, <strong>".htmlspecialchars($username)."</strong>!<br><br>"
-                 . "Вы успешно зарегистрировались на сайте <strong>"
-                 . htmlspecialchars($config['home_title'])."</strong>.<br><br>"
-                 . "Ваш логин: <strong>".htmlspecialchars($username)."</strong><br>"
-                 . "Дата регистрации: ".date('d.m.Y H:i');
-        
-        // Отправка письма
-        if (!Mailer::send($email, $subject, $message)) {
-            error_log("Failed to send registration email to: ".$email);
-            throw new Exception("Не удалось отправить письмо подтверждения");
+        if ($stmt->execute([$username, $hash, $email, $isAdmin, $verificationToken])) {
+            $this->sendVerificationEmail($username, $email, $verificationToken);
+            flash(Lang::get('reg_success_verify', 'core'));
+            return true;
         }
         
-    } catch (Exception $e) {
-        error_log("Registration email error: ".$e->getMessage());
-        // Можно продолжить регистрацию даже если письмо не отправилось
+        return false;
     }
-    return $stmt->execute([$username, $hash, $email, $isAdmin]);
-}
+
+    private function sendVerificationEmail($username, $email, $token) {
+        global $config;
+        Mailer::init($config);
+        
+        $verificationUrl = "http://{$_SERVER['HTTP_HOST']}/?action=verify_email&token=$token";
+        $subject = Lang::get('verify_email_subject', 'core');
+        
+        $message = '
+            <p>'.Lang::get('hiuser', 'main').' <strong>'.htmlspecialchars($username).'</strong>,</p>
+            
+            <p>'.Lang::get('thank', 'core').' '.htmlspecialchars($config['home_title'] ?? 'our site').'. 
+            '.Lang::get('verify_email_body', 'core').'</p>
+            
+            <p style="text-align: center; margin: 25px 0;">
+                <a href="'.htmlspecialchars($verificationUrl).'" class="button">
+                    '.Lang::get('verify', 'core').'
+                </a>
+            </p>
+            
+            <p>'.Lang::get('reset_email_body2', 'core').'<br>
+            <code>'.htmlspecialchars($verificationUrl).'</code></p>
+            
+            <p>'.Lang::get('verify_email_body2', 'core').'</p>
+            
+            <p>'.Lang::get('reset_email_body4', 'core').',<br>'.htmlspecialchars($config['home_title'] ?? 'simpleBlog').'</p>
+        ';
+
+        return Mailer::send($email, $subject, $message);
+    }
+
+    public function verifyEmail($token) {
+        global $dbPrefix;
+        
+        // Check if token exists
+        $stmt = $this->pdo->prepare("SELECT id FROM {$dbPrefix}users WHERE verification_token = ? AND email_verified = 0");
+        $stmt->execute([$token]);
+        $userId = $stmt->fetchColumn();
+
+        if ($userId) {
+            // Mark email as verified
+            $stmt = $this->pdo->prepare("UPDATE {$dbPrefix}users SET email_verified = 1, verification_token = NULL WHERE id = ?");
+            return $stmt->execute([$userId]);
+        }
+        
+        return false;
+    }
+
+    public function sendPasswordReset($email) {
+        global $dbPrefix, $config;
+        
+        $stmt = $this->pdo->prepare("SELECT id, username FROM {$dbPrefix}users WHERE email = ?");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user) {
+            $resetToken = bin2hex(random_bytes(32));
+            $expires = date('Y-m-d H:i:s', time() + 3600); // 1 hour expiration
+            
+            $stmt = $this->pdo->prepare("UPDATE {$dbPrefix}users SET reset_token = ?, reset_expires = ? WHERE id = ?");
+            if ($stmt->execute([$resetToken, $expires, $user['id']])) {
+                return $this->sendResetEmail($user['username'], $email, $resetToken);
+            }
+        }
+        
+        return false;
+    }
+
+    private function sendResetEmail($username, $email, $token) {
+        global $config;
+        Mailer::init($config);
+        
+        $resetUrl = "http://{$_SERVER['HTTP_HOST']}/?action=reset_password&token=$token";
+        $subject = Lang::get('reset_email_subject', 'core');
+        
+        $message = '
+            <p>'.Lang::get('hiuser', 'main').' <strong>'.htmlspecialchars($username).'</strong>,</p>
+            
+            <p>'.Lang::get('reset_email_body', 'core').'</p>
+            
+            <p style="text-align: center; margin: 25px 0;">
+                <a href="'.htmlspecialchars($resetUrl).'" class="button">
+                    '.Lang::get('reset_password', 'core').'
+                </a>
+            </p>
+            
+            <p>'.Lang::get('reset_email_body2', 'core').'<br>
+            <code>'.htmlspecialchars($resetUrl).'</code></p>
+            
+            <p>'.Lang::get('reset_email_body3', 'core').'</p>
+            
+            <p>'.Lang::get('reset_email_body4', 'core').',<br>'.htmlspecialchars($config['home_title'] ?? 'simpleBlog').'</p>
+        ';
+
+        return Mailer::send($email, $subject, $message);
+    }
+
+    public function resetPassword($token, $newPassword) {
+        global $dbPrefix;
+        
+        // Check if token is valid and not expired
+        $stmt = $this->pdo->prepare("SELECT id FROM {$dbPrefix}users WHERE reset_token = ? AND reset_expires > NOW()");
+        $stmt->execute([$token]);
+        $userId = $stmt->fetchColumn();
+
+        if ($userId) {
+            $hash = password_hash($newPassword, PASSWORD_BCRYPT);
+            $stmt = $this->pdo->prepare("UPDATE {$dbPrefix}users SET password = ?, reset_token = NULL, reset_expires = NULL WHERE id = ?");
+            return $stmt->execute([$hash, $userId]);
+        }
+        
+        return false;
+    }
 
 	public function login($username, $password) {
 	global $dbPrefix;

@@ -81,3 +81,8 @@ CREATE TABLE `{PREFIX_}article_votes` (
 ALTER TABLE `{PREFIX_}blogs` 
 ADD COLUMN `likes` INT NOT NULL DEFAULT 0 AFTER `content`,
 ADD COLUMN `dislikes` INT NOT NULL DEFAULT 0 AFTER `likes`;
+ALTER TABLE `{PREFIX_}users` 
+ADD COLUMN `email_verified` TINYINT(1) NOT NULL DEFAULT 0,
+ADD COLUMN `verification_token` VARCHAR(64) NULL,
+ADD COLUMN `reset_token` VARCHAR(64) NULL,
+ADD COLUMN `reset_expires` DATETIME NULL;

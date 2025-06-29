@@ -43,7 +43,7 @@
 
       <div class="w3-container w3-border-top w3-padding-16 w3-light-grey">
         <button onclick="document.getElementById('id01').style.display='none'" type="button" class="w3-button w3-red"><?= Lang::get('cancel') ?></button>
-        <span class="w3-right w3-padding w3-hide-small"><a href="?action=register"><?= Lang::get('register') ?></a></span>
+        <span class="w3-right w3-padding w3-hide-small"><a href="?action=forgot_password"><?= Lang::get('forgot_password', 'core') ?></a> | <a href="?action=register"><?= Lang::get('register') ?></a></span>
       </div>
 
     </div>
@@ -65,7 +65,7 @@
 			<input type="hidden" name="action" value="search">
             <input type="text" name="search" placeholder="<?= Lang::get('findarea') ?>" 
                    value="<?php if (isset($_GET['search'])) echo htmlspecialchars($_GET['search']); ?>">
-            <button type="submit" class="w3-button w3-block w3-dark-grey"><?= Lang::get('find') ?></button>
+            <button type="submit" class="w3-button w3-dark-grey"><?= Lang::get('find') ?></button>
         </form>
     </div>
 </div>

@@ -1,18 +1,13 @@
 <?php include __DIR__ . '/header.tpl'; ?>
 
-<div class="card auth-card">
-    <div class="card-header">
-        <h2><i class="fas fa-sign-in-alt"></i> <?= Lang::get('login') ?></h2>
-    </div>
-    
-    <div class="card-body">
+<div class="w3-card-4 w3-margin w3-white">
+<div id="contact" class="w3-container w3-center w3-padding-32">
+	<h2 class="w3-wide"><i class="fas fa-sign-in-alt"></i> <?= Lang::get('login') ?></h2>
         <?php if (isset($_SESSION['auth_error'])): ?>
             <div class="alert error">
                 <i class="fas fa-exclamation-circle"></i> <?= $_SESSION['auth_error'] ?>
             </div>
         <?php endif; ?>
-        
-        
             <form method="POST" class="auth-form">
                 <input type="hidden" name="action" value="login">
                 
@@ -48,7 +43,7 @@
             </form>
         
         <div class="auth-links">
-            <?= Lang::get('nologin') ?> <a href="/?action=register"><?= Lang::get('doreg') ?></a>
+            <a href="?action=forgot_password"><?= Lang::get('forgot_password', 'core') ?></a> | <?= Lang::get('nologin') ?> <a href="/?action=register"><?= Lang::get('doreg') ?></a>
         </div>
     </div>
 </div>

@@ -1,4 +1,23 @@
 <?php
+/**
+ * Front controller - main application entry point
+ * 
+ * @package    SimpleBlog
+ * @subpackage Core
+ * @version    0.6.8
+ * 
+ * @router
+ *  GET  /             - Blog index
+ *  GET  /?id=N        - Single post view
+ *  GET  /?action=X    - Special actions (login/register/etc)
+ *  POST /             - Form processing
+ * 
+ * @features
+ * - Multilingual support
+ * - SEO-optimized routing
+ * - CSRF protection
+ * - Caching layer
+ */
 $start = microtime(1);
 session_start();
 require 'class/Lang.php';
@@ -161,19 +180,7 @@ try {
             }
         }
     }
-function getCommonTemplateVars($config, $news, $user = null) {
-    return [
-        'powered' => $config['powered'],
-        'version' => $config['version'],
-		'dbPrefix' => $dbPrefix,
-        'templ' => $config['templ'],
-        'captcha_image_url' => '/class/captcha.php',
-        'allTags' => $news->GetAllTags(),
-        'lastThreeNews' => $news->getLastThreeNews(),
-        'user' => $user ?? null,
-        'comments' => $comments
-    ];
-}
+
 
     // Обработка GET-запросов
 	$searchQuery = isset($_GET['search']) ? trim($_GET['search']) : '';
@@ -205,7 +212,7 @@ function getCommonTemplateVars($config, $news, $user = null) {
 			$totalCommentPages = ceil($totalComments / $commentsPerPage);
 
 			// Передаем данные в шаблон
-			$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+			$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 		$pageVars = [
 			'pageTitle' => $pageTitle,
 			'commentsList' => $commentsList,
@@ -243,7 +250,7 @@ function getCommonTemplateVars($config, $news, $user = null) {
 			unset($item);
 			$lastThreeNews = $news->getLastThreeNews();
 			// Передача данных в шаблон
-			$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+			$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 		$pageVars = [
 			'pageTitle' => $pageTitle,
 			'metaDescription' => $metaDescription,
@@ -276,7 +283,7 @@ function getCommonTemplateVars($config, $news, $user = null) {
 			$lastThreeNews = $news->getLastThreeNews();
 			
 			// Передача данных в шаблон
-			$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+			$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 		$pageVars = [
 			'pageTitle' => $pageTitle,
 			'metaDescription' => $config['metaDescription'],
@@ -291,6 +298,63 @@ function getCommonTemplateVars($config, $news, $user = null) {
     echo $template->render('home.tpl');
     } else {
         switch ($_GET['action']) {
+			case 'verify_email':
+                if (isset($_GET['token'])) {
+                    if ($user->verifyEmail($_GET['token'])) {
+                        $_SESSION['flash'] = Lang::get('email_verified', 'core');
+                    } else {
+                        $_SESSION['flash'] = Lang::get('invalid_token', 'core');
+                    }
+                    header('Location: /');
+                    exit;
+                }
+                break;
+                
+            case 'forgot_password':
+                $pageTitle = Lang::get('forgot_password', 'core') . ' | ' . $baseTitle;
+                $commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+                $pageVars = [
+                    'pageTitle' => $pageTitle,
+                ];
+                $template->assignMultiple(array_merge($commonVars, $pageVars));
+                echo $template->render('forgot_password.tpl');
+                break;
+                
+            case 'request_reset':
+                if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
+                    if ($user->sendPasswordReset($_POST['email'])) {
+                        $_SESSION['flash'] = Lang::get('reset_email_sent', 'core');
+                    } else {
+                        $_SESSION['flash'] = Lang::get('reset_email_error', 'core');
+                    }
+                    header('Location: /');
+                    exit;
+                }
+                break;
+                
+            case 'reset_password':
+                if (isset($_GET['token'])) {
+                    $pageTitle = Lang::get('reset_password', 'core') . ' | ' . $baseTitle;
+                    $commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+                    $pageVars = [
+                        'pageTitle' => $pageTitle,
+                        'token' => $_GET['token']
+                    ];
+                    $template->assignMultiple(array_merge($commonVars, $pageVars));
+                    echo $template->render('reset_password.tpl');
+                    break;
+                }
+                
+                if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['token'], $_POST['password'])) {
+                    if ($user->resetPassword($_POST['token'], $_POST['password'])) {
+                        $_SESSION['flash'] = Lang::get('password_reset_success', 'core');
+                    } else {
+                        $_SESSION['flash'] = Lang::get('password_reset_error', 'core');
+                    }
+                    header('Location: /');
+                    exit;
+                }
+                break;
 			case 'search':
 				if (!empty($searchQuery)) {
 				
@@ -313,7 +377,7 @@ function getCommonTemplateVars($config, $news, $user = null) {
 					
 					$lastThreeNews = $news->getLastThreeNews();
 					
-					$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+					$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
 					'pageTitle' => $pageTitle,
 					'searchQuery' => htmlspecialchars($searchQuery),
@@ -333,7 +397,7 @@ function getCommonTemplateVars($config, $news, $user = null) {
 				$pageTitle = Lang::get('auth', 'core') . ' | ' . $baseTitle;
 				$metaDescription = $news->generateMetaDescription('', 'login');
 				$metaKeywords = $news->generateMetaKeywords('', 'login');
-				$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+				$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
 				'pageTitle' => Lang::get('auth', 'core'),
 				'metaDescription' => $metaDescription,
@@ -346,7 +410,7 @@ function getCommonTemplateVars($config, $news, $user = null) {
 				$pageTitle = Lang::get('register', 'core') . ' | ' . $baseTitle;
 				$metaDescription = $news->generateMetaDescription('', 'register');
 				$metaKeywords = $news->generateMetaKeywords('', 'register');
-                $commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+                $commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
 				'pageTitle' => Lang::get('register', 'core'),
 				'metaDescription' => $metaDescription,
@@ -359,7 +423,7 @@ function getCommonTemplateVars($config, $news, $user = null) {
 				$pageTitle = Lang::get('contact', 'core') . ' | ' . $baseTitle;
 				$metaDescription = $news->generateMetaDescription('', 'contact');
 				$metaKeywords = $news->generateMetaKeywords('', 'contact');
-                $commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+                $commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
 				'pageTitle' => Lang::get('contact', 'core'),
 				'metaDescription' => $metaDescription,
@@ -374,7 +438,7 @@ function getCommonTemplateVars($config, $news, $user = null) {
 				$pageTitle = Lang::get('error404', 'core') . ' | ' . $baseTitle;
 				$metaDescription = $news->generateMetaDescription('', 'error404');
 				$metaKeywords = $news->generateMetaKeywords('', 'error404');
-				$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+				$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
 				'pageTitle' => Lang::get('error404', 'core'),
 				'metaDescription' => $metaDescription,
@@ -392,7 +456,7 @@ function getCommonTemplateVars($config, $news, $user = null) {
 	$pageTitle = Lang::get('error500', 'core') . ' | ' . $baseTitle;
 	$metaDescription = $news->generateMetaDescription('', 'error500');
     $metaKeywords = $news->generateMetaKeywords('', 'error500');
-	$commonVars = getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+	$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 	$pageVars = [
 	'pageTitle' => Lang::get('error500', 'core'),
 	'metaDescription' => $metaDescription,

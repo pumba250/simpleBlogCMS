@@ -1,4 +1,26 @@
 <?php
+/**
+ * Contact form message handler - manages contact submissions and admin operations
+ *
+ * @package    SimpleBlog
+ * @subpackage Models
+ * @category   Contact
+ * @version    0.6.8
+ * @author     pumba250
+ * 
+ * @property PDO $pdo Active database connection
+ *
+ * @method bool   saveMessage(string $name, string $email, string $message)  Stores new contact message
+ * @method array  getAllMessages()                                          Retrieves all messages (admin)
+ * @method bool   deleteMessage(int $id)                                    Removes message by ID (admin)
+ * 
+ * @table {prefix}blogs_contacts
+ *  - id          :int
+ *  - name        :varchar
+ *  - email       :varchar
+ *  - message     :text
+ *  - created_at  :timestamp
+ */
 class Contact {
     private $pdo;
 

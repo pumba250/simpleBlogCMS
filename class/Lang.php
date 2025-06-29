@@ -1,4 +1,28 @@
 <?php
+/**
+ * Multilingual support system - handles language detection and translations
+ *
+ * @package    SimpleBlog
+ * @subpackage Core
+ * @category   Internationalization
+ * @static
+ * 
+ * @property-read string $language       Current language code (e.g. 'en')
+ * @property-read array  $translations   Loaded translation strings
+ * 
+ * @method static void   init()              Initialize language system
+ * @method static void   setLanguage(string $lang) Change active language
+ * @method static string get(string $key, string $section = 'main') Get translation
+ * 
+ * @file-structure
+ *  /lang/
+ *    /en/
+ *      - main.php
+ *      - admin.php
+ *    /ru/
+ *      - main.php
+ *      - admin.php
+ */
 class Lang {
     private static $language = 'en';
     private static $translations = [];
@@ -28,10 +52,6 @@ class Lang {
         }
 
         return self::$translations[$section][$key] ?? $key;
-    }
-
-    public static function isRTL() {
-        return in_array(self::$language, self::$rtlLanguages);
     }
 
     private static function detectLanguage() {

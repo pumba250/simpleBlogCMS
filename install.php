@@ -1,4 +1,21 @@
 <?php
+/**
+ * Installation wizard for SimpleBlog CMS
+ * 
+ * @package    SimpleBlog
+ * @subpackage Installer
+ * @version    0.6.8
+ * @author     pumba250 
+ * 
+ * @todo       Add database version checking
+ * @todo       Implement upgrade path for existing installations
+ * 
+ * This script handles:
+ * - Database connection testing
+ * - Schema initialization
+ * - Configuration file generation
+ * - Post-install cleanup
+ */
 if (version_compare(PHP_VERSION, '7.0.0', '<')) {
     die('Требуется PHP версии 7.0 или выше.');
 }
@@ -20,9 +37,13 @@ function executeSqlFile($filename, $pdo, $prefix = '') {
     $sql = file_get_contents($filename);
     
     if (!empty($prefix)) {
-        if (!preg_match('/^[a-zA-Z0-9_]+$/', $prefix)) {
-            throw new Exception("Недопустимый префикс таблиц");
+        $prefix = rtrim($prefix, '_');
+        $prefix .= '_';
+        
+        if (!preg_match('/^[a-zA-Z0-9]+$/', $prefix)) {
+            throw new Exception("Префикс таблиц должен содержать только буквы и цифры");
         }
+        
         $sql = str_replace('{PREFIX_}', $prefix, $sql);
     }
     
@@ -70,6 +91,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $dbUser = validateInput($_POST['db_user']);
     $dbPass = $_POST['db_pass']; 
     $dbPrefix = isset($_POST['db_prefix']) ? validateInput($_POST['db_prefix']) : '';
+	$dbPrefix = rtrim($dbPrefix, '_');
+	if (!empty($dbPrefix)) {
+		$dbPrefix .= '_';
+	}
 
     if (file_exists('config/config.php')) {
         die("Конфигурационный файл уже существует. Удалите его для повторной установки.");
@@ -91,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             mkdir('config', 0755, true);
         }
         
-        $configContent = "<?php\n\nreturn [\n  'host' => '$dbHost',\n  'database' => '$dbName',\n  'db_user' => '$dbUser',\n  'db_pass' => '$dbPass',\n 'home_title' => 'Заголовок вашего сайта',\n  'templ' => 'simple',\n  'db_prefix' => '$dbPrefix',\n 'csrf_token_name' => 'csrf_token',\n  'max_backups' => 5,\n  'backup_schedule' => 'disabled',\n  'backup_dir' => 'admin/backups/',\n 'blocks_for_reg' => true,\n  'metaKeywords' => 'Здесь ключевые слова, через запятую (,)',\n  'metaDescription' => 'Здесь описание вашего сайта',\n 'mail_from' => 'no-reply@yourdomain.com',\n 'mail_from_name' => 'SimpleBlog Notifications',\n 'powered' => 'simpleBlog',\n  'version' => 'v0.6.7',\n  ];";
+        $configContent = "<?php\n\nreturn [\n  'host' => '$dbHost',\n  'database' => '$dbName',\n  'db_user' => '$dbUser',\n  'db_pass' => '$dbPass',\n 'home_title' => 'Заголовок вашего сайта',\n  'templ' => 'simple',\n  'db_prefix' => '$dbPrefix',\n 'csrf_token_name' => 'csrf_token',\n  'max_backups' => 5,\n  'backup_schedule' => 'disabled',\n  'backup_dir' => 'admin/backups/',\n 'blocks_for_reg' => true,\n  'metaKeywords' => 'Здесь ключевые слова, через запятую (,)',\n  'metaDescription' => 'Здесь описание вашего сайта',\n 'mail_from' => 'no-reply@yourdomain.com',\n 'mail_from_name' => 'SimpleBlog Notifications',\n 'powered' => 'simpleBlog',\n  'version' => 'v0.6.8',\n  ];";
         
         if (file_put_contents('config/config.php', $configContent) === false) {
             throw new Exception("Не удалось записать конфигурационный файл");
@@ -145,8 +170,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <label for="db_pass">Пароль БД:</label>
         <input type="password" name="db_pass" required>
         <br>
-        <label for="db_prefix">Префикс таблиц (необязательно):</label>
-        <input type="text" name="db_prefix" placeholder="Например: myprefix_" pattern="[a-zA-Z0-9_]+">
+        <label for="db_prefix">Префикс таблиц (желательно):</label>
+        <input type="text" name="db_prefix" placeholder="Например: myprefix" pattern="[a-zA-Z0-9_]+" title="Префикс должен содержать только буквы и цифры">
         <br>
         <label>
             <input type="checkbox" name="delete_files" value="1" checked>

@@ -1,4 +1,22 @@
 <?php
+/**
+ * Administration control panel - core management interface
+ * 
+ * @package    SimpleBlog
+ * @subpackage Admin
+ * @version    0.6.8
+ * 
+ * @property PDO       $pdo       Database connection
+ * @property Template  $template  View renderer
+ * @property User      $user      Authentication handler
+ * 
+ * Sections:
+ * - User management
+ * - Content moderation
+ * - System configuration
+ * - Backup operations
+ * - Activity logs
+ */
 $start = microtime(1);
 session_start();
 require 'class/Lang.php';
