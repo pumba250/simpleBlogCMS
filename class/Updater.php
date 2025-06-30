@@ -20,7 +20,6 @@ class Updater {
      * Проверяет обновления через GitHub Releases
      */
 public function checkForUpdates() {
-	@unlink($this->lastCheckFile);
     if ($this->config['disable_update_check'] ?? true) {
         return false;
     }
