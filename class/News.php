@@ -91,7 +91,7 @@ class News {
     }
 	public function getLastThreeNews() {
 	global $dbPrefix;
-    $stmt = $this->pdo->query("SELECT * FROM {$dbPrefix}blogs ORDER BY created_at DESC LIMIT 3");
+    $stmt = $this->pdo->query("SELECT * FROM {$dbPrefix}blogs ORDER BY RAND() DESC LIMIT 3");
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 	}
 	public function generateTags($title, $content) {

@@ -164,6 +164,12 @@
             <h2 style="padding: 0 20px;"><?= Lang::get('menu', 'admin') ?></h2>
             <ul class="admin-menu">
 				<li <?if ($section == 'system_settings'):?>class="active"<?endif;?>><a href="?section=system_settings"><?= Lang::get('system_settings', 'admin') ?></a></li>
+				<li class="nav-item <?if ($section == 'updates'):?>active<?endif?>"><a href="?section=updates"><i class="fas fa-sync-alt"></i> <?= Lang::get('update', 'admin') ?>
+        <?if ($updateInfo):?>
+            <span class="badge bg-danger"><?= Lang::get('new', 'admin') ?></span>
+        <?endif?>
+    </a>
+</li>
                 <li <?if ($section == 'blogs'):?>class="active"<?endif;?>><a href="?section=blogs"><?= Lang::get('blogs', 'admin') ?></a></li>
                 <li <?if ($section == 'contacts'):?>class="active"<?endif;?>><a href="?section=contacts"><?= Lang::get('contacts', 'admin') ?></a></li>
                 <li <?if ($section == 'users'):?>class="active"<?endif;?>><a href="?section=users"><?= Lang::get('users', 'admin') ?></a></li>
@@ -858,11 +864,11 @@ document.addEventListener('keydown', function(e) {
 																<i class="fas fa-check"></i> <?= Lang::get('fdelete', 'admin') ?>
 															</span>
 														<?php else: ?>
-															<span class="badge bg-<?= ($perms == '0644' || $perms == '0444') ? 'success' : 'warning' ?>">
+															<span class="badge bg-<?= ($perms == '0644' || $perms == '0444' || $perms == '0600') ? 'success' : 'warning' ?>">
 																<?= $perms ?>
 															</span>
-															<?php if (($file == 'config/config.php') && $perms != '0644' && $perms != '0444'): ?>
-															<small class="text-danger">(<?= Lang::get('perm', 'admin') ?> 0644)</small>
+															<?php if (($file == 'config/config.php') && $perms != '0600' && $perms != '0444'): ?>
+															<small class="text-danger">(<?= Lang::get('perm', 'admin') ?> 0600)</small>
 															<?php endif; ?>
 															<?php endif; ?>
 															
@@ -991,6 +997,18 @@ document.addEventListener('keydown', function(e) {
 								</div>
 								
 								<div class="form-group">
+									<label><?= Lang::get('blogs_per_page', 'admin') ?>:</label>
+									<input type="text" name="blogs_per_page" class="form-control" value="<?=htmlspecialchars($currentSettings['blogs_per_page'] ?? '')?>">
+									<small class="text-muted"><?= Lang::get('blogs_per_page_desc', 'admin') ?></small>
+								</div>
+								
+								<div class="form-group">
+									<label><?= Lang::get('comments_per_page', 'admin') ?>:</label>
+									<input type="text" name="comments_per_page" class="form-control" value="<?=htmlspecialchars($currentSettings['comments_per_page'] ?? '')?>">
+									<small class="text-muted"><?= Lang::get('comments_per_page_desc', 'admin') ?></small>
+								</div>
+								
+								<div class="form-group">
 									<label><?= Lang::get('mail_from', 'admin') ?>:</label>
 									<input type="text" name="mail_from" class="form-control" value="<?=htmlspecialchars($currentSettings['mail_from'] ?? '')?>">
 									<small class="text-muted"><?= Lang::get('mail_from_desc', 'admin') ?></small>
@@ -1011,14 +1029,74 @@ document.addEventListener('keydown', function(e) {
 								
 								<div class="form-group">
 									<label><?= Lang::get('current_version', 'admin') ?>:</label>
-									<b>simpleBlog_<?=htmlspecialchars($currentSettings['version'] ?? '')?></b>
+									<b><?=htmlspecialchars($currentSettings['powered'] ?? '')?>_<?=htmlspecialchars($currentSettings['version'] ?? '')?></b>
 								</div>
 								
 								<button type="submit" class="btn btn-primary"><?= Lang::get('save_changes', 'admin') ?></button>
 							</form>
 						</div>
 					</div>
-				<?php endif; ?>
+				<?php elseif ($section == 'updates'): ?>
+					<div class="admin-content">
+						<h2><?= Lang::get('updates', 'admin') ?></h2>
+						
+						<?php if (!empty($admin_message)): ?>
+							<div class="alert alert-success"><?php echo htmlspecialchars($admin_message); ?></div>
+						<?php endif; ?>
+						
+						<?php if (!empty($admin_error)): ?>
+							<div class="alert alert-danger"><?php echo htmlspecialchars($admin_error); ?></div>
+						<?php endif; ?>
+						
+						<div class="card mb-4">
+							<div class="card-header">
+								<h3><?= Lang::get('version_info', 'admin') ?></h3>
+							</div>
+							<div class="card-body">
+								<p><strong><?= Lang::get('current_ver', 'admin') ?></strong> <?php echo htmlspecialchars($currentVersion); ?></p>
+								
+								<?php if (!empty($updateInfo)): ?>
+									<div class="alert <?php echo $updateInfo['is_important'] ? 'alert-danger' : 'alert-info'; ?>">
+										<h4><?= Lang::get('update_avail', 'admin') ?><?php echo htmlspecialchars($updateInfo['new_version']); ?>!</h4>
+										<p><strong><?= Lang::get('date_release', 'admin') ?></strong> <?php echo htmlspecialchars($updateInfo['release_date']); ?></p>
+										<p><strong><?= Lang::get('important', 'admin') ?></strong> 
+											<?php if ($updateInfo['is_important']): ?>
+												<span class="badge bg-danger"><?= Lang::get('important_update', 'admin') ?></span>
+											<?php else: ?>
+												<span class="badge bg-warning"><?= Lang::get('recomend_update', 'admin') ?></span>
+											<?php endif; ?>
+										</p>
+										
+										<h5><?= Lang::get('changelog', 'admin') ?></h5>
+										<div class="changelog"><code><?php echo nl2br(htmlspecialchars($updateInfo['changelog'])); ?></code></div>
+										<br />
+										<div class="mt-3">
+											<a href="<?php echo htmlspecialchars($updateInfo['release_url']); ?>" 
+											   target="_blank" 
+											   class="btn btn-success">
+												<?= Lang::get('link_git', 'admin') ?>
+											</a>
+											<a href="<?php echo htmlspecialchars($updateInfo['download_url']); ?>" 
+											   target="_blank" 
+											   class="btn btn-primary"> <?= Lang::get('download', 'admin') ?>
+											</a>
+											<!--<form method="POST" style="display: inline-block;">
+												<input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+												<input type="hidden" name="action" value="install_update">
+												<button type="submit" class="btn btn-primary ml-2">
+													Установить обновление
+												</button>
+											</form>-->
+										</div>
+									</div>
+								<?php else: ?>
+									<div class="alert alert-success">
+										<?= Lang::get('latest', 'admin') ?>
+									</div>
+								<?php endif; ?>
+							</div>
+						</div>
+					</div>				<?php endif; ?>
         </div>
     </div>
 </body>

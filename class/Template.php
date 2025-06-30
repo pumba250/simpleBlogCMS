@@ -1,4 +1,41 @@
 <?php
+/**
+ * Template Engine - handles view rendering with security and variable management
+ *
+ * @package    SimpleBlog
+ * @subpackage Core
+ * @category   Views
+ * @version    0.6.9
+ *
+ * @property-read array $variables      All assigned template variables
+ * @property-read string $templateDir   Active template directory
+ *
+ * @method void assign(string $key, mixed $value)        Assign single variable (auto-escapes strings)
+ * @method void assignMultiple(array $vars)              Bulk assign variables
+ * @method string render(string $templateFile, array $additionalVars = []) Render template to string
+ * @method array getCommonTemplateVars(array $config, News $news, ?User $user) Get standard template vars
+ * @method bool changeTemplate(string $newTemplate, array $availableTemplates, array &$config, string $configPath) Switch active template
+ * @method array getAvailableTemplates(string $templatesDir) Discover valid templates
+ * @method string formatSize(int $bytes) Format bytes to human-readable size
+ *
+ * @security
+ * - Automatic HTML escaping for all string variables
+ * - Sandboxed template inclusion
+ * - Path traversal protection
+ *
+ * @template-requirements
+ * - Must contain header.tpl
+ * - Must contain footer.tpl
+ * - UTF-8 encoded files
+ *
+ * @performance
+ * - Uses output buffering
+ * - OPcache integration
+ * - Minimal variable processing overhead
+ *
+ * @throws RuntimeException On template file errors
+ * @throws Exception On directory initialization failures
+ */
 class Template {
     protected $variables = [];
     protected $templateDir;
@@ -102,7 +139,7 @@ public function render(string $templateFile, array $additionalVars = []): string
 	function changeTemplate($newTemplate, $availableTemplates, &$config, $configPath) {
 		if (in_array($newTemplate, $availableTemplates)) {
 			$config['templ'] = $newTemplate;
-			$configContent = "<?php\nreturn " . var_export($config, true) . ";\n";
+			$configContent = "<?php\nif (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }\nreturn " . var_export($config, true) . ";\n";
 			
 			if (file_put_contents($configPath, $configContent, LOCK_EX)) {
 				if (function_exists('opcache_invalidate')) {

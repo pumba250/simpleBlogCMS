@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Admin
- * @version    0.6.8
+ * @version    0.6.9
  * 
  * @property PDO       $pdo       Database connection
  * @property Template  $template  View renderer
@@ -17,8 +17,14 @@
  * - Backup operations
  * - Activity logs
  */
+define('IN_SIMPLECMS', true);
 $start = microtime(1);
-session_start();
+session_start([
+    'cookie_secure' => true,
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'use_strict_mode' => true
+]);
 require 'class/Lang.php';
 Lang::init();
 
@@ -32,6 +38,7 @@ if (file_exists('install.php')) {
     die;
 }
 $config = require 'config/config.php';
+
 try {
     $host = $config['host'];
     $database = $config['database'];
@@ -111,6 +118,9 @@ require 'class/News.php';
 require 'class/Comments.php';
 require 'class/Parse.php';
 require_once 'admin/backup_db.php';
+require 'class/Updater.php';
+$updater = new Updater($pdo, $config);
+
 // После создания других объектов добавить:
 $comments = new Comments($pdo);
 $template = new Template();
@@ -206,6 +216,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					} else {
 						// Обновляем конфигурацию
 						$config['home_title'] = trim($_POST['home_title']);
+						$config['blogs_per_page'] = trim($_POST['blogs_per_page']);
+						$config['comments_per_page'] = trim($_POST['comments_per_page']);
 						$config['mail_from'] = trim($_POST['mail_from']);
 						$config['mail_from_name'] = trim($_POST['mail_from_name']);
 						$config['metaKeywords'] = trim($_POST['metaKeywords']);
@@ -213,7 +225,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						$config['blocks_for_reg'] = isset($_POST['blocks_for_reg']) ? true : false;
 						
 						// Сохраняем обновленный конфиг
-						file_put_contents(__DIR__ . '/config/config.php', "<?php\nreturn " . var_export($config, true) . ";\n");
+						file_put_contents(__DIR__ . '/config/config.php', "<?php\nif (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен');}\nreturn " . var_export($config, true) . ";\n");
 						
 						$_SESSION['admin_message'] = Lang::get('save_setting', 'core');
 						logAction('Изменение системных настроек', 'Обновлены основные настройки системы');
@@ -493,10 +505,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					$config['backup_schedule'] = $_POST['backup_schedule'];
 					
 					// Сохраняем обновленный конфиг
-					file_put_contents(__DIR__ . '/config/config.php', "<?php\nreturn " . var_export($config, true) . ";\n");
+					file_put_contents(__DIR__ . '/config/config.php', "<?php\nif (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен');}\nreturn " . var_export($config, true) . ";\n");
 					
 					$_SESSION['admin_message'] = Lang::get('backup_upd', 'core');
 					logAction('Изменение настроек бэкапа', 'Макс. копий: ' . $config['max_backups'] . ', Расписание: ' . $config['backup_schedule']);
+				}
+				break;
+			case 'save_update':
+				if ($_POST['action'] === 'install_update') {
+					try {
+						if ($updater->performUpdate()) {
+							$_SESSION['admin_message'] = 'Обновление успешно установлено! Система будет перезагружена.';
+							echo '<meta http-equiv="refresh" content="2;URL=?section=updates">';
+							exit;
+						}
+					} catch (Exception $e) {
+						$_SESSION['admin_error'] = 'Ошибка обновления: '.$e->getMessage();
+					}
 				}
 				break;
 		}
@@ -511,7 +536,7 @@ if (empty($_SESSION['csrf_token'])) {
 $section = isset($_GET['section']) ? $_GET['section'] : 'server_info';
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-
+$updateInfo = $updater->checkForUpdates();
 try {
     // Подготовка данных для шаблона
     $template->assign('pageTitle', $pageTitle);
@@ -552,10 +577,19 @@ Translate after
 			$template->assign('newsCount', $newsCount);
 			$template->assign('blogs', $blogs);
 			$template->assign('allTags', $allTags);
+			$template->assign('updateInfo', $updateInfo);
 			break;
 			
         case 'system_settings':
 			$template->assign('currentSettings', $config);
+			$template->assign('updateInfo', $updateInfo);
+			break;
+
+		case 'updates':
+			$updateInfo = $updater->checkForUpdates();
+			$template->assign('updateInfo', $updateInfo);
+			$template->assign('currentVersion', $config['version']);
+			//echo $template->render('admin/updates.tpl');
 			break;
 			
         case 'comments':
@@ -572,22 +606,26 @@ Translate after
 			$template->assign('totalPages', $totalPages);
 			$template->assign('currentPage', $page);
             $template->assign('pendingCount', $pendingCount);
+			$template->assign('updateInfo', $updateInfo);
             break;
             
         case 'contacts':
             $contacts = $contact->getAllMessages();
             $template->assign('contacts', $contacts);
+			$template->assign('updateInfo', $updateInfo);
             break;
             
         case 'users':
             $users = $user->getAllUsers();
             $template->assign('users', $users);
 			$template->assign('roleName', $roleName);
+			$template->assign('updateInfo', $updateInfo);
             break;
             
         case 'tags':
             $tags = $pdo->query("SELECT * FROM `{$dbPrefix}tags` ORDER by `name`")->fetchAll(PDO::FETCH_ASSOC);
             $template->assign('tags', $tags);
+			$template->assign('updateInfo', $updateInfo);
             break;
             
         case 'template_settings':
@@ -599,11 +637,12 @@ Translate after
             if (!in_array($currentTemplate, $availableTemplates)) {
                 $currentTemplate = 'simple';
                 $config['templ'] = 'simple';
-                file_put_contents($configPath, "<?php\nreturn ".var_export($config, true).";\n");
+                file_put_contents($configPath, "<?php\nif (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен');}\nreturn ".var_export($config, true).";\n");
             }
             
             $template->assign('templates', $availableTemplates);
             $template->assign('currentTemplate', $currentTemplate);
+			$template->assign('updateInfo', $updateInfo);
             break;
             
         case 'logs':
@@ -619,6 +658,7 @@ Translate after
             $template->assign('currentPage', $page);
             $template->assign('perPage', $limit);
 			$template->assign('parse', $parse);
+			$template->assign('updateInfo', $updateInfo);
             break;
 			
 		case 'server_info':
@@ -652,6 +692,7 @@ Translate after
 			$template->assign('serverInfo', $serverInfo);
 			$template->assign('filePermissions', $filePermissions);
 			$template->assign('phpModules', $phpModules);
+			$template->assign('updateInfo', $updateInfo);
 			break;
 	
 		case 'backups':
@@ -729,6 +770,7 @@ Translate after
 			$template->assign('backups', $backups);
 			$template->assign('max_backups', $config['max_backups'] ?? 5);
 			$template->assign('backup_schedule', $config['backup_schedule'] ?? 'disabled');
+			$template->assign('updateInfo', $updateInfo);
 			break;
     }
     

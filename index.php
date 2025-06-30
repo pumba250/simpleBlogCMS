@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Core
- * @version    0.6.8
+ * @version    0.6.9
  * 
  * @router
  *  GET  /             - Blog index
@@ -18,8 +18,14 @@
  * - CSRF protection
  * - Caching layer
  */
+define('IN_SIMPLECMS', true);
 $start = microtime(1);
-session_start();
+session_start([
+    'cookie_secure' => true,
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Strict',
+    'use_strict_mode' => true
+]);
 require 'class/Lang.php';
 Lang::init();
 
@@ -263,7 +269,7 @@ try {
 		} else {
 			// Загрузка главной страницы
 			$pageTitle = Lang::get('home_page', 'main') . ' | ' . $baseTitle;
-			$limit = 6; // Количество новостей на странице
+			$limit = $config['blogs_per_page']; // Количество новостей на странице
 			$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 			$offset = ($page - 1) * $limit;
 			$allNews = $news->getAllNews($limit, $offset);

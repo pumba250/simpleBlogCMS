@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Core
- * @version    0.6.8
+ * @version    0.6.9
  * @author     pumba250
  * @license    MIT License
  * @copyright  2023 SimpleBlog

@@ -1,7 +1,5 @@
 <?php include __DIR__ . '/header.tpl'; 
 if (isset($_GET['id'])) {
-    //$newsId = (int)$_GET['id'];
-    //$newsItem = $news->getNewsById($newsId); 
     $articleRating = $votes->getArticleRating($newsItem['id']);
 
     if ($newsItem):
