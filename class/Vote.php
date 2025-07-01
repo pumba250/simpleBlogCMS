@@ -22,7 +22,9 @@ class Votes {
         if ($this->hasUserVoted($id, $userId)) {
             return false;
         }
-
+		if (!in_array($voteType, ['plus', 'minus'])) {
+			throw new InvalidArgumentException("Invalid vote type");
+		}
         $column = $voteType == 'plus' ? 'plus' : 'minus';
         
         try {

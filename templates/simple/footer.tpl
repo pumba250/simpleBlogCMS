@@ -30,6 +30,7 @@
       <form method="POST" class="w3-container">
         <div class="w3-section">
 		<input type="hidden" name="action" value="login">
+		<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
           <label><b><?= Lang::get('username') ?></b></label>
           <input class="w3-input w3-border w3-margin-bottom" type="text" placeholder="Enter Username" name="username" required>
           <label><b><?= Lang::get('password') ?></b></label>

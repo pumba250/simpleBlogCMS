@@ -5,7 +5,7 @@
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Contact
- * @version    0.6.9
+ * @version    0.7.0
  * @author     pumba250
  * 
  * @property PDO $pdo Active database connection

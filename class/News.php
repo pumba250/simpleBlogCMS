@@ -62,28 +62,31 @@ class News {
 	}
     public function getAllAdm($limit = 0, $offset = 0) {
 		global $dbPrefix;
-        $limitClause = $limit > 0 ? "LIMIT $limit OFFSET $offset" : "";
-        
-        $stmt = $this->pdo->query("
-            SELECT b.*, GROUP_CONCAT(t.name) as tag_names, GROUP_CONCAT(t.id) as tag_ids
-            FROM `{$dbPrefix}blogs` b
-            LEFT JOIN `{$dbPrefix}blogs_tags` bt ON b.id = bt.blogs_id
-            LEFT JOIN `{$dbPrefix}tags` t ON bt.tag_id = t.id
-            GROUP BY b.id
-            ORDER BY b.created_at DESC
-            $limitClause
-        ");
-        
-        $blogs = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        // Преобразуем теги в массивы
-        foreach ($blogs as &$blog) {
-            $blog['tags'] = $blog['tag_names'] ? explode(',', $blog['tag_names']) : [];
-            $blog['tag_ids'] = $blog['tag_ids'] ? array_map('intval', explode(',', $blog['tag_ids'])) : [];
-        }
-        
-        return $blogs;
-    }
+		$limitClause = $limit > 0 ? "LIMIT $limit OFFSET $offset" : "";
+		
+		$stmt = $this->pdo->prepare("
+			SELECT b.*, GROUP_CONCAT(t.name) as tag_names, GROUP_CONCAT(t.id) as tag_ids
+			FROM `{$dbPrefix}blogs` b
+			LEFT JOIN `{$dbPrefix}blogs_tags` bt ON b.id = bt.blogs_id
+			LEFT JOIN `{$dbPrefix}tags` t ON bt.tag_id = t.id
+			GROUP BY b.id
+			ORDER BY b.created_at DESC
+			LIMIT :limit OFFSET :offset
+		");
+		$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+		$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+		$stmt->execute();
+		
+		$blogs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+		
+		// Преобразуем теги в массивы
+		foreach ($blogs as &$blog) {
+			$blog['tags'] = $blog['tag_names'] ? array_map('htmlspecialchars', explode(',', $blog['tag_names'])) : [];
+			$blog['tag_ids'] = $blog['tag_ids'] ? array_map('intval', explode(',', $blog['tag_ids'])) : [];
+		}
+		
+		return $blogs;
+	}
 
     public function getTotalNewsCount() {
 	global $dbPrefix;
@@ -169,16 +172,24 @@ class News {
 		}
 	}
 	public function getNewsWithTags() {
-	global $dbPrefix;
-    $stmt = $this->pdo->query("
-        SELECT n.*, GROUP_CONCAT(t.name SEPARATOR ', ') as tags
-        FROM {$dbPrefix}blogs n
-        LEFT JOIN {$dbPrefix}blogs_tags nt ON n.id = nt.blogs_id
-        LEFT JOIN {$dbPrefix}tags t ON nt.tag_id = t.id
-        GROUP BY n.id
-        ORDER BY n.created_at DESC
-    ");
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+		global $dbPrefix;
+		$stmt = $this->pdo->prepare("
+			SELECT b.id, b.title, LEFT(b.content, 320) AS excerpt, b.content, b.created_at
+			FROM {$dbPrefix}blogs b
+			JOIN {$dbPrefix}blogs_tags bt ON b.id = bt.blogs_id
+			WHERE bt.tag_id = ?
+		");
+		$stmt->execute([$tagId]);
+		$result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+		
+		// Escape the tags data
+		foreach ($result as &$row) {
+			if ($row['tags']) {
+				$row['tags'] = htmlspecialchars($row['tags']);
+			}
+		}
+		
+		return $result;
 	}
 	public function updateNews($id, $title, $content, $tags) {
 		global $dbPrefix;

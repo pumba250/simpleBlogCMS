@@ -5,7 +5,7 @@
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Views
- * @version    0.6.9
+ * @version    0.7.0
  *
  * @property-read array $variables      All assigned template variables
  * @property-read string $templateDir   Active template directory
@@ -65,6 +65,7 @@ class Template {
 			'powered' => $config['powered'],
 			'version' => $config['version'],
 			'dbPrefix' => $dbPrefix,
+			'csrf_token' => $_SESSION['csrf_token'],
 			'templ' => $config['templ'],
 			'captcha_image_url' => '/class/captcha.php',
 			'allTags' => $news->GetAllTags(),

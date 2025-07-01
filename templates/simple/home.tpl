@@ -10,7 +10,7 @@ if (isset($_GET['id'])) {
             <h5><span class="w3-opacity"><?= htmlspecialchars($newsItem['created_at']) ?></span></h5>
         </div>
         <div class="w3-container">
-            <p><?= ($newsItem['content']) ?></p> 
+            <p><?= strip_tags($newsItem['content'], '<br><p><a><strong><em><ul><ol><li><div><span>') ?></p> 
             
             <div class="w3-panel w3-light-grey w3-padding">
                 <p><?= Lang::get('voteart') ?>:</p>
@@ -18,6 +18,7 @@ if (isset($_GET['id'])) {
                     <form method="post" action="?id=<?= $newsItem['id'] ?>" class="w3-bar-item">
 						<input type="hidden" name="id" value="<?= $newsId ?>">
                         <input type="hidden" name="vote_article" value="like">
+						<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
                         <button type="submit" class="w3-button w3-green">
                             <i class="fa fa-thumbs-up"></i> <?= $articleRating['likes'] ?? 0 ?>
                         </button>
@@ -25,6 +26,7 @@ if (isset($_GET['id'])) {
                     <form method="post" action="?id=<?= $newsItem['id'] ?>" class="w3-bar-item">
 						<input type="hidden" name="id" value="<?= $newsId ?>">
                         <input type="hidden" name="vote_article" value="dislike">
+						<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
                         <button type="submit" class="w3-button w3-red">
                             <i class="fa fa-thumbs-down"></i> <?= $articleRating['dislikes'] ?? 0 ?>
                         </button>
@@ -64,6 +66,7 @@ if (isset($_GET['id'])) {
                                 <div class="w3-right">
                                     <form method="post" action="?id=<?= $newsId ?>" class="w3-bar-item">
                                         <input type="hidden" name="vote_comment" value="<?= $comment['id'] ?>_plus">
+										<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
                                         <button type="submit" class="w3-button w3-small <?= $hasVoted ? 'w3-light-grey' : 'w3-green' ?>" 
                                             <?= $hasVoted ? 'disabled' : '' ?>>
                                             <i class="fa fa-thumbs-up"></i> <?= $commentRating['plus'] ?? 0 ?>
@@ -71,6 +74,7 @@ if (isset($_GET['id'])) {
                                     </form>
                                     <form method="post" action="?id=<?= $newsId ?>" class="w3-bar-item">
                                         <input type="hidden" name="vote_comment" value="<?= $comment['id'] ?>_minus">
+										<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
                                         <button type="submit" class="w3-button w3-small <?= $hasVoted ? 'w3-light-grey' : 'w3-red' ?>" 
                                             <?= $hasVoted ? 'disabled' : '' ?>>
                                             <i class="fa fa-thumbs-down"></i> <?= $commentRating['minus'] ?? 0 ?>
@@ -115,6 +119,7 @@ if (isset($_GET['id'])) {
             endif; ?>
             
             <form method="post">
+				<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
                 <?php if (!isset($user['username'])): ?>
                     <input class="w3-input w3-border" type="text" name="user_name" required placeholder="<?= Lang::get('name') ?>"><br>
                 <?php endif; ?>

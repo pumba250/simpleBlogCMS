@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Core
- * @version    0.6.9
+ * @version    0.7.0
  * @author     pumba250
  * @license    MIT License
  * @copyright  2023 SimpleBlog
@@ -19,7 +19,19 @@ class User {
 
     public function __construct($pdo) {
         $this->pdo = $pdo;
+		$this->startSession();
+}
+
+private function startSession() {
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+        // Initialize rate limiting if not set
+        if (!isset($_SESSION['login_attempts'])) {
+            $_SESSION['login_attempts'] = 0;
+            $_SESSION['last_attempt'] = 0;
+        }
     }
+}
     public function getAllUsers() {
 	global $dbPrefix;
         $stmt = $this->pdo->prepare("SELECT id, username, email, isadmin, created_at FROM {$dbPrefix}users ORDER BY created_at DESC");
@@ -74,6 +86,10 @@ class User {
             flash(Lang::get('user_exists', 'core'));
             return false;
         }
+		if (strlen($password) < 6 || !preg_match('/[A-Z]/', $password) || 
+			!preg_match('/[0-9]/', $password)) {
+			throw new Exception("Password does not meet complexity requirements");
+		}
 
         $stmt = $this->pdo->prepare("INSERT INTO {$dbPrefix}users (username, password, email, isadmin, verification_token) VALUES (?, ?, ?, ?, ?)");
         
@@ -200,28 +216,53 @@ class User {
     }
 
 	public function login($username, $password) {
-	global $dbPrefix;
-    $stmt = $this->pdo->prepare("SELECT * FROM {$dbPrefix}users WHERE username = ?");
-    $stmt->execute([$username]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($user && password_verify($password, $user['password'])) {
-        session_start();
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['username'] = $user['username'];
-		$_SESSION['isadmin'] = $user['isadmin'];
-        return $user;
-    }
-    return false;
-}
-public function logout() {
-    if (session_status() == PHP_SESSION_NONE) {
-        session_start();
-    }
-    $_SESSION = [];
-    
-    session_destroy();
-}
+		global $dbPrefix;
+		
+		// Rate limiting check
+		if ($_SESSION['login_attempts'] >= 5 && time() - $_SESSION['last_attempt'] < 3600) {
+			flash(Lang::get('too_many_attempts', 'core'));
+			return false;
+		}
+		if ($_SESSION['login_attempts'] >= 3) {
+			sleep(min(10, $_SESSION['login_attempts'])); // Экспоненциальная задержка
+		}
+
+		$stmt = $this->pdo->prepare("SELECT * FROM {$dbPrefix}users WHERE username = ?");
+		$stmt->execute([$username]);
+		$user = $stmt->fetch(PDO::FETCH_ASSOC);
+		
+		if ($user && password_verify($password, $user['password'])) {
+			// Reset attempts on successful login
+			$_SESSION['login_attempts'] = 0;
+			$_SESSION['user_id'] = $user['id'];
+			$_SESSION['username'] = $user['username'];
+			$_SESSION['isadmin'] = $user['isadmin'];
+			return $user;
+		}
+		
+		// Increment attempts on failure
+		$_SESSION['login_attempts']++;
+		$_SESSION['last_attempt'] = time();
+		return false;
+	}
+	/*public function generateCsrfToken() {
+		if (empty($_SESSION['csrf_token'])) {
+			$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+		}
+		return $_SESSION['csrf_token'];
+	}
+
+	public function validateCsrfToken($token) {
+		return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+	}*/
+	public function logout() {
+		if (session_status() == PHP_SESSION_NONE) {
+			session_start();
+		}
+		$_SESSION = [];
+		
+		session_destroy();
+	}
 }
 function flash(?string $message = null){
     if ($message) {

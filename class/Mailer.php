@@ -6,7 +6,7 @@
  * @subpackage Services
  * @category   Communication
  * @static
- * @version    0.6.9
+ * @version    0.7.0
  * 
  * @config-requires
  *  - mail_from       :string  Sender email

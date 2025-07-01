@@ -10,6 +10,7 @@
         <?php endif; ?>
             <form method="POST" class="auth-form">
                 <input type="hidden" name="action" value="login">
+				<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
                 
                 <div class="form-group">
                     <label for="username"><i class="fas fa-user"></i> <?= Lang::get('username') ?></label>

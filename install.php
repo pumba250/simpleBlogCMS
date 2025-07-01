@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Installer
- * @version    0.6.9
+ * @version    0.7.0
  * @author     pumba250 
  * 
  * Security improvements:
@@ -214,10 +214,10 @@ return [
     'blogs_per_page' => 6,
     'comments_per_page' => 10,
     'powered' => 'simpleBlog',
-    'version' => 'v0.6.9',
-	'update_check_interval' => 86400,
-	'disable_update_check' => false,
+    'version' => 'v0.7.0',
 	'github_repo' => 'pumba250/simpleBlog',
+	'update_check_interval' => 86400, // 24 часа в секундах
+	'disable_update_check' => false,
     'install_ip' => '".addslashes($ip)."',
     'install_time' => ".time()."
 ];";

@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Core
- * @version    0.6.9
+ * @version    0.7.0
  * 
  * @router
  *  GET  /             - Blog index
@@ -19,12 +19,15 @@
  * - Caching layer
  */
 define('IN_SIMPLECMS', true);
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://".$_SERVER['SERVER_NAME']."; style-src 'self' 'unsafe-inline'");
 $start = microtime(1);
 session_start([
     'cookie_secure' => true,
     'cookie_httponly' => true,
-    'cookie_samesite' => 'Strict',
-    'use_strict_mode' => true
+    'cookie_samesite' => 'Lax', // Более гибко, чем Strict
+    'use_strict_mode' => true,
+    'cookie_lifetime' => 3600, // Ограничение времени жизни
+    'gc_maxlifetime' => 3600   // Очистка неактивных сессий
 ]);
 require 'class/Lang.php';
 Lang::init();
@@ -43,6 +46,7 @@ if (isset($_GET['lang'])) {
 if (!empty($_SESSION['lang'])) {
     Lang::setLanguage($_SESSION['lang']);
 }
+
 if (!ob_start("ob_gzhandler")) {
     ob_start();
 }
@@ -86,19 +90,23 @@ require 'class/Parse.php';
 require 'class/Mailer.php';
 
 // Инициализация объектов
-$template = new Template();
+
 $user = new User($pdo, $template);
 $contact = new Contact($pdo);
 $news = new News($pdo);
 $comments = new Comments($pdo);
 $votes = new Votes($pdo);
 $parse = new parse();
+$template = new Template();
 $baseTitle = $config['home_title']; // Базовое название сайта
 $pageTitle = $baseTitle; // Значение по умолчанию
 
 try {
     // Обработка регистрации
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+		if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+			die("Неверный CSRF-токен");
+		}
 			if (isset($_POST['user_text'])) {
 				$themeId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 				$userName = isset($_SESSION['user']['username']) ? $_SESSION['user']['username'] : $_POST['user_name'];
@@ -158,6 +166,9 @@ try {
 				$userData = $user->login($username, $password);
 				if ($userData) {
 					$_SESSION['user'] = $userData;
+					session_regenerate_id(true);
+					$_SESSION['last_activity'] = time();
+					$_SESSION['ip'] = $_SERVER['REMOTE_ADDR'];
 					sleep(1);
 					header("Location: /");
 					exit;
@@ -187,13 +198,22 @@ try {
         }
     }
 
-
+// Генерация CSRF-токена
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
     // Обработка GET-запросов
 	$searchQuery = isset($_GET['search']) ? trim($_GET['search']) : '';
     if (!isset($_GET['action'])) {
         if (isset($_GET['id'])) {
 			// Получаем одну новость по id
-			$newsId = (int)$_GET['id'];
+			$newsId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT, [
+				'options' => ['min_range' => 1]
+			]);
+			if ($newsId === false) {
+				throw new InvalidArgumentException("Invalid news ID");
+			}
+			//$newsId = (int)$_GET['id'];
 			$newsItem = $news->getNewsById($newsId); // Получаем одну новость
 			// Обрабатываем контент
 			$newsItem['content'] = $parse->userblocks($newsItem['content'], $config, $_SESSION['user'] ?? null);

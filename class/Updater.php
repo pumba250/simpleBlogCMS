@@ -20,6 +20,7 @@ class Updater {
      * Проверяет обновления через GitHub Releases
      */
 public function checkForUpdates() {
+	
     if ($this->config['disable_update_check'] ?? true) {
         return false;
     }
@@ -264,9 +265,10 @@ public function checkForUpdates() {
      * Применяет обновление из ZIP-архива
      */
     private function applyUpdate($zipContent) {
-        $tempDir = sys_get_temp_dir().'/sb_update_'.md5(time());
-        mkdir($tempDir, 0755);
-        
+        $tempDir = sys_get_temp_dir().'/sb_update_'.bin2hex(random_bytes(8));
+		if (!mkdir($tempDir, 0700)) {
+			throw new RuntimeException("Failed to create temp directory");
+		}
         $zipFile = $tempDir.'/update.zip';
         file_put_contents($zipFile, $zipContent);
         

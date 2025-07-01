@@ -7,6 +7,7 @@
 <? echo @$errors[0]; ?>
 <form method="POST">
 <input type="hidden" name="action" value="contact">
+<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
 <input class="w3-input" type="text" placeholder="<?= Lang::get('name') ?>" required name="name">
 <input class="w3-input" type="text" placeholder="<?= Lang::get('email') ?>" required name="email">
 <input class="w3-input" type="text" placeholder="<?= Lang::get('message') ?>" required name="message">

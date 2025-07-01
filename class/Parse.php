@@ -157,11 +157,11 @@ class parse {
 			"#\[hide\](.*?)\[/hide\]#is",
 			function($matches) use ($user) {
 				if (is_array($user)) {
-					return $matches[1];
+					return htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8');
 				}
 				return '<div class="w3-hide-container w3-round">
   <span class="w3-hide-message">' . 
-					   Lang::get('not_logged') . 
+					   htmlspecialchars(Lang::get('not_logged'), ENT_QUOTES, 'UTF-8') .  
 					   '</span>
 </div>';
 			},

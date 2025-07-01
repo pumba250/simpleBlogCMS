@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Admin
- * @version    0.6.9
+ * @version    0.7.0
  * 
  * @property PDO       $pdo       Database connection
  * @property Template  $template  View renderer
@@ -111,6 +111,7 @@ if (!isset($_SESSION['user']) || !$_SESSION['user']['isadmin']) {
     header('Location: /');
     exit;
 }
+$currentUserRole = $_SESSION['user']['isadmin'] ?? 0;
 require 'class/Template.php';
 require 'class/User.php';
 require 'class/Contact.php';
@@ -138,7 +139,7 @@ function getRoleName($roleValue) {
 			default: return Lang::get('unknownrole', 'admin');
 		}
 	}
-$currentUserRole = $_SESSION['user']['isadmin'] ?? 0;
+
 // Обработка POST-запросов
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Проверка CSRF-токена
@@ -440,7 +441,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					$_SESSION['admin_error'] = Lang::get('not_perm', 'core');
 				} else {
 					$file = __DIR__ . '/'. $backupDir . basename($_POST['file']);
-					
+					if (!preg_match('/\.sql$/', $file)) {
+						die("Только .sql файлы разрешены");
+					}
 					if (file_exists($file)) {
 						try {
 							// Читаем SQL файл
@@ -455,16 +458,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 								break;
 							}
 							// Разбиваем на отдельные запросы
-							$queries = explode(';', $sql);
+							$queries = array_filter(array_map('trim', explode(';', $sql)));
 							
 							// Выполняем каждый запрос в транзакции
 							$pdo->beginTransaction();
 							
 							foreach ($queries as $query) {
-								$query = trim($query);
-								if (!empty($query)) {
-									$pdo->exec($query);
-								}
+								$stmt = $pdo->prepare($query);
+								$stmt->execute();
 							}
 							
 							$pdo->commit();
@@ -487,10 +488,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					$_SESSION['admin_error'] = Lang::get('not_perm', 'core');
 				} else {
 					$file = __DIR__ . '/'. $backupDir . basename($_POST['file']);
-					if (file_exists($file)) {
-						unlink($file);
-						$_SESSION['admin_message'] = Lang::get('backup_del', 'core');
-						logAction('Удаление резервной копии', 'Файл: ' . basename($file));
+					
+					// Добавляем проверку пути
+					$realPath = realpath($file);
+					$allowedPath = realpath(__DIR__ . '/' . $backupDir);
+					
+					if ($realPath === false || strpos($realPath, $allowedPath) !== 0) {
+						$_SESSION['admin_error'] = Lang::get('invalid_file_path', 'core');
+					} elseif (file_exists($realPath)) {
+						if (unlink($realPath)) {
+							$_SESSION['admin_message'] = Lang::get('backup_del', 'core');
+							logAction('Удаление резервной копии', 'Файл: ' . basename($realPath));
+						} else {
+							$_SESSION['admin_error'] = Lang::get('backup_del_failed', 'core');
+						}
 					} else {
 						$_SESSION['admin_error'] = Lang::get('not_file', 'core');
 					}
