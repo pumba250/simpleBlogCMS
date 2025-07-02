@@ -1,18 +1,17 @@
 <?php
 /**
- * Installation wizard for SimpleBlog CMS
+ * Установочный скрипт системы
  * 
  * @package    SimpleBlog
  * @subpackage Installer
- * @version    0.7.0
- * @author     pumba250 
+ * @version    0.8.0
  * 
- * Security improvements:
- * - Enhanced input validation
- * - Secure session handling
- * - Password encryption in config
- * - File permission checks
- * - IP-based installation blocking
+ * @security
+ * - Валидация вводимых данных
+ * - Безопасная работа с сессиями
+ * - Шифрование паролей в конфигурации
+ * - Проверка прав доступа к файлам
+ * - Блокировка по IP при множественных попытках
  */
 
 // Check PHP version
@@ -214,9 +213,9 @@ return [
     'blogs_per_page' => 6,
     'comments_per_page' => 10,
     'powered' => 'simpleBlog',
-    'version' => 'v0.7.0',
+    'version' => 'v0.8.0',
 	'github_repo' => 'pumba250/simpleBlog',
-	'update_check_interval' => 86400, // 24 часа в секундах
+	'update_check_interval' => 43200, // 12 часа в секундах
 	'disable_update_check' => false,
     'install_ip' => '".addslashes($ip)."',
     'install_time' => ".time()."

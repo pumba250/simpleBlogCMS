@@ -5,6 +5,7 @@
 <!-- Introduction menu -->
 <div class="w3-col l4">
   <!-- About Card -->
+  <?if (!$isCached):?>
   <div class="w3-card w3-margin w3-margin-top">
   <?php if ($user): ?><img src="<?= !empty($user['avatar']) ? htmlspecialchars($user['avatar'], ENT_QUOTES) : '/images/avatar_g.png'; ?>" style="width:120px"><?php endif; ?>
     <div class="w3-container w3-white"><?php flash(); ?>
@@ -18,13 +19,12 @@
                 <i class="fas fa-exclamation-circle"></i> <?= $_SESSION['auth_error'] ?>
             </div>
         <?php endif; ?>
-        <p><button onclick="document.getElementById('id01').style.display='block'" class="w3-button w3-gray w3-large"><?= Lang::get('loginuser') ?></button></p>
+        <p><button class="w3-button w3-gray w3-large login-btn"><?= Lang::get('loginuser') ?></button></p>
 
   <div id="id01" class="w3-modal">
     <div class="w3-modal-content w3-card-4 w3-animate-zoom" style="max-width:600px">
   
       <div class="w3-center"><br>
-        <span onclick="document.getElementById('id01').style.display='none'" class="w3-button w3-xlarge w3-transparent w3-display-topright" title="Close Modal">×</span>
         <img src="/images/avatar_g.png" alt="Avatar" style="width:30%" class="w3-circle w3-margin-top">
       </div>
       <form method="POST" class="w3-container">
@@ -32,9 +32,9 @@
 		<input type="hidden" name="action" value="login">
 		<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
           <label><b><?= Lang::get('username') ?></b></label>
-          <input class="w3-input w3-border w3-margin-bottom" type="text" placeholder="Enter Username" name="username" required>
+          <input class="w3-input w3-border w3-margin-bottom" type="text" placeholder="<?= Lang::get('username') ?>" name="username" required>
           <label><b><?= Lang::get('password') ?></b></label>
-          <input class="w3-input w3-border" type="password" placeholder="Enter Password" name="password" required>
+          <input class="w3-input w3-border" type="password" placeholder="<?= Lang::get('password') ?>" name="password" required>
 		  <label><b><?= Lang::get('howcapcha') ?> </b><img src="<?php echo $captcha_image_url; ?>" alt="<?= Lang::get('captcha') ?>"></label>
 			<input class="w3-input w3-border" type="text" name="captcha" required placeholder="<?= Lang::get('answer') ?>">
           <button class="w3-button w3-block w3-gray w3-section w3-padding" type="submit"><?= Lang::get('loginuser') ?></button>
@@ -42,10 +42,13 @@
         </div>
       </form>
 
-      <div class="w3-container w3-border-top w3-padding-16 w3-light-grey">
-        <button onclick="document.getElementById('id01').style.display='none'" type="button" class="w3-button w3-red"><?= Lang::get('cancel') ?></button>
-        <span class="w3-right w3-padding w3-hide-small"><a href="?action=forgot_password"><?= Lang::get('forgot_password', 'core') ?></a> | <a href="?action=register"><?= Lang::get('register') ?></a></span>
-      </div>
+		<div class="w3-container w3-border-top w3-padding-16 w3-light-grey">
+			<button type="button" class="w3-button w3-red close-modal"><?= Lang::get('cancel') ?></button>
+			<span class="w3-right w3-padding w3-hide-small">
+				<a href="?action=forgot_password"><?= Lang::get('forgot_password', 'core') ?></a> | 
+				<a href="?action=register"><?= Lang::get('register') ?></a>
+			</span>
+		</div>
 
     </div>
   </div></p>
@@ -55,7 +58,7 @@
 	<p><a href="?action=contact"><?= Lang::get('contact') ?></a></p>
     </div>
   </div><hr>
-  
+  <?endif;?>
   <!-- Search -->
 <div class="w3-card w3-margin">
     <div class="w3-container w3-padding">

@@ -542,7 +542,7 @@ document.addEventListener('keydown', function(e) {
                 <h2><?= Lang::get('control', 'admin') ?> <?= Lang::get('template', 'admin') ?></h2>
 				
 				<div class="current-template">
-					<h3><?= Lang::get('curent_template', 'admin') ?>: <?= htmlspecialchars($currentTemplate) ?></h3>
+					<h3><?= Lang::get('current_template', 'admin') ?>: <?= htmlspecialchars($currentTemplate) ?></h3>
 				</div>
 
 				<div class="templates-grid">
@@ -1019,6 +1019,82 @@ document.addEventListener('keydown', function(e) {
 									<small class="text-muted"><?= Lang::get('mail_from_name_desc', 'admin') ?></small>
 								</div>
 								
+								<div class="card mb-4">
+									<div class="card-header bg-light">
+										<h4><?= Lang::get('cache_settings', 'admin') ?></h4>
+									</div>
+									<div class="card-body">
+										<div class="form-group">
+											<div class="form-check">
+												<input type="checkbox" name="cache_enabled" id="cache_enabled" class="form-check-input" <?=($currentSettings['cache_enabled'] ?? false) ? 'checked' : ''?>>
+												<label for="cache_enabled" class="form-check-label"><?= Lang::get('cache_enabled', 'admin') ?></label>
+												<small class="text-muted"><?= Lang::get('cache_enabled_desc', 'admin') ?></small>
+											</div>
+										</div>
+										
+										<div class="form-group">
+											<label><?= Lang::get('cache_driver', 'admin') ?>:</label>
+											<select name="cache_driver" id="cache_driver_select" class="form-control">
+												<option value="file" <?=($currentSettings['cache_driver'] ?? 'file') == 'file' ? 'selected' : ''?>><?= Lang::get('cache_driver_file', 'admin') ?></option>
+												<option value="redis" <?=($currentSettings['cache_driver'] ?? '') == 'redis' ? 'selected' : ''?>><?= Lang::get('cache_driver_redis', 'admin') ?></option>
+												<option value="memcached" <?=($currentSettings['cache_driver'] ?? '') == 'memcached' ? 'selected' : ''?>><?= Lang::get('cache_driver_memcached', 'admin') ?></option>
+												<option value="apcu" <?=($currentSettings['cache_driver'] ?? '') == 'apcu' ? 'selected' : ''?>><?= Lang::get('cache_driver_apcu', 'admin') ?></option>
+											</select>
+											<small class="text-muted"><?= Lang::get('cache_driver_desc', 'admin') ?></small>
+										</div>
+										
+										<div id="common_cache_settings">
+											<div class="form-group">
+												<label><?= Lang::get('cache_ttl', 'admin') ?>:</label>
+												<input type="number" name="cache_ttl" class="form-control" value="<?=htmlspecialchars($currentSettings['cache_ttl'] ?? 3600)?>">
+												<small class="text-muted"><?= Lang::get('cache_ttl_desc', 'admin') ?></small>
+											</div>
+											
+											<div class="form-group">
+												<label><?= Lang::get('cache_key_salt', 'admin') ?>:</label>
+												<input type="text" name="cache_key_salt" class="form-control" value="<?=htmlspecialchars($currentSettings['cache_key_salt'] ?? 'your_unique_salt_here')?>">
+												<small class="text-muted"><?= Lang::get('cache_key_salt_desc', 'admin') ?></small>
+											</div>
+										</div>
+										
+										<div id="redis_settings" class="driver-settings" style="display: none;">
+											<h5 class="mt-3"><?= Lang::get('redis_settings', 'admin') ?></h5>
+											<div class="form-group">
+												<label><?= Lang::get('redis_host', 'admin') ?>:</label>
+												<input type="text" name="redis_host" class="form-control" value="<?=htmlspecialchars($currentSettings['redis_host'] ?? '127.0.0.1')?>">
+												<small class="text-muted"><?= Lang::get('redis_host_desc', 'admin') ?></small>
+											</div>
+											
+											<div class="form-group">
+												<label><?= Lang::get('redis_port', 'admin') ?>:</label>
+												<input type="number" name="redis_port" class="form-control" value="<?=htmlspecialchars($currentSettings['redis_port'] ?? 6379)?>">
+												<small class="text-muted"><?= Lang::get('redis_port_desc', 'admin') ?></small>
+											</div>
+											
+											<div class="form-group">
+												<label><?= Lang::get('redis_password', 'admin') ?>:</label>
+												<input type="password" name="redis_password" class="form-control" value="<?=htmlspecialchars($currentSettings['redis_password'] ?? '')?>">
+												<small class="text-muted"><?= Lang::get('redis_password_desc', 'admin') ?></small>
+											</div>
+										</div>
+										
+										<div id="memcached_settings" class="driver-settings" style="display: none;">
+											<h5 class="mt-3"><?= Lang::get('memcached_settings', 'admin') ?></h5>
+											<div class="form-group">
+												<label><?= Lang::get('memcached_host', 'admin') ?>:</label>
+												<input type="text" name="memcached_host" class="form-control" value="<?=htmlspecialchars($currentSettings['memcached_host'] ?? '127.0.0.1')?>">
+												<small class="text-muted"><?= Lang::get('memcached_host_desc', 'admin') ?></small>
+											</div>
+											
+											<div class="form-group">
+												<label><?= Lang::get('memcached_port', 'admin') ?>:</label>
+												<input type="number" name="memcached_port" class="form-control" value="<?=htmlspecialchars($currentSettings['memcached_port'] ?? 11211)?>">
+												<small class="text-muted"><?= Lang::get('memcached_port_desc', 'admin') ?></small>
+											</div>
+										</div>
+									</div>
+								</div>
+								
 								<div class="form-group">
 									<div class="form-check">
 										<input type="checkbox" name="blocks_for_reg" id="blocks_for_reg" class="form-check-input" <?=($currentSettings['blocks_for_reg'] ?? false) ? 'checked' : ''?>>
@@ -1036,6 +1112,32 @@ document.addEventListener('keydown', function(e) {
 							</form>
 						</div>
 					</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cacheDriverSelect = document.getElementById('cache_driver_select');
+    const driverSettings = document.querySelectorAll('.driver-settings');
+    
+    function updateDriverSettings() {
+        const selectedDriver = cacheDriverSelect.value;
+        
+        driverSettings.forEach(setting => {
+            setting.style.display = 'none';
+        });
+        
+        if (selectedDriver === 'redis') {
+            document.getElementById('redis_settings').style.display = 'block';
+        } else if (selectedDriver === 'memcached') {
+            document.getElementById('memcached_settings').style.display = 'block';
+        }
+        
+        document.getElementById('common_cache_settings').style.display = 'block';
+    }
+    
+    updateDriverSettings();
+    
+    cacheDriverSelect.addEventListener('change', updateDriverSettings);
+});
+</script>
 				<?php elseif ($section == 'updates'): ?>
 					<div class="admin-content">
 						<h2><?= Lang::get('updates', 'admin') ?></h2>

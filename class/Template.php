@@ -1,40 +1,20 @@
 <?php
+if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
 /**
- * Template Engine - handles view rendering with security and variable management
- *
+ * Класс шаблонизатора
+ * 
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Views
- * @version    0.7.0
- *
- * @property-read array $variables      All assigned template variables
- * @property-read string $templateDir   Active template directory
- *
- * @method void assign(string $key, mixed $value)        Assign single variable (auto-escapes strings)
- * @method void assignMultiple(array $vars)              Bulk assign variables
- * @method string render(string $templateFile, array $additionalVars = []) Render template to string
- * @method array getCommonTemplateVars(array $config, News $news, ?User $user) Get standard template vars
- * @method bool changeTemplate(string $newTemplate, array $availableTemplates, array &$config, string $configPath) Switch active template
- * @method array getAvailableTemplates(string $templatesDir) Discover valid templates
- * @method string formatSize(int $bytes) Format bytes to human-readable size
- *
- * @security
- * - Automatic HTML escaping for all string variables
- * - Sandboxed template inclusion
- * - Path traversal protection
- *
- * @template-requirements
- * - Must contain header.tpl
- * - Must contain footer.tpl
- * - UTF-8 encoded files
- *
- * @performance
- * - Uses output buffering
- * - OPcache integration
- * - Minimal variable processing overhead
- *
- * @throws RuntimeException On template file errors
- * @throws Exception On directory initialization failures
+ * @version    0.8.0
+ * 
+ * @method void assign(string $key, mixed $value) Назначает переменную
+ * @method void assignMultiple(array $vars) Назначает несколько переменных
+ * @method string render(string $templateFile, array $additionalVars = []) Рендерит шаблон
+ * @method array getCommonTemplateVars(array $config, News $news, ?User $user) Получает общие переменные
+ * @method bool changeTemplate(string $newTemplate, array $availableTemplates, array &$config, string $configPath) Меняет шаблон
+ * @method array getAvailableTemplates(string $templatesDir) Получает доступные шаблоны
+ * @method string formatSize(int $bytes) Форматирует размер
  */
 class Template {
     protected $variables = [];
@@ -42,6 +22,7 @@ class Template {
     
     public function __construct() {
         global $templ; 
+		$this->config = $config;
         $this->templateDir = "templates/{$templ}";
         
         if (!is_dir($this->templateDir)) {
@@ -103,7 +84,11 @@ public function render(string $templateFile, array $additionalVars = []): string
         include $templatePath;
     } catch (\Throwable $e) {
         ob_end_clean(); // Очищаем буфер в случае ошибки
-        throw new \RuntimeException("Error rendering template {$templateFile}: " . $e->getMessage(), 0, $e);
+        error_log("Template error: " . $e->getMessage());
+        if ($this->config['debug'] ?? false) {
+            throw $e;
+        }
+        return '<div class="error">Page rendering error</div>';
     }
     
     return ob_get_clean();
@@ -121,7 +106,8 @@ public function render(string $templateFile, array $additionalVars = []): string
 				$fullPath = $templatesDir.'/'.$item;
 				if ($item != '.' && $item != '..' && is_dir($fullPath)) {
 					if (file_exists($fullPath.'/footer.tpl') && 
-						file_exists($fullPath.'/header.tpl')) {
+						file_exists($fullPath.'/header.tpl') && 
+						file_exists($fullPath.'/home.tpl')) {
 						$availableTemplates[] = $item;
 					}
 				}

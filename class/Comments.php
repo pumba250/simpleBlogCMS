@@ -1,5 +1,28 @@
 <?php
-
+if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
+/**
+ * Класс для работы с комментариями
+ * 
+ * @package    SimpleBlog
+ * @subpackage Models
+ * @category   Content
+ * @version    0.8.0
+ * 
+ * @method int addComment(int $parentId, int $fParent, int $themeId, string $userName, string $userText) Добавляет комментарий
+ * @method bool editComment(int $id, string $userText) Редактирует комментарий
+ * @method bool deleteComment(int $id) Удаляет комментарий
+ * @method array getComments(int $themeId, int $limit = 10, int $offset = 0, bool $moderatedOnly = true) Получает комментарии
+ * @method array AllComments(int $limit = 10, int $offset = 0) Получает все комментарии (админка)
+ * @method int countComments(int $themeId, bool $moderatedOnly = true) Считает комментарии
+ * @method int countAllComments() Считает все комментарии
+ * @method bool toggleModeration(int $id) Переключает модерацию
+ * @method bool voteComment(int $id, string $voteType) Голосование за комментарий
+ * @method bool approveComment(int $commentId) Одобряет комментарий
+ * @method bool rejectComment(int $commentId) Отклоняет комментарий
+ * @method array getPendingComments() Получает комментарии на модерации
+ * @method int countPendingComments() Считает комментарии на модерации
+ * @method bool getCommentStatus(int $id) Получает статус комментария
+ */
 class Comments {
     private $pdo;
 	private $dbPrefix;

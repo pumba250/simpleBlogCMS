@@ -1,42 +1,41 @@
 <?php
 /**
- * Front controller - main application entry point
+ * Главный контроллер приложения - точка входа
  * 
  * @package    SimpleBlog
  * @subpackage Core
- * @version    0.7.0
+ * @version    0.8.0
  * 
  * @router
- *  GET  /             - Blog index
- *  GET  /?id=N        - Single post view
- *  GET  /?action=X    - Special actions (login/register/etc)
- *  POST /             - Form processing
+ *  GET  /             - Главная страница блога
+ *  GET  /?id=N        - Просмотр отдельной записи
+ *  GET  /?action=X    - Специальные действия (авторизация/регистрация)
+ *  POST /             - Обработка форм
  * 
  * @features
- * - Multilingual support
- * - SEO-optimized routing
- * - CSRF protection
- * - Caching layer
+ * - Поддержка русского и английского языков
+ * - SEO-оптимизированные маршруты
+ * - Защита от CSRF-атак
+ * - Система кэширования
  */
 define('IN_SIMPLECMS', true);
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://".$_SERVER['SERVER_NAME']."; style-src 'self' 'unsafe-inline'");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' https://".$_SERVER['SERVER_NAME']."; style-src 'self' 'unsafe-inline'; img-src 'self' data:;");
+header("X-Frame-Options: DENY");
+header("X-Content-Type-Options: nosniff");
+header("Referrer-Policy: strict-origin-when-cross-origin");
 $start = microtime(1);
 session_start([
     'cookie_secure' => true,
     'cookie_httponly' => true,
-    'cookie_samesite' => 'Lax', // Более гибко, чем Strict
+    'cookie_samesite' => 'Lax', 
     'use_strict_mode' => true,
-    'cookie_lifetime' => 3600, // Ограничение времени жизни
-    'gc_maxlifetime' => 3600   // Очистка неактивных сессий
+    'cookie_lifetime' => 3600,
+    'gc_maxlifetime' => 3600 
 ]);
 require 'class/Lang.php';
 Lang::init();
 
 if (isset($_GET['lang'])) {
-	/*
-	$allowed_langs = ['ru', 'en', 'es', 'de'];
-	$lang = in_array($_GET['lang'], $allowed_langs) ? $_GET['lang'] : 'ru';
-	*/
 	$lang = in_array($_GET['lang'], ['ru', 'en']) ? $_GET['lang'] : 'ru';
     Lang::setLanguage($lang);
 	$_SESSION['lang'] = $lang;
@@ -67,7 +66,7 @@ try {
     $pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8", $db_user, $db_pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-    echo "Connection failed: " . $e->getMessage();
+    echo "Connection failed";
 }
 $templ = $config['templ'];
 $dbPrefix = $config['db_prefix'];
@@ -79,7 +78,8 @@ if (isset($config['backup_schedule']) && $config['backup_schedule'] !== 'disable
     require_once __DIR__ . '/admin/backup_db.php';
     checkScheduledBackup($pdo, $config);
 }
-
+require 'class/Cache.php';
+Cache::init($config);
 require 'class/Template.php';
 require 'class/User.php';
 require 'class/Contact.php';
@@ -88,9 +88,7 @@ require 'class/News.php';
 require 'class/Vote.php';
 require 'class/Parse.php';
 require 'class/Mailer.php';
-
 // Инициализация объектов
-
 $user = new User($pdo, $template);
 $contact = new Contact($pdo);
 $news = new News($pdo);
@@ -98,8 +96,8 @@ $comments = new Comments($pdo);
 $votes = new Votes($pdo);
 $parse = new parse();
 $template = new Template();
-$baseTitle = $config['home_title']; // Базовое название сайта
-$pageTitle = $baseTitle; // Значение по умолчанию
+$baseTitle = $config['home_title'];
+$pageTitle = $baseTitle;
 
 try {
     // Обработка регистрации
@@ -213,8 +211,15 @@ if (empty($_SESSION['csrf_token'])) {
 			if ($newsId === false) {
 				throw new InvalidArgumentException("Invalid news ID");
 			}
-			//$newsId = (int)$_GET['id'];
-			$newsItem = $news->getNewsById($newsId); // Получаем одну новость
+			$userPrefix = isset($_SESSION['user_id']) ? 'user_' . $_SESSION['user_id'] : 'guest';
+			$cacheKey = $userPrefix . '_news_page_'. $newsId .'_' . ($_SESSION['lang'] ?? 'ru');
+			if ($_SERVER['REQUEST_METHOD'] === 'GET' && Cache::has($cacheKey)) {
+				echo Cache::get($cacheKey);
+				exit;
+			}
+			$userPrefix = isset($_SESSION['user_id']) ? 'user_' . $_SESSION['user_id'] : 'guest';
+			$cacheKey = $userPrefix . '_news_page_'. $newsId .'_' . ($_SESSION['lang'] ?? 'ru');
+			$newsItem = $news->getNewsByIdCached($newsId); // Получаем одну новость
 			// Обрабатываем контент
 			$newsItem['content'] = $parse->userblocks($newsItem['content'], $config, $_SESSION['user'] ?? null);
 			$newsItem['content'] = $parse->truncateHTML($newsItem['content'], 100000);
@@ -222,7 +227,6 @@ if (empty($_SESSION['csrf_token'])) {
 			$metaDescription = $news->generateMetaDescription($newsItem['content'], 'article', [
 				'title' => $newsItem['title']
 			]);
-			
 			$metaKeywords = $news->generateMetaKeywords($newsItem['content'], 'article', [
 				'title' => $newsItem['title']
 			]);
@@ -236,6 +240,7 @@ if (empty($_SESSION['csrf_token'])) {
 			$commentsList = $comments->getComments($newsId, $commentsPerPage, $commentsOffset);
 			$totalComments = $comments->countComments($newsId);
 			$totalCommentPages = ceil($totalComments / $commentsPerPage);
+			$articleRating = $votes->getArticleRating($newsId);
 
 			// Передаем данные в шаблон
 			$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
@@ -246,7 +251,8 @@ if (empty($_SESSION['csrf_token'])) {
 			'currentCommentPage' => $currentCommentPage,
 			'metaDescription' => $metaDescription,
 			'metaKeywords' => $metaKeywords,
-			'newsItem' => $newsItem,
+			'news' => $newsItem,
+			'articleRating' => $articleRating,
 			'votes' => $votes,
 			];
 			$template->assignMultiple(array_merge($commonVars, $pageVars));
@@ -254,7 +260,13 @@ if (empty($_SESSION['csrf_token'])) {
 		} elseif (isset($_GET['tags'])) {
 			// Обработка тегов
 			$tag = htmlspecialchars($_GET['tags']);
-			$pageTitle = Lang::get('tag_news', 'core') . htmlspecialchars($_GET['tags']) . ' | ' . $baseTitle;
+			$userPrefix = isset($_SESSION['user_id']) ? 'user_' . $_SESSION['user_id'] : 'guest';
+			$cacheKey = $userPrefix . '_tags_page_' . $tag . '_' . ($_SESSION['lang'] ?? 'ru');
+			if ($_SERVER['REQUEST_METHOD'] === 'GET' && Cache::has($cacheKey)) {
+				echo Cache::get($cacheKey);
+				exit;
+			}
+			$pageTitle = Lang::get('tag_news', 'core') . $tag . ' | ' . $baseTitle;
 			$metaDescription = $news->generateMetaDescription('', 'tag', [
 				'tag' => $tag
 			]);
@@ -288,11 +300,17 @@ if (empty($_SESSION['csrf_token'])) {
 			
 		} else {
 			// Загрузка главной страницы
+			$userPrefix = isset($_SESSION['user_id']) ? 'user_' . $_SESSION['user_id'] : 'guest';
+			$cacheKey = $userPrefix . '_homepage_' . ($_SESSION['lang'] ?? 'ru') . '_page_' . (isset($_GET['page']) ? (int)$_GET['page'] : 1);
+			if (Cache::has($cacheKey) && ($_SERVER['REQUEST_METHOD'] === 'GET')) {
+				echo Cache::get($cacheKey);
+				exit;
+			}
 			$pageTitle = Lang::get('home_page', 'main') . ' | ' . $baseTitle;
 			$limit = $config['blogs_per_page']; // Количество новостей на странице
 			$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 			$offset = ($page - 1) * $limit;
-			$allNews = $news->getAllNews($limit, $offset);
+			$allNews = $news->getAllNewsCached($limit, $offset);
 			foreach ($allNews as &$item) {
 				if (isset($item['excerpt'])) {
 					$item['excerpt'] = $parse->userblocks(
@@ -321,7 +339,10 @@ if (empty($_SESSION['csrf_token'])) {
 			];
 			$template->assignMultiple(array_merge($commonVars, $pageVars));
 		}
-    echo $template->render('home.tpl');
+		$output = $template->render('home.tpl');
+        Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
+        echo $output;
+	//echo $template->render('home.tpl');
     } else {
         switch ($_GET['action']) {
 			case 'verify_email':
@@ -477,7 +498,13 @@ if (empty($_SESSION['csrf_token'])) {
     }
 } catch (Exception $e) {
     // Обработка ошибки 500
-    error_log($e->getMessage()); // Логирование ошибки
+    error_log(sprintf(
+    '[%s] Error in %s:%d - %s',
+    get_class($e),
+    $e->getFile(),
+    $e->getLine(),
+    $config['debug'] ? $e->getMessage() : 'Operation failed'
+)); // Логирование ошибки
     header($_SERVER["SERVER_PROTOCOL"] . Lang::get('error500', 'core'));
 	$pageTitle = Lang::get('error500', 'core') . ' | ' . $baseTitle;
 	$metaDescription = $news->generateMetaDescription('', 'error500');

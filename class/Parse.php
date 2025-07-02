@@ -1,4 +1,19 @@
 <?php
+if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
+/**
+ * Класс для обработки контента
+ * 
+ * @package    SimpleBlog
+ * @subpackage Core
+ * @category   Utilities
+ * @version    0.8.0
+ * 
+ * @method string truncateHTML(string $text, int $size = 300, string $finisher = '...') Обрезает HTML
+ * @method string userblocks(string $content, array $config, array|null $user = null) Обрабатывает пользовательские блоки
+ * @method string time_elapsed_string(string $datetime, bool $full = false) Форматирует время
+ * @method string getNounPluralForm(int $number, string $one, string $two, string $five) Склоняет существительные
+ * @method string getLogBadgeColor(string $action) Получает цвет для логов
+ */
 class parse {
     function truncateHTML($text, $size = 300, $finisher = '...') {
 		$len = strlen($text);

@@ -1,8 +1,3 @@
-<?
-header("X-Frame-Options: DENY");
-header("X-Content-Type-Options: nosniff");
-header("Referrer-Policy: strict-origin-when-cross-origin");
-?>
 <!DOCTYPE html>
 <html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title><? echo $pageTitle; ?></title>
@@ -10,10 +5,12 @@ header("Referrer-Policy: strict-origin-when-cross-origin");
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="<?= htmlspecialchars($metaDescription ?? 'IT блог о настройке сетевого оборудования') ?>">
 <meta name="keywords" content="<?= htmlspecialchars($metaKeywords ?? 'IT, блог, сети, mikrotik') ?>">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="/css/font-awesome.min.css">
+<link rel="stylesheet" href="/css/all.min.css">
 <link id="theme-style" rel="stylesheet" href="/css/w3.css">
 <link id="theme-style" rel="stylesheet" href="/css/css">
+<link rel="stylesheet" href="/templates/<?=$templ?>/css/modal.css">
+<script src="/templates/<?=$templ?>/js/modal.js" defer></script>
 <style>
 body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 .language-switcher { position: absolute; top: 20px; right: 20px; z-index: 1000; }

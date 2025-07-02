@@ -1,27 +1,16 @@
 <?php
+if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
 /**
- * Multilingual support system - handles language detection and translations
- *
+ * Класс для работы с языковыми файлами
+ * 
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Internationalization
- * @static
+ * @version    0.8.0
  * 
- * @property-read string $language       Current language code (e.g. 'en')
- * @property-read array  $translations   Loaded translation strings
- * 
- * @method static void   init()              Initialize language system
- * @method static void   setLanguage(string $lang) Change active language
- * @method static string get(string $key, string $section = 'main') Get translation
- * 
- * @file-structure
- *  /lang/
- *    /en/
- *      - main.php
- *      - admin.php
- *    /ru/
- *      - main.php
- *      - admin.php
+ * @method static void init() Инициализирует языковую систему
+ * @method static void setLanguage(string $lang) Устанавливает язык
+ * @method static string get(string $key, string $section = 'main') Получает перевод
  */
 class Lang {
     private static $language = 'en';

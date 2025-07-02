@@ -1,30 +1,14 @@
 <?php
+if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
 /**
- * Email delivery service - handles templating and sending of system emails
- *
+ * Класс для отправки email
+ * 
  * @package    SimpleBlog
  * @subpackage Services
  * @category   Communication
- * @static
- * @version    0.7.0
+ * @version    0.8.0
  * 
- * @config-requires
- *  - mail_from       :string  Sender email
- *  - home_title      :string  Site name
- *  - version         :string  System version
- *  - powered         :string  Footer text
- * 
- * @method static bool send(string $to, string $subject, string $body, bool $isHtml = true)
- *          Send email with HTML templating
- * 
- * @uses htmlspecialchars() For output sanitization
- * @internal Uses PHP mail() function as transport
- * 
- * @email-template
- *  - Automatic HTML wrapper
- *  - Responsive design
- *  - Branded header/footer
- *  - UTF-8 encoding
+ * @method static bool send(string $to, string $subject, string $body, bool $isHtml = true) Отправляет email
  */
 class Mailer {
     private static $config;

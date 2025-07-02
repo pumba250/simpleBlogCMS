@@ -1,5 +1,20 @@
 <?php
-
+if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
+/**
+ * Класс для работы с голосованием
+ * 
+ * @package    SimpleBlog
+ * @subpackage Models
+ * @category   Interaction
+ * @version    0.8.0
+ * 
+ * @method bool voteComment(int $id, string $voteType, int $userId) Голосует за комментарий
+ * @method bool hasUserVoted(int $commentId, int $userId) Проверяет голос пользователя
+ * @method bool voteArticle(int $articleId, string $voteType, int $userId) Голосует за статью
+ * @method bool hasUserVotedForArticle(int $articleId, int $userId) Проверяет голос за статью
+ * @method array getArticleRating(int $articleId) Получает рейтинг статьи
+ * @method array getCommentRating(int $commentId) Получает рейтинг комментария
+ */
 class Votes {
     private $pdo;
     private $dbPrefix;

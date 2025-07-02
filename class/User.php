@@ -1,18 +1,22 @@
 <?php
+if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
 /**
- * User management class - handles authentication, registration, permissions and profile operations
+ * Класс для работы с пользователями
  * 
  * @package    SimpleBlog
  * @subpackage Core
- * @version    0.7.0
- * @author     pumba250
- * @license    MIT License
- * @copyright  2023 SimpleBlog
+ * @version    0.8.0
  * 
- * @method bool hasPermission(int $requiredRole, int $currentRole) Check user access level
- * @method bool register(string $username, string $password, string $email) Process new user registration
- * @method bool verifyEmail(string $token) Confirm email address validity
- * @method bool sendPasswordReset(string $email) Initiate password recovery
+ * @method array getAllUsers() Получает всех пользователей
+ * @method bool hasPermission(int $requiredRole, int $currentRole) Проверяет права
+ * @method bool updateUser(int $id, string $username, string $email, int $isadmin) Обновляет пользователя
+ * @method bool deleteUser(int $id) Удаляет пользователя
+ * @method bool register(string $username, string $password, string $email) Регистрирует пользователя
+ * @method bool verifyEmail(string $token) Подтверждает email
+ * @method bool sendPasswordReset(string $email) Отправляет сброс пароля
+ * @method bool resetPassword(string $token, string $newPassword) Сбрасывает пароль
+ * @method array|bool login(string $username, string $password) Авторизует пользователя
+ * @method void logout() Выход из системы
  */
 class User {
     private $pdo;
@@ -51,7 +55,13 @@ private function startSession() {
             $stmt = $this->pdo->prepare("UPDATE {$dbPrefix}users SET username = ?, email = ?, isadmin = ? WHERE id = ?");
             return $stmt->execute([$username, $email, $isadmin, $id]);
         } catch (Exception $e) {
-            error_log($e->getMessage());
+            error_log(sprintf(
+    '[%s] Error in %s:%d - %s',
+    get_class($e),
+    $e->getFile(),
+    $e->getLine(),
+    $config['debug'] ? $e->getMessage() : 'Operation failed'
+));
             return false;
         }
     }
@@ -219,12 +229,25 @@ private function startSession() {
 		global $dbPrefix;
 		
 		// Rate limiting check
-		if ($_SESSION['login_attempts'] >= 5 && time() - $_SESSION['last_attempt'] < 3600) {
-			flash(Lang::get('too_many_attempts', 'core'));
+		$security = [
+			'max_attempts' => 5,         // Макс. попыток до полной блокировки
+			'block_time' => 3600,        // Время блокировки (1 час)
+			'initial_delay' => 10,       // Задержка после 1-й попытки (сек)
+			'progressive_delay' => 30    // Задержка после 3+ попыток (сек)
+		];
+
+		// Проверка блокировки
+		if ($_SESSION['login_attempts'] >= $security['max_attempts'] && 
+			time() - $_SESSION['last_attempt'] < $security['block_time']) {
+			flash(Lang::get('too_many_attempts', 'core') . ' Попробуйте через ' . 
+				  ceil(($security['block_time'] - (time() - $_SESSION['last_attempt'])) / 60) . ' минут.');
 			return false;
 		}
-		if ($_SESSION['login_attempts'] >= 3) {
-			sleep(min(10, $_SESSION['login_attempts'])); // Экспоненциальная задержка
+
+		// Прогрессивная задержка
+		if ($_SESSION['login_attempts'] >= 1) {
+			$delay = ($_SESSION['login_attempts'] >= 3) ? $security['progressive_delay'] : $security['initial_delay'];
+			sleep($delay);
 		}
 
 		$stmt = $this->pdo->prepare("SELECT * FROM {$dbPrefix}users WHERE username = ?");
@@ -232,35 +255,32 @@ private function startSession() {
 		$user = $stmt->fetch(PDO::FETCH_ASSOC);
 		
 		if ($user && password_verify($password, $user['password'])) {
-			// Reset attempts on successful login
-			$_SESSION['login_attempts'] = 0;
+			session_regenerate_id(true);
+			$_SESSION = [];
 			$_SESSION['user_id'] = $user['id'];
 			$_SESSION['username'] = $user['username'];
 			$_SESSION['isadmin'] = $user['isadmin'];
+			$_SESSION['ip'] = $_SERVER['REMOTE_ADDR'];
+			$_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'];
+			$_SESSION['created_at'] = time();
+			// Сбрасываем счетчик попыток
+			$_SESSION['login_attempts'] = 0;
+			Cache::clear();
 			return $user;
 		}
 		
-		// Increment attempts on failure
+		// Увеличиваем счетчик попыток
 		$_SESSION['login_attempts']++;
 		$_SESSION['last_attempt'] = time();
 		return false;
 	}
-	/*public function generateCsrfToken() {
-		if (empty($_SESSION['csrf_token'])) {
-			$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-		}
-		return $_SESSION['csrf_token'];
-	}
 
-	public function validateCsrfToken($token) {
-		return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
-	}*/
 	public function logout() {
 		if (session_status() == PHP_SESSION_NONE) {
 			session_start();
 		}
 		$_SESSION = [];
-		
+		Cache::clear();
 		session_destroy();
 	}
 }

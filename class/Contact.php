@@ -1,25 +1,16 @@
 <?php
+if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
 /**
- * Contact form message handler - manages contact submissions and admin operations
- *
+ * Класс для работы с контактными сообщениями
+ * 
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Contact
- * @version    0.7.0
- * @author     pumba250
+ * @version    0.8.0
  * 
- * @property PDO $pdo Active database connection
- *
- * @method bool   saveMessage(string $name, string $email, string $message)  Stores new contact message
- * @method array  getAllMessages()                                          Retrieves all messages (admin)
- * @method bool   deleteMessage(int $id)                                    Removes message by ID (admin)
- * 
- * @table {prefix}blogs_contacts
- *  - id          :int
- *  - name        :varchar
- *  - email       :varchar
- *  - message     :text
- *  - created_at  :timestamp
+ * @method bool saveMessage(string $name, string $email, string $message) Сохраняет сообщение
+ * @method array getAllMessages() Получает все сообщения
+ * @method bool deleteMessage(int $id) Удаляет сообщение
  */
 class Contact {
     private $pdo;

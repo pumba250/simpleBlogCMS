@@ -1,25 +1,25 @@
 <?php include __DIR__ . '/header.tpl'; 
 if (isset($_GET['id'])) {
-    $articleRating = $votes->getArticleRating($newsItem['id']);
-
-    if ($newsItem):
+    if ($news):
+		$newsId = $news['id'];
+		$hasVotedArticle = isset($_SESSION['user']) ? $votes->hasUserVotedForArticle($news['id'], $_SESSION['user']['id']) : false;
 ?>
     <div class="w3-card-4 w3-margin w3-white">
         <div class="w3-container">
-            <h3><b><?= htmlspecialchars($newsItem['title']) ?></b></h3>
+            <h3><b><?= htmlspecialchars($news['title']) ?></b></h3>
             <h5><span class="w3-opacity"><?= htmlspecialchars($newsItem['created_at']) ?></span></h5>
         </div>
         <div class="w3-container">
-            <p><?= strip_tags($newsItem['content'], '<br><p><a><strong><em><ul><ol><li><div><span>') ?></p> 
+            <p><?= strip_tags($news['content'], '<br><p><a><strong><em><ul><ol><li><div><span>') ?></p> 
             
             <div class="w3-panel w3-light-grey w3-padding">
                 <p><?= Lang::get('voteart') ?>:</p>
                 <div class="w3-bar">
-                    <form method="post" action="?id=<?= $newsItem['id'] ?>" class="w3-bar-item">
+                    <form method="post" action="?id=<?= $news['id'] ?>" class="w3-bar-item">
 						<input type="hidden" name="id" value="<?= $newsId ?>">
                         <input type="hidden" name="vote_article" value="like">
 						<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
-                        <button type="submit" class="w3-button w3-green">
+                        <button type="submit" class="w3-button w3-green" <?= $hasVotedArticle ? 'disabled' : '' ?>>
                             <i class="fa fa-thumbs-up"></i> <?= $articleRating['likes'] ?? 0 ?>
                         </button>
                     </form>
@@ -27,7 +27,7 @@ if (isset($_GET['id'])) {
 						<input type="hidden" name="id" value="<?= $newsId ?>">
                         <input type="hidden" name="vote_article" value="dislike">
 						<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
-                        <button type="submit" class="w3-button w3-red">
+                        <button type="submit" class="w3-button w3-red" <?= $hasVotedArticle ? 'disabled' : '' ?>>
                             <i class="fa fa-thumbs-down"></i> <?= $articleRating['dislikes'] ?? 0 ?>
                         </button>
                     </form>
@@ -107,7 +107,7 @@ if (isset($_GET['id'])) {
             
             <hr>
             
-            <?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_text'])): 
+            <?php /*if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_text'])): 
                 $userName = isset($user['username']) ? $user['username'] : trim($_POST['user_name']);
                 $userText = trim($_POST['user_text']);
                 if (!empty($userName) && !empty($userText)) {
@@ -116,7 +116,7 @@ if (isset($_GET['id'])) {
                 } else {
                     echo '<p class="w3-panel w3-red">'. Lang::get('commerror').'</p>';
                 }
-            endif; ?>
+            endif;*/ ?>
             
             <form method="post">
 				<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">

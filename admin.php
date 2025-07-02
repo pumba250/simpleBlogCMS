@@ -1,21 +1,22 @@
 <?php
 /**
- * Administration control panel - core management interface
+ * Административная панель управления
  * 
  * @package    SimpleBlog
  * @subpackage Admin
- * @version    0.7.0
+ * @version    0.8.0
  * 
- * @property PDO       $pdo       Database connection
- * @property Template  $template  View renderer
- * @property User      $user      Authentication handler
+ * @sections
+ * - Управление пользователями
+ * - Модерация контента
+ * - Системные настройки
+ * - Резервное копирование
+ * - Журнал событий
  * 
- * Sections:
- * - User management
- * - Content moderation
- * - System configuration
- * - Backup operations
- * - Activity logs
+ * @permissions
+ * - Администратор (уровень 9)
+ * - Модератор (уровень 7)
+ * - Обычный пользователь (уровень 0)
  */
 define('IN_SIMPLECMS', true);
 $start = microtime(1);
@@ -112,6 +113,8 @@ if (!isset($_SESSION['user']) || !$_SESSION['user']['isadmin']) {
     exit;
 }
 $currentUserRole = $_SESSION['user']['isadmin'] ?? 0;
+require 'class/Cache.php';
+Cache::init($config);
 require 'class/Template.php';
 require 'class/User.php';
 require 'class/Contact.php';
@@ -217,6 +220,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					} else {
 						// Обновляем конфигурацию
 						$config['home_title'] = trim($_POST['home_title']);
+						$config['cache_enabled'] = trim($_POST['cache_enabled']);
+						$config['cache_driver'] = trim($_POST['cache_driver']);
+						$config['cache_ttl'] = trim($_POST['cache_ttl']);
+						$config['cache_key_salt'] = trim($_POST['cache_key_salt']);
+						$config['redis_host'] = trim($_POST['redis_host']);
+						$config['redis_port'] = trim($_POST['redis_port']);
+						$config['memcached_host'] = trim($_POST['memcached_host']);
+						$config['memcached_port'] = trim($_POST['memcached_port']);
 						$config['blogs_per_page'] = trim($_POST['blogs_per_page']);
 						$config['comments_per_page'] = trim($_POST['comments_per_page']);
 						$config['mail_from'] = trim($_POST['mail_from']);
@@ -564,9 +575,7 @@ try {
         $template->assign('admin_error', $_SESSION['admin_error']);
         unset($_SESSION['admin_error']);
     }
-/*
-Translate after
-*/
+
     // Загрузка данных в зависимости от раздела
     switch ($section) {
 		case 'blogs':
@@ -581,9 +590,10 @@ Translate after
 				// Загрузка тегов для этой записи
 				$editBlog['tag_ids'] = $news->getTagsByNewsId($id);
 				$template->assign('editBlog', $editBlog);
+				
 			}
 			$newsCount = $news->getTotalNewsCount();
-			$blogs = $news->getAllAdm(0, 0);
+			$blogs = $news->getAllAdm();
 			$allTags = $pdo->query("SELECT * FROM `{$dbPrefix}tags` ORDER by `name`")->fetchAll(PDO::FETCH_ASSOC);
 			$template->assign('newsCount', $newsCount);
 			$template->assign('blogs', $blogs);

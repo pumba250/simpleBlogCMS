@@ -1,4 +1,16 @@
 <?php
+/**
+ * Класс для обновлений системы
+ * 
+ * @package    SimpleBlog
+ * @subpackage Services
+ * @category   Maintenance
+ * @version    0.8.0
+ * 
+ * @method bool|array checkForUpdates() Проверяет обновления
+ * @method bool performUpdate() Выполняет обновление
+ * @method array getUpdateInfo() Получает информацию об обновлении
+ */
 if (!defined('IN_SIMPLECMS')) {
     die('Прямой доступ запрещен');
 }
