@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Installer
- * @version    0.8.0
+ * @version    0.8.1
  * 
  * @security
  * - Валидация вводимых данных
@@ -213,7 +213,7 @@ return [
     'blogs_per_page' => 6,
     'comments_per_page' => 10,
     'powered' => 'simpleBlog',
-    'version' => 'v0.8.0',
+    'version' => 'v0.8.1',
 	'github_repo' => 'pumba250/simpleBlog',
 	'update_check_interval' => 43200, // 12 часа в секундах
 	'disable_update_check' => false,

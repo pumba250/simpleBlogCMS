@@ -1,4 +1,4 @@
-<?php include __DIR__ . '/header.tpl'; ?>
+{include 'header.tpl'}
 <div class="w3-card-4 w3-margin w3-white">
     <img src="/images/500.png" alt="500 Internal Server Error" style="width:100%">
     <div class="w3-container">
@@ -18,4 +18,4 @@
     </div>
 </div>
 <hr>
-<?php include __DIR__ . '/footer.tpl'; ?>
+{include 'footer.tpl'}

@@ -49,7 +49,9 @@ hr{border:0;border-top:1px solid #eee;margin:20px 0}
   padding: 16px;
   position: relative;
 }
-
+.pagination {
+	margin: 16px 0 16px 16px !important;
+}
 .w3-hide-container:before {
   content: "🔒";
   position: absolute;

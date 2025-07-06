@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Core
- * @version    0.8.0
+ * @version    0.8.1
  * 
  * @router
  *  GET  /             - Главная страница блога
@@ -88,113 +88,25 @@ require 'class/News.php';
 require 'class/Vote.php';
 require 'class/Parse.php';
 require 'class/Mailer.php';
+require 'class/Pagination.php';
+require 'class/Core.php';
 // Инициализация объектов
 $user = new User($pdo, $template);
+$votes = new Votes($pdo);
 $contact = new Contact($pdo);
 $news = new News($pdo);
 $comments = new Comments($pdo);
-$votes = new Votes($pdo);
 $parse = new parse();
 $template = new Template();
 $baseTitle = $config['home_title'];
 $pageTitle = $baseTitle;
+$core = new Core($pdo, $config, $template);
 
+// Обработка POST-запросов
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $core->handlePostRequest();
+}
 try {
-    // Обработка регистрации
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-		if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-			die("Неверный CSRF-токен");
-		}
-			if (isset($_POST['user_text'])) {
-				$themeId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-				$userName = isset($_SESSION['user']['username']) ? $_SESSION['user']['username'] : $_POST['user_name'];
-				$userText = $_POST['user_text'];
-				
-				if ($themeId > 0 && !empty($userName) && !empty($userText)) {
-					$comments->addComment(0, 0, $themeId, $userName, $userText);
-					header("Location: ?id=" . $themeId);
-					exit;
-				}
-			}
-		if (isset($_POST['vote_article']) || isset($_POST['vote_comment'])) {
-			$newsId = isset($_POST['id']) ? (int)$_POST['id'] : (isset($_GET['id']) ? (int)$_GET['id'] : 0);
-			
-			if ($newsId === 0) {
-				die(Lang::get('not_id', 'core'));
-			}
-			
-			// Проверяем существование новости
-			$newsItem = $news->getNewsById($newsId);
-			if (!$newsItem) {
-				die(Lang::get('not_news', 'core'));
-			}
-			
-			// Обработка голосования за статью
-			if (isset($_POST['vote_article']) && isset($_SESSION['user']['id'])) {
-				$voteType = $_POST['vote_article'];
-				$votes->voteArticle($newsId, $voteType, $_SESSION['user']['id']);
-				header("Location: ?id=$newsId");
-				exit;
-			}
-			
-			// Обработка голосования за комментарий
-			if (isset($_POST['vote_comment']) && isset($_SESSION['user']['id'])) {
-				list($commentId, $voteType) = explode('_', $_POST['vote_comment']);
-				$votes->voteComment($commentId, $voteType, $_SESSION['user']['id']);
-				header("Location: ?id=$newsId");
-				exit;
-			}
-		}
-        if ($_POST['action'] === 'register') {
-            $user->register($_POST['username'], $_POST['password'], $_POST['email']);
-			header("Location: /");
-			exit;
-        }
-        // Обработка авторизации
-        if (isset($_POST['action']) && $_POST['action'] === 'login') {
-			$captchaValid = isset($_POST['captcha']) && $_POST['captcha'] == $_SESSION['captcha_answer'];
-			$username = $_POST['username'] ?? '';
-			$password = $_POST['password'] ?? '';
-			
-			if (!$captchaValid) {
-				$_SESSION['auth_error'] = Lang::get('not_answer', 'core');
-			} elseif (empty($username) || empty($password)) {
-				$_SESSION['auth_error'] = Lang::get('all_field', 'core');
-			} else {
-				$userData = $user->login($username, $password);
-				if ($userData) {
-					$_SESSION['user'] = $userData;
-					session_regenerate_id(true);
-					$_SESSION['last_activity'] = time();
-					$_SESSION['ip'] = $_SERVER['REMOTE_ADDR'];
-					sleep(1);
-					header("Location: /");
-					exit;
-				} else {
-					$_SESSION['auth_error'] = Lang::get('not_login', 'core');
-				}
-			}
-			
-			$_SESSION['auth_form_data'] = [
-				'username' => $username
-			];
-			
-			header("Location: " . $_SERVER['REQUEST_URI']);
-			exit;
-		}
-        // Обработка обратной связи
-        if ($_POST['action'] === 'contact') {
-            if (isset($_POST['captcha']) && $_POST['captcha'] == $_SESSION['captcha_answer']) {
-                if ($contact->saveMessage($_POST['name'], $_POST['email'], $_POST['message'])) {
-                    $errors[] = Lang::get('msg_send', 'core');
-                } else {
-                    $errors[] = Lang::get('msg_error', 'core');
-                }
-            } else {
-                $errors[] = Lang::get('not_answer', 'core');
-            }
-        }
-    }
 
 // Генерация CSRF-токена
 if (empty($_SESSION['csrf_token'])) {
@@ -231,24 +143,33 @@ if (empty($_SESSION['csrf_token'])) {
 				'title' => $newsItem['title']
 			]);
 			$lastThreeNews = $news->getLastThreeNews();
-			// Количество комментариев на страницу
-			$commentsPerPage = 10;
-			$currentCommentPage = isset($_GET['comment_page']) ? max(1, (int)$_GET['comment_page']) : 1;
-			$commentsOffset = ($currentCommentPage - 1) * $commentsPerPage;
-
-			// Получаем комментарии с пагинацией
-			$commentsList = $comments->getComments($newsId, $commentsPerPage, $commentsOffset);
 			$totalComments = $comments->countComments($newsId);
-			$totalCommentPages = ceil($totalComments / $commentsPerPage);
-			$articleRating = $votes->getArticleRating($newsId);
+			$currentCommentPage = (int)($_GET['comment_page'] ?? 1);
 
+			$pagination = Pagination::calculate(
+				$totalComments,
+				Pagination::TYPE_COMMENTS,
+				$currentCommentPage,
+				$config
+			);
+
+			$commentsList = $comments->getComments(
+				$newsId,
+				$pagination['per_page'],
+				$pagination['offset']
+			);
+
+			$paginationHtml = Pagination::render(
+				$pagination, 
+				"?id=$newsId", 
+				'comment_page'
+			);
+			$articleRating = $votes->getArticleRating($newsId);
 			// Передаем данные в шаблон
 			$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 		$pageVars = [
 			'pageTitle' => $pageTitle,
 			'commentsList' => $commentsList,
-			'totalCommentPages' => $totalCommentPages,
-			'currentCommentPage' => $currentCommentPage,
 			'metaDescription' => $metaDescription,
 			'metaKeywords' => $metaKeywords,
 			'news' => $newsItem,
@@ -256,7 +177,14 @@ if (empty($_SESSION['csrf_token'])) {
 			'votes' => $votes,
 			];
 			$template->assignMultiple(array_merge($commonVars, $pageVars));
-			
+			$template->assign('pagination', new class($paginationHtml) {
+				private $html;
+				public function __construct($html) { $this->html = $html; }
+				public function __toString() { return $this->html; }
+			});
+			$output = $template->render('news.tpl');
+        Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
+        echo $output;
 		} elseif (isset($_GET['tags'])) {
 			// Обработка тегов
 			$tag = htmlspecialchars($_GET['tags']);
@@ -297,7 +225,9 @@ if (empty($_SESSION['csrf_token'])) {
 			'votes' => $votes,
 			];
 			$template->assignMultiple(array_merge($commonVars, $pageVars));
-			
+			$output = $template->render('home.tpl');
+        Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
+        echo $output;
 		} else {
 			// Загрузка главной страницы
 			$userPrefix = isset($_SESSION['user_id']) ? 'user_' . $_SESSION['user_id'] : 'guest';
@@ -307,10 +237,22 @@ if (empty($_SESSION['csrf_token'])) {
 				exit;
 			}
 			$pageTitle = Lang::get('home_page', 'main') . ' | ' . $baseTitle;
-			$limit = $config['blogs_per_page']; // Количество новостей на странице
-			$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-			$offset = ($page - 1) * $limit;
-			$allNews = $news->getAllNewsCached($limit, $offset);
+			$totalNewsCount = $news->getTotalNewsCount();
+			$page = (int)($_GET['page'] ?? 1);
+
+			$pagination = Pagination::calculate(
+				$totalNewsCount, 
+				Pagination::TYPE_NEWS, 
+				$page, 
+				$config
+			);
+
+			$allNews = $news->getAllNewsCached(
+				$pagination['per_page'], 
+				$pagination['offset']
+			);
+
+			$paginationHtml = Pagination::render($pagination, "/");
 			foreach ($allNews as &$item) {
 				if (isset($item['excerpt'])) {
 					$item['excerpt'] = $parse->userblocks(
@@ -322,10 +264,7 @@ if (empty($_SESSION['csrf_token'])) {
 				}
 			}
 			unset($item);
-			$totalNewsCount = $news->getTotalNewsCount();
-			$totalPages = ceil($totalNewsCount / $limit);
 			$lastThreeNews = $news->getLastThreeNews();
-			
 			// Передача данных в шаблон
 			$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 		$pageVars = [
@@ -333,16 +272,19 @@ if (empty($_SESSION['csrf_token'])) {
 			'metaDescription' => $config['metaDescription'],
 			'metaKeywords' => $config['metaKeywords'],
 			'news' => $allNews,
-			'totalPages' => $totalPages,
-			'currentPage' => $page,
 			'votes' => $votes,
 			];
 			$template->assignMultiple(array_merge($commonVars, $pageVars));
-		}
-		$output = $template->render('home.tpl');
+			$template->assign('pagination', new class($paginationHtml) {
+				private $html;
+				public function __construct($html) { $this->html = $html; }
+				public function __toString() { return $this->html; }
+			});
+			$output = $template->render('home.tpl');
         Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
         echo $output;
-	//echo $template->render('home.tpl');
+		}
+		
     } else {
         switch ($_GET['action']) {
 			case 'verify_email':
@@ -414,14 +356,30 @@ if (empty($_SESSION['csrf_token'])) {
 					$metaKeywords = $news->generateMetaKeywords('', 'search', [
 						'query' => $searchQuery
 					]);
-					$limit = 6; // Количество результатов на странице
-					$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-					$offset = ($page - 1) * $limit;
-					
-					$searchResults = $news->searchNews($searchQuery, $limit, $offset);
 					$totalResults = $news->countSearchResults($searchQuery);
-					$totalPages = ceil($totalResults / $limit);
-					
+					$page = (int)($_GET['page'] ?? 1);
+					$pagination = Pagination::calculate(
+						$totalResults, 
+						Pagination::TYPE_NEWS, 
+						$page, 
+						$config
+					);
+					$searchResults = $news->searchNews($searchQuery, $pagination['per_page'], $pagination['offset']);
+					foreach ($searchResults as &$item) {
+						if (isset($item['excerpt'])) {
+							$item['excerpt'] = $parse->userblocks(
+								$item['excerpt'],
+								$config,
+								$_SESSION['user'] ?? null  // Передаем данные пользователя
+							);
+							$item['excerpt'] = $parse->truncateHTML($item['excerpt']);
+						}
+					}
+					unset($item);
+					$paginationHtml = Pagination::render(
+    $pagination, 
+    "?action=search&search=" . urlencode($searchQuery)
+);
 					$lastThreeNews = $news->getLastThreeNews();
 					
 					$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
@@ -429,13 +387,16 @@ if (empty($_SESSION['csrf_token'])) {
 					'pageTitle' => $pageTitle,
 					'searchQuery' => htmlspecialchars($searchQuery),
 					'news' => $searchResults,
-					'totalPages' => $totalPages,
-					'currentPage' => $page,
 					'totalResults' => $totalResults,
 					'metaDescription' => $metaDescription,
 					'metaKeywords' => $metaKeywords,
 					];
 					$template->assignMultiple(array_merge($commonVars, $pageVars));
+					$template->assign('pagination', new class($paginationHtml) {
+						private $html;
+						public function __construct($html) { $this->html = $html; }
+						public function __toString() { return $this->html; }
+					});
 					echo $template->render('search.tpl');
 					
 				}
@@ -521,4 +482,3 @@ if (empty($_SESSION['csrf_token'])) {
 }
 $finish = microtime(1);
 //echo 'generation time: ' . round($finish - $start, 5) . ' сек';
-//echo $searchQuery;

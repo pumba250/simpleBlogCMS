@@ -1,32 +1,32 @@
-<?php include __DIR__ . '/header.tpl'; ?>
+{include 'header.tpl'}
 
 <div class="w3-card-4 w3-margin w3-white">
 <div id="contact" class="w3-container w3-center w3-padding-32">
-	<h2 class="w3-wide"><i class="fas fa-sign-in-alt"></i> <?= Lang::get('login') ?></h2>
-        <?php if (isset($_SESSION['auth_error'])): ?>
+	<h2 class="w3-wide"><i class="fas fa-sign-in-alt"></i> {Lang::get('login')}</h2>
+        {if $auth_error}
             <div class="alert error">
-                <i class="fas fa-exclamation-circle"></i> <?= $_SESSION['auth_error'] ?>
+                <i class="fas fa-exclamation-circle"></i> {$auth_error}
             </div>
-        <?php endif; ?>
+        {/if}
             <form method="POST" class="auth-form">
                 <input type="hidden" name="action" value="login">
-				<input type="hidden" name="csrf_token" value="<?=$csrf_token;?>">
+				<input type="hidden" name="csrf_token" value="{$csrf_token}">
                 
                 <div class="form-group">
-                    <label for="username"><i class="fas fa-user"></i> <?= Lang::get('username') ?></label>
+                    <label for="username"><i class="fas fa-user"></i> {Lang::get('username')}</label>
                     <input type="text" id="username" name="username" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="password"><i class="fas fa-lock"></i> <?= Lang::get('password') ?></label>
+                    <label for="password"><i class="fas fa-lock"></i> {Lang::get('password')}</label>
                     <input type="password" id="password" name="password" required>
                 </div>
                 
                 <div class="form-group">
-                    <label><i class="fas fa-shield-alt"></i> <?= Lang::get('captcha') ?></label>
+                    <label><i class="fas fa-shield-alt"></i> {Lang::get('captcha')}</label>
                     <div class="captcha-container">
-                        <img src="<?= $captcha_image_url ?>" alt="<?= Lang::get('captcha') ?>">
-                        <input type="text" name="captcha" required placeholder="<?= Lang::get('answer') ?>">
+                        <img src="{$captcha_image_url}" alt="{Lang::get('captcha')}">
+                        <input type="text" name="captcha" required placeholder="{Lang::get('answer')}">
                     </div>
                 </div>
                 
@@ -34,19 +34,19 @@
                     <label class="checkbox-container">
                         <input type="checkbox" name="remember" checked>
                         <span class="checkmark"></span>
-                        <?= Lang::get('remember') ?>
+                        {Lang::get('remember')}
                     </label>
                     
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-sign-in-alt"></i> <?= Lang::get('loginuser') ?>
+                        <i class="fas fa-sign-in-alt"></i> {Lang::get('loginuser')}
                     </button>
                 </div>
             </form>
         
         <div class="auth-links">
-            <a href="?action=forgot_password"><?= Lang::get('forgot_password', 'core') ?></a> | <?= Lang::get('nologin') ?> <a href="/?action=register"><?= Lang::get('doreg') ?></a>
+            <a href="?action=forgot_password">{Lang::get('forgot_password', 'core')}</a> | {Lang::get('nologin')} <a href="/?action=register">{Lang::get('doreg')}</a>
         </div>
     </div>
 </div>
 
-<?php include __DIR__ . '/footer.tpl'; ?>
+{include 'footer.tpl'}

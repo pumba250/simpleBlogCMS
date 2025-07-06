@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Content
- * @version    0.8.0
+ * @version    0.8.1
  * 
  * @method int addComment(int $parentId, int $fParent, int $themeId, string $userName, string $userText) Добавляет комментарий
  * @method bool editComment(int $id, string $userText) Редактирует комментарий
@@ -52,6 +52,12 @@ class Comments {
         return $stmt->execute([$id]);
     }
 
+public function getCommentsPaginationData($themeId, $currentPage = 1, $moderatedOnly = true) {
+    $total = $this->countComments($themeId, $moderatedOnly);
+    global $config;
+    return Pagination::calculate($total, 'comments_per_page', $currentPage, $config);
+}
+
     /**
      * Получает комментарии для конкретной темы с пагинацией
      * @param int $themeId ID темы
@@ -60,17 +66,23 @@ class Comments {
      * @param bool $moderatedOnly Только модерированные комментарии (по умолчанию true)
      * @return array
      */
-    public function getComments($themeId, $limit = 10, $offset = 0, $moderatedOnly = true) {
+public function getComments($themeId, $limit = 10, $offset = 0, $moderatedOnly = true) {
     $moderationCondition = $moderatedOnly ? 'AND moderation = 1' : '';
-    $stmt = $this->pdo->prepare("SELECT * FROM `{$this->dbPrefix}comments` 
-                                WHERE theme_id = ? $moderationCondition 
-                                ORDER BY created_at DESC 
-                                LIMIT ? OFFSET ?");
-    // Явно указываем тип параметров (PDO::PARAM_INT)
+    
+    $stmt = $this->pdo->prepare("
+        SELECT c.*, u.avatar, u.isadmin 
+        FROM `{$this->dbPrefix}comments` c
+        LEFT JOIN `{$this->dbPrefix}users` u ON c.user_name = u.username
+        WHERE theme_id = ? $moderationCondition 
+        ORDER BY created_at DESC 
+        LIMIT ? OFFSET ?
+    ");
+    
     $stmt->bindValue(1, $themeId, PDO::PARAM_INT);
     $stmt->bindValue(2, $limit, PDO::PARAM_INT);
     $stmt->bindValue(3, $offset, PDO::PARAM_INT);
     $stmt->execute();
+    
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 

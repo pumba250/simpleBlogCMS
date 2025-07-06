@@ -5,7 +5,7 @@
  * @package    SimpleBlog
  * @subpackage Services
  * @category   Maintenance
- * @version    0.8.0
+ * @version    0.8.1
  * 
  * @method bool|array checkForUpdates() Проверяет обновления
  * @method bool performUpdate() Выполняет обновление

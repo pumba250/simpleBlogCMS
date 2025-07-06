@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Content
- * @version    0.8.0
+ * @version    0.8.1
  * 
  * @method array getAllNews(int $limit, int $offset) Получает новости с пагинацией
  * @method array searchNews(string $query, int $limit = 10, int $offset = 0) Ищет новости
@@ -469,4 +469,68 @@ class News {
 		
 		return $result;
 	}
+	// Добавляем в класс News
+public function getNewsForRendering($limit, $offset): array {
+	global $votes;
+    $stmt = $this->pdo->prepare("
+        SELECT id, title, LEFT(content, 320) AS excerpt, content, created_at 
+        FROM {$this->dbPrefix}blogs 
+        ORDER BY created_at DESC 
+        LIMIT :limit OFFSET :offset
+    ");
+    $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+    $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    $news = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $result = [];
+    foreach ($news as $item) {
+        $rating = $votes->getArticleRating($item['id']);
+        $tags = $this->getTagsByNewsId($item['id']);
+
+        $result[] = [
+            'id' => $item['id'],
+            'title' => $item['title'],
+            'excerpt' => $item['excerpt'],
+            'content' => $item['content'],
+            'created_at' => $item['created_at'],
+            'likes' => $rating['likes'] ?? 0,
+            'dislikes' => $rating['dislikes'] ?? 0,
+            'tags' => $tags,
+            'read_more' => Lang::get('read_more'),
+            'url' => "?id={$item['id']}"
+        ];
+    }
+
+    return $result;
+}
+
+public function getSingleNewsForRendering($id): ?array {
+    $stmt = $this->pdo->prepare("
+        SELECT id, title, content, created_at 
+        FROM {$this->dbPrefix}blogs 
+        WHERE id = ? 
+        LIMIT 1
+    ");
+    $stmt->execute([$id]);
+    $item = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$item) {
+        return null;
+    }
+
+    $rating = $this->votes->getArticleRating($id);
+    $tags = $this->getTagsByNewsId($id);
+
+    return [
+        'id' => $item['id'],
+        'title' => $item['title'],
+        'content' => $item['content'],
+        'created_at' => $item['created_at'],
+        'likes' => $rating['likes'] ?? 0,
+        'dislikes' => $rating['dislikes'] ?? 0,
+        'tags' => $tags,
+        'url' => "?id={$item['id']}"
+    ];
+}
 }

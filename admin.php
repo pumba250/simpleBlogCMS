@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Admin
- * @version    0.8.0
+ * @version    0.8.1
  * 
  * @sections
  * - Управление пользователями
@@ -294,8 +294,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			} else {
                 $title = htmlspecialchars(trim($_POST['title']));
                 $content = nl2br(trim($_POST['content']));
-				//$content = nl2br(trim($_POST['content']));
-                //$tags = isset($_POST['tags']) ? $_POST['tags'] : [];
                 
                 if ($news->addBlog($title, $content, $tags)) {
                     logAction('Добавление записи блога', "Добавлена новая запись: $title");
@@ -610,7 +608,6 @@ try {
 			$updateInfo = $updater->checkForUpdates();
 			$template->assign('updateInfo', $updateInfo);
 			$template->assign('currentVersion', $config['version']);
-			//echo $template->render('admin/updates.tpl');
 			break;
 			
         case 'comments':

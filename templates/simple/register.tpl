@@ -1,6 +1,5 @@
-<?php include __DIR__ . '/header.tpl';
-
-?><div class="w3-card-4 w3-margin w3-white">
+{include 'header.tpl'}
+<div class="w3-card-4 w3-margin w3-white">
 <div id="contact" class="w3-container w3-center w3-padding-32">
 <?php if (!$user): ?><h2 class="w3-wide"><i class="fas fa-user-plus"></i> <?= Lang::get('register') ?></h2>
 <p class="w3-opacity w3-center"><? flash(); ?></p>
@@ -26,4 +25,4 @@
             </div>
 <?php else: ?><p class="w3-opacity w3-center"><a href="?"><?= Lang::get('main') ?></a></p><?php endif; ?></div>
 </div>
-<?php include __DIR__ . '/footer.tpl'; ?>
+{include 'footer.tpl'}
