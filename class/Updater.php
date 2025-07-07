@@ -448,7 +448,7 @@ private function updateConfigVersion($newVersion) {
         require_once __DIR__.'/../admin/backup_db.php';
         
         $backupDir = $this->config['backup_dir'] ?? 'admin/backups/';
-        $backupFile = $backupDir.'pre_update_'.date('Y-m-d_His').'.sql';
+        $backupFile = $backupDir.'backup_pre_update_'.date('Y-m-d_His').'.sql';
         
         // Создаем резервную копию БД
         dbBackup(__DIR__.'/../'.$backupFile, true);
