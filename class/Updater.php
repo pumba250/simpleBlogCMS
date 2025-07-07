@@ -36,14 +36,19 @@ public function checkForUpdates() {
     if ($this->config['disable_update_check'] ?? true) {
         return false;
     }
-	@unlink($this->lastCheckFile);
-    $lastCheck = @filemtime($this->lastCheckFile);
-    if ($lastCheck && (time() - $lastCheck) < $this->config['update_check_interval']) {
-        return false;
+	//@unlink($this->lastCheckFile);
+    // Проверяем временной интервал
+    if (file_exists($this->lastCheckFile)) {
+        $lastCheck = filemtime($this->lastCheckFile);
+        $interval = $this->config['update_check_interval'] ?? 0; // По умолчанию 24 часа
+        
+        if ((time() - $lastCheck) < $interval) {
+            if (isset($_SESSION['available_update'])) {
+                return $_SESSION['available_update'];
+            }
+            return false; // Ещё не время проверять
+        }
     }
-
-    @touch($this->lastCheckFile);
-    $currentVersion = $this->normalizeVersion($this->config['version']);
 
     try {
         $url = "https://api.github.com/repos/{$this->githubRepo}/releases/latest";
@@ -70,7 +75,7 @@ public function checkForUpdates() {
         if (json_last_error() !== JSON_ERROR_NONE || !isset($release['tag_name'])) {
             throw new Exception("Invalid GitHub response format");
         }
-        
+        $currentVersion = $this->normalizeVersion($this->config['version']);
         $latestVersion = $this->normalizeVersion($release['tag_name']);
         
         if (version_compare($currentVersion, $latestVersion, '<')) {
@@ -83,6 +88,13 @@ public function checkForUpdates() {
                 'release_url' => $release['html_url'],
                 'is_important' => $this->isImportantUpdate($release['body'])
             ];
+			if ($updateInfo) {
+				if (session_status() === PHP_SESSION_NONE) {
+					session_start();
+				}
+				$_SESSION['available_update'] = $updateInfo;
+				@touch($this->lastCheckFile);
+			}
             return $updateInfo;
         }
     } catch (Exception $e) {
