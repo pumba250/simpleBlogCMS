@@ -7,7 +7,14 @@
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
         .admin-container { display: flex; min-height: 100vh; }
-        .admin-sidebar { width: 250px; background: #333; color: white; padding: 20px 0; }
+        .admin-sidebar { 
+            width: 250px; 
+            background: #333; 
+            color: white; 
+            padding: 20px 0;
+            position: relative;
+            transition: transform 0.3s ease;
+        }
         .admin-content { flex: 1; padding: 20px; }
         .admin-menu { list-style: none; padding: 0; margin: 0; }
         .admin-menu li { padding: 10px 20px; }
@@ -34,6 +41,74 @@
 		.template-card { background-color: white; padding: 1.5rem; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center; border: 2px solid transparent; }
 		.template-card.active { border-color: var(--success-color); }
 		.template-card h4 { margin-top: 0; }
+		/* Бургер-меню */
+        .burger-menu {
+            display: none;
+            cursor: pointer;
+            padding: 15px;
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+        }
+        
+        .burger-menu span {
+            display: block;
+            width: 25px;
+            height: 3px;
+            margin-bottom: 5px;
+            background: #000;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-toggle {
+            display: none;
+        }
+        
+        /* Мобильные стили */
+        @media (max-width: 768px) {
+            .admin-container {
+                position: relative;
+            }
+            
+            .admin-sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                z-index: 999;
+                transform: translateX(-100%);
+            }
+            
+            .admin-sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .admin-content {
+                margin-left: 0;
+                width: 100%;
+            }
+            
+            .burger-menu {
+                display: block;
+            }
+            
+            .sidebar-toggle:checked ~ .admin-sidebar {
+                transform: translateX(0);
+            }
+            
+            .sidebar-toggle:checked + .burger-menu span:nth-child(1) {
+                transform: rotate(45deg) translate(5px, 5px);
+            }
+            
+            .sidebar-toggle:checked + .burger-menu span:nth-child(2) {
+                opacity: 0;
+            }
+            
+            .sidebar-toggle:checked + .burger-menu span:nth-child(3) {
+                transform: rotate(-45deg) translate(7px, -6px);
+            }
+        }
 		/* Основные стили для горизонтальной пагинации */
 .pagination {
     display: flex;
@@ -160,11 +235,21 @@
 </head>
 <body>
     <div class="admin-container">
+        <!-- Чекбокс для управления состоянием меню -->
+        <input type="checkbox" id="sidebar-toggle" class="sidebar-toggle">
+        
+        <!-- Бургер-меню -->
+        <label for="sidebar-toggle" class="burger-menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </label>
+        
         <div class="admin-sidebar">
             <h2 style="padding: 0 20px;"><?= Lang::get('menu', 'admin') ?></h2>
             <ul class="admin-menu">
-				<li <?if ($section == 'system_settings'):?>class="active"<?endif;?>><a href="?section=system_settings"><?= Lang::get('system_settings', 'admin') ?></a></li>
-				<li class="nav-item <?if ($section == 'updates'):?>active<?endif?>"><a href="?section=updates"><i class="fas fa-sync-alt"></i> <?= Lang::get('update', 'admin') ?>
+                <li <?if ($section == 'system_settings'):?>class="active"<?endif;?>><a href="?section=system_settings"><?= Lang::get('system_settings', 'admin') ?></a></li>
+                <li class="nav-item <?if ($section == 'updates'):?>active<?endif?>"><a href="?section=updates"><i class="fas fa-sync-alt"></i> <?= Lang::get('update', 'admin') ?>
         <?if ($updateInfo):?>
             <span class="badge bg-danger"><?= Lang::get('new', 'admin') ?></span>
         <?endif?>
@@ -173,10 +258,10 @@
                 <li <?if ($section == 'blogs'):?>class="active"<?endif;?>><a href="?section=blogs"><?= Lang::get('blogs', 'admin') ?></a></li>
                 <li <?if ($section == 'contacts'):?>class="active"<?endif;?>><a href="?section=contacts"><?= Lang::get('contacts', 'admin') ?></a></li>
                 <li <?if ($section == 'users'):?>class="active"<?endif;?>><a href="?section=users"><?= Lang::get('users', 'admin') ?></a></li>
-				<li <?if ($section == 'backups'):?>class="active"<?endif;?>><a href="?section=backups"><?= Lang::get('backups', 'admin') ?></a></li>
-				<li <?if ($section == 'comments'):?>class="active"<?endif;?>><a href="?section=comments"><?= Lang::get('comments', 'admin') ?></a></li>
+                <li <?if ($section == 'backups'):?>class="active"<?endif;?>><a href="?section=backups"><?= Lang::get('backups', 'admin') ?></a></li>
+                <li <?if ($section == 'comments'):?>class="active"<?endif;?>><a href="?section=comments"><?= Lang::get('comments', 'admin') ?></a></li>
                 <li <?if ($section == 'tags'):?>class="active"<?endif;?>><a href="?section=tags"><?= Lang::get('tags', 'admin') ?></a></li>
-				<li <?if ($section == 'logs'):?>class="active"<?endif;?>><a href="?section=logs"><?= Lang::get('admlogs', 'admin') ?></a></li>
+                <li <?if ($section == 'logs'):?>class="active"<?endif;?>><a href="?section=logs"><?= Lang::get('admlogs', 'admin') ?></a></li>
                 <li <?if ($section == 'template_settings'):?>class="active"<?endif;?>><a href="?section=template_settings"><?= Lang::get('templates', 'admin') ?></a></li>
                 <li><a href="/"><?= Lang::get('go_main', 'admin') ?></a></li>
                 <li><a href="?logout"><?= Lang::get('log_out', 'admin') ?></a></li>
@@ -1182,13 +1267,15 @@ document.addEventListener('DOMContentLoaded', function() {
 											   target="_blank" 
 											   class="btn btn-primary"> <?= Lang::get('download', 'admin') ?>
 											</a>
-											<!--<form method="POST" style="display: inline-block;">
+											<?php if (!empty($updateInfo)): ?>
+											<form method="POST" style="display: inline-block;">
 												<input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
 												<input type="hidden" name="action" value="install_update">
 												<button type="submit" class="btn btn-primary ml-2">
 													Установить обновление
 												</button>
-											</form>-->
+											</form>
+											<?php endif; ?>
 										</div>
 									</div>
 								<?php else: ?>
@@ -1201,5 +1288,20 @@ document.addEventListener('DOMContentLoaded', function() {
 					</div>				<?php endif; ?>
         </div>
     </div>
+	<script>
+        // Закрытие меню при клике на пункт на мобильных устройствах
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuItems = document.querySelectorAll('.admin-menu a');
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            
+            menuItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                        sidebarToggle.checked = false;
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>

@@ -5,7 +5,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * 
  * @package    SimpleBlog
  * @subpackage Core
- * @version    0.8.1
+ * @version    0.8.2
  * 
  * @method array getAllUsers() Получает всех пользователей
  * @method bool hasPermission(int $requiredRole, int $currentRole) Проверяет права

@@ -3,6 +3,11 @@
 <div class="w3-card-4 w3-margin w3-white">
 <div id="contact" class="w3-container w3-center w3-padding-32">
 <h2 class="w3-wide">{Lang::get('contactus')}</h2>
+        {if $flash}
+            <div class="w3-panel w3-{$flash.type}">
+                {$flash.message}
+            </div>
+        {/if}
 <p class="w3-opacity w3-center"><i>{Lang::get('writefeed')}</i></p>
 
 <form method="POST">

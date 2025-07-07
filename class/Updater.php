@@ -5,7 +5,7 @@
  * @package    SimpleBlog
  * @subpackage Services
  * @category   Maintenance
- * @version    0.8.1
+ * @version    0.8.2
  * 
  * @method bool|array checkForUpdates() Проверяет обновления
  * @method bool performUpdate() Выполняет обновление
@@ -36,7 +36,7 @@ public function checkForUpdates() {
     if ($this->config['disable_update_check'] ?? true) {
         return false;
     }
-
+	@unlink($this->lastCheckFile);
     $lastCheck = @filemtime($this->lastCheckFile);
     if ($lastCheck && (time() - $lastCheck) < $this->config['update_check_interval']) {
         return false;
@@ -132,40 +132,6 @@ public function checkForUpdates() {
                (strpos($body, 'безопасност') !== false) ||
                (strpos($body, 'критич') !== false);
     }
-    /**
-     * Получает последний релиз с GitHub
-     */
-    private function getLatestGitHubRelease() {
-    $url = "https://api.github.com/repos/{$this->githubRepo}/releases/latest";
-    
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL => $url,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_USERAGENT => 'SimpleBlog CMS Updater',
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/vnd.github.v3+json'
-        ],
-        CURLOPT_TIMEOUT => 10,
-        CURLOPT_SSL_VERIFYPEER => true,
-        CURLOPT_FOLLOWLOCATION => true
-    ]);
-        
-        $response = curl_exec($ch);
-        
-        if (curl_errno($ch)) {
-            throw new Exception("GitHub API error: ".curl_error($ch));
-        }
-        
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        if ($httpCode !== 200) {
-            throw new Exception("GitHub API returned $httpCode");
-        }
-        
-        curl_close($ch);
-        
-        return json_decode($response, true);
-    }
     
     /**
      * Получает SHA256 хеш ассета
@@ -202,110 +168,170 @@ public function checkForUpdates() {
     }
     
     /**
-     * Выполняет обновление
-     */
-    public function performUpdate() {
-        $updateInfo = $this->getUpdateInfo();
-        if (!$updateInfo) {
-            throw new Exception("Нет информации об обновлении");
-        }
-        
-        // Создаем резервную копию
-        $backupFile = $this->createBackup();
-        
-        try {
-            // Загружаем обновление
-            $package = $this->downloadUpdate($updateInfo['download_url']);
-            
-            // Проверяем хеш
-            if ($updateInfo['sha256'] && hash('sha256', $package) !== $updateInfo['sha256']) {
-                throw new Exception("Хеш пакета не совпадает");
-            }
-            
-            // Применяем обновление
-            $this->applyUpdate($package);
-            
-            // Обновляем версию в конфиге
-            $this->updateConfigVersion($updateInfo['new_version']);
-            
-            return true;
-        } catch (Exception $e) {
-            // Восстанавливаем из резервной копии при ошибке
-            if (file_exists($backupFile)) {
-                $this->restoreBackup($backupFile);
-            }
-            throw $e;
-        }
-    }
-    
-    /**
-     * Загружает обновление
-     */
-    private function downloadUpdate($url) {
-    $tempFile = tempnam(sys_get_temp_dir(), 'sb_update_');
-    
-    // Для GitHub добавляем заголовок Accept
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL => $url,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_USERAGENT => 'SimpleBlog CMS Updater',
-        CURLOPT_HTTPHEADER => [
-            'Accept: application/octet-stream'
-        ],
-        CURLOPT_TIMEOUT => 300,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_SSL_VERIFYPEER => true,
-        CURLOPT_FILE => fopen($tempFile, 'w+')
-    ]);
-        
-        if (!curl_exec($ch)) {
-            $error = curl_error($ch);
-            curl_close($ch);
-            unlink($tempFile);
-            throw new Exception("Ошибка загрузки: $error");
-        }
-        
-        curl_close($ch);
-        $content = file_get_contents($tempFile);
-        unlink($tempFile);
-        
-        return $content;
-    }
-    
-    /**
-     * Применяет обновление из ZIP-архива
-     */
-    private function applyUpdate($zipContent) {
-        $tempDir = sys_get_temp_dir().'/sb_update_'.bin2hex(random_bytes(8));
-		if (!mkdir($tempDir, 0700)) {
-			throw new RuntimeException("Failed to create temp directory");
+	 * Выполняет обновление
+	 */
+	public function performUpdate() {
+		try {
+			// Явный вывод ошибок
+			echo "Начало процесса обновления...<br>";
+			
+			// Получаем информацию об обновлении
+			$updateInfo = $this->checkForUpdates();
+			echo "Информация об обновлении: " . print_r($updateInfo, true) . "<br>";
+			
+			if (!$updateInfo || !isset($updateInfo['download_url'])) {
+				throw new Exception("Нет корректной информации об обновлении");
+			}
+
+			// Создаем резервную копию
+			echo "Создание резервной копии...<br>";
+			$backupFile = $this->createBackup();
+			echo "Резервная копия создана: $backupFile<br>";
+
+			// Загружаем обновление
+			echo "Загрузка обновления...<br>";
+			$tempFile = $this->downloadUpdate($updateInfo['download_url']);
+			echo "Обновление загружено во временный файл: $tempFile<br>";
+
+			// Проверка хеша
+			if (!empty($updateInfo['sha256'])) {
+				echo "Проверка хеша...<br>";
+				$fileHash = hash_file('sha256', $tempFile);
+				if ($fileHash !== $updateInfo['sha256']) {
+					throw new Exception("Хеш не совпадает! Ожидалось: {$updateInfo['sha256']}, получено: $fileHash");
+				}
+				echo "Хеш верный<br>";
+			}
+
+			// Применяем обновление
+			echo "Применение обновления...<br>";
+			$this->applyUpdate($tempFile);
+			echo "Обновление применено<br>";
+
+			// Обновляем версию в конфиге
+			echo "Обновление конфигурации...<br>";
+			$this->updateConfigVersion($updateInfo['new_version']);
+			echo "Версия в конфиге обновлена<br>";
+
+			// Очистка
+			if (file_exists($tempFile)) {
+				unlink($tempFile);
+			}
+
+			echo "Обновление успешно завершено!<br>";
+			return true;
+
+		} catch (Exception $e) {
+			// Логируем ошибку
+			error_log("Ошибка обновления: " . $e->getMessage());
+			echo "<strong>Ошибка:</strong> " . $e->getMessage() . "<br>";
+			
+			// Восстановление из резервной копии
+			if (!empty($backupFile) && file_exists($backupFile)) {
+				echo "Попытка восстановления из резервной копии...<br>";
+				$this->restoreBackup($backupFile);
+			}
+			
+			return false;
 		}
-        $zipFile = $tempDir.'/update.zip';
-        file_put_contents($zipFile, $zipContent);
-        
-        $zip = new ZipArchive;
-        if ($zip->open($zipFile) !== true) {
-            throw new Exception("Не удалось открыть архив обновления");
-        }
-        
-        if (!$zip->extractTo($tempDir)) {
-            $zip->close();
-            throw new Exception("Ошибка распаковки архива");
-        }
-        $zip->close();
-        unlink($zipFile);
-        
-        // Копируем файлы
-        $this->copyDirectory($tempDir.'/files', dirname(__DIR__));
-        
-        // Выполняем SQL-скрипты
-        if (file_exists($tempDir.'/update.sql')) {
-            $this->executeUpdateSql($tempDir.'/update.sql');
-        }
-        
-        $this->removeDirectory($tempDir);
-    }
+	}
+    
+    /**
+	 * Загружает обновление во временный файл и возвращает путь к нему
+	 */
+	private function downloadUpdate($url) {
+		$tempFile = tempnam(sys_get_temp_dir(), 'sb_update_');
+		if (!$tempFile) {
+			throw new Exception("Не удалось создать временный файл");
+		}
+
+		$ch = curl_init();
+		$fp = fopen($tempFile, 'w+');
+		
+		$headers = [
+			'Accept: application/vnd.github.v3.raw',
+			'User-Agent: SimpleBlog-CMS-Updater'
+		];
+		
+		curl_setopt_array($ch, [
+			CURLOPT_URL => $url,
+			CURLOPT_FILE => $fp,
+			CURLOPT_HTTPHEADER => $headers,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_TIMEOUT => 300,
+			CURLOPT_SSL_VERIFYPEER => true,
+			CURLOPT_FAILONERROR => true
+		]);
+		
+		if (!curl_exec($ch)) {
+			$error = curl_error($ch);
+			$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+			curl_close($ch);
+			fclose($fp);
+			unlink($tempFile);
+			
+			throw new Exception("Ошибка загрузки (HTTP $httpCode): $error");
+		}
+		
+		$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		curl_close($ch);
+		fclose($fp);
+		
+		if ($httpCode !== 200) {
+			unlink($tempFile);
+			throw new Exception("Сервер вернул код $httpCode");
+		}
+		
+		// Проверяем, что файл не пустой
+		if (filesize($tempFile) === 0) {
+			unlink($tempFile);
+			throw new Exception("Загружен пустой файл");
+		}
+		
+		return $tempFile;
+	}
+    
+    /**
+	 * Применяет обновление из временного файла
+	 */
+	private function applyUpdate($tempFile) {
+		$tempDir = sys_get_temp_dir().'/sb_update_'.bin2hex(random_bytes(8));
+		if (!mkdir($tempDir, 0700)) {
+			throw new Exception("Не удалось создать временную директорию");
+		}
+
+		$zip = new ZipArchive;
+		if ($zip->open($tempFile) !== true) {
+			$this->removeDirectory($tempDir);
+			throw new Exception("Не удалось открыть архив обновления");
+		}
+		
+		if (!$zip->extractTo($tempDir)) {
+			$zip->close();
+			$this->removeDirectory($tempDir);
+			throw new Exception("Ошибка распаковки архива");
+		}
+		$zip->close();
+		
+		// GitHub архивы содержат папку repo-name-commitHash/
+		$extractedDirs = array_diff(scandir($tempDir), ['.', '..']);
+		$sourceDir = $tempDir.'/'.reset($extractedDirs);
+		
+		if (!is_dir($sourceDir)) {
+			$this->removeDirectory($tempDir);
+			throw new Exception("Неверная структура архива обновления");
+		}
+		
+		// Копируем файлы из архива в корень системы
+		$this->copyDirectory($sourceDir, dirname(__DIR__));
+		
+		// Выполняем SQL-скрипты, если они есть
+		if (file_exists($sourceDir.'/update.sql')) {
+			$this->executeUpdateSql($sourceDir.'/update.sql');
+		}
+		
+		$this->removeDirectory($tempDir);
+	}
     
     /**
      * Получает информацию о доступном обновлении
@@ -313,7 +339,108 @@ public function checkForUpdates() {
     public function getUpdateInfo() {
         return $_SESSION['available_update'] ?? null;
     }
+    /**
+ * Обновляет версию в конфигурационном файле
+ * 
+ * @param string $newVersion Новая версия (например "1.0.0")
+ * @return bool
+ * @throws Exception
+ */
+private function updateConfigVersion($newVersion) {
+    // Проверка формата версии
+    if (!preg_match('/^v?\d+\.\d+(\.\d+)?$/', $newVersion)) {
+        throw new Exception("Некорректный формат версии: ".$newVersion);
+    }
     
+    $configFile = __DIR__.'/../config/config.php';
+    
+    // Проверяем существование файла
+    if (!file_exists($configFile)) {
+        throw new Exception("Конфигурационный файл не найден");
+    }
+    
+    // Проверяем права на запись
+    if (!is_writable($configFile)) {
+        throw new Exception("Нет прав на запись в конфигурационный файл");
+    }
+    
+    // Читаем текущий конфиг
+    $config = require $configFile;
+    
+    // Создаем резервную копию
+    $backupContent = file_get_contents($configFile);
+    if ($backupContent === false) {
+        throw new Exception("Не удалось прочитать конфигурационный файл");
+    }
+    
+    // Обновляем версию в массиве
+    $config['version'] = $newVersion;
+    
+    // Готовим новое содержимое
+    $newContent = "<?php\n";
+    $newContent .= "if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }\n\n";
+    $newContent .= "return [\n";
+    
+    // Вручную формируем массив для надежности
+    foreach ($config as $key => $value) {
+        $newContent .= "    '".addslashes($key)."' => ";
+        
+        if (is_null($value)) {
+            $newContent .= "null";
+        } elseif (is_bool($value)) {
+            $newContent .= $value ? 'true' : 'false';
+        } elseif (is_int($value) || is_float($value)) {
+            $newContent .= $value;
+        } else {
+            $newContent .= "'".addslashes($value)."'";
+        }
+        
+        $newContent .= ",\n";
+    }
+    
+    $newContent .= "];\n";
+    
+    // Создаем временный файл
+    $tempFile = tempnam(sys_get_temp_dir(), 'config_');
+    if (file_put_contents($tempFile, $newContent) === false) {
+        throw new Exception("Не удалось записать временный конфигурационный файл");
+    }
+    
+    // Проверяем, что файл валиден
+    try {
+        $testConfig = require $tempFile;
+        if (($testConfig['version'] ?? null) !== $newVersion) {
+            throw new Exception("Проверка версии не удалась");
+        }
+    } catch (Exception $e) {
+        unlink($tempFile);
+        throw new Exception("Сгенерированный конфиг содержит ошибки: ".$e->getMessage());
+    }
+    
+    // Делаем бэкап оригинального файла
+    $backupFile = $configFile.'.bak';
+    if (!copy($configFile, $backupFile)) {
+        unlink($tempFile);
+        throw new Exception("Не удалось создать резервную копию конфига");
+    }
+    
+    // Пытаемся обновить основной конфиг
+    if (!rename($tempFile, $configFile)) {
+        // Пытаемся восстановить из бэкапа
+        if (file_exists($backupFile)) {
+            copy($backupFile, $configFile);
+        }
+        throw new Exception("Не удалось заменить конфигурационный файл");
+    }
+    
+    // Финальная проверка
+    $finalConfig = require $configFile;
+    if (($finalConfig['version'] ?? null) !== $newVersion) {
+        throw new Exception("Финальная проверка версии не пройдена");
+    }
+    
+    return true;
+}
     /**
      * Создает резервную копию перед обновлением
      */
@@ -321,7 +448,7 @@ public function checkForUpdates() {
         require_once __DIR__.'/../admin/backup_db.php';
         
         $backupDir = $this->config['backup_dir'] ?? 'admin/backups/';
-        $backupFile = $backupDir.'pre_update_'.date('Y-m-d_His').'.zip';
+        $backupFile = $backupDir.'pre_update_'.date('Y-m-d_His').'.sql';
         
         // Создаем резервную копию БД
         dbBackup(__DIR__.'/../'.$backupFile, true);
@@ -337,7 +464,7 @@ public function checkForUpdates() {
         @mkdir($dst);
         
         while (($file = readdir($dir)) !== false) {
-            if ($file != '.' && $file != '..') {
+            if ($file != '.' && $file != '..' && $file != 'install.php') {
                 if (is_dir($src.'/'.$file)) {
                     $this->copyDirectory($src.'/'.$file, $dst.'/'.$file);
                 } else {
@@ -385,4 +512,55 @@ public function checkForUpdates() {
             }
         }
     }
+	/**
+	 * Восстанавливает систему из резервной копии
+	 * 
+	 * @param string $backupFile Путь к файлу резервной копии
+	 * @return bool
+	 * @throws Exception
+	 */
+	private function restoreBackup($backupFile) {
+		if (!file_exists($backupFile)) {
+			throw new Exception("Файл резервной копии не найден");
+		}
+
+		try {
+			// Проверяем расширение файла
+			if (!preg_match('/\.sql$/i', $backupFile)) {
+				throw new Exception("Недопустимый формат файла резервной копии");
+			}
+
+			// Читаем SQL файл
+			$sql = file_get_contents($backupFile);
+			if ($sql === false) {
+				throw new Exception("Не удалось прочитать файл резервной копии");
+			}
+
+			// Удаляем комментарии и пустые строки
+			$sql = preg_replace('/\-\-.*$/m', '', $sql);
+			$sql = preg_replace('/\/\*.*?\*\//s', '', $sql);
+			$sql = preg_replace('/^\s*$/m', '', $sql);
+
+			// Разбиваем на отдельные запросы
+			$queries = array_filter(array_map('trim', explode(';', $sql)));
+
+			// Выполняем каждый запрос в транзакции
+			$this->pdo->beginTransaction();
+			
+			foreach ($queries as $query) {
+				if (!empty($query)) {
+					$this->pdo->exec($query);
+				}
+			}
+			
+			$this->pdo->commit();
+			
+			return true;
+		} catch (Exception $e) {
+			if ($this->pdo->inTransaction()) {
+				$this->pdo->rollBack();
+			}
+			throw new Exception("Ошибка восстановления из резервной копии: " . $e->getMessage());
+		}
+	}
 }

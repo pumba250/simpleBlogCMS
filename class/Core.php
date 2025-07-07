@@ -6,7 +6,7 @@
  * отправку комментариев, голосования, обратную связь и сброс пароля. 
  * Также обеспечивает проверку CSRF-токена и валидацию данных.
  * 
- * @version 0.8.1
+ * @version 0.8.2
  * @author pumba250
  */
 class Core {
@@ -171,12 +171,12 @@ class Core {
     private function handleContact() {
         if (isset($_POST['captcha']) && $_POST['captcha'] == $_SESSION['captcha_answer']) {
             if ($this->contact->saveMessage($_POST['name'], $_POST['email'], $_POST['message'])) {
-                $errors[] = Lang::get('msg_send', 'core');
+                $_SESSION['flash'] = Lang::get('msg_send', 'core');
             } else {
-                $errors[] = Lang::get('msg_error', 'core');
+                $_SESSION['flash'] = Lang::get('msg_error', 'core');
             }
         } else {
-            $errors[] = Lang::get('not_answer', 'core');
+            $_SESSION['flash'] = Lang::get('not_answer', 'core');
         }
     }
 
