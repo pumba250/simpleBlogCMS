@@ -6,15 +6,15 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Internationalization
- * @version    0.8.2
+ * @version    0.9.0
  * 
  * @method static void init() Инициализирует языковую систему
  * @method static void setLanguage(string $lang) Устанавливает язык
  * @method static string get(string $key, string $section = 'main') Получает перевод
  */
 class Lang {
-    private static $language = 'en';
-    private static $translations = [];
+    protected static $translations = [];
+    protected static $language = 'ru'; // Язык по умолчанию
 
     public static function init() {
         // Определяем язык из сессии или браузера
@@ -32,14 +32,24 @@ class Lang {
         }
     }
 
-    public static function get($key, $section = 'main') {
-        if (empty(self::$translations[$section])) {
+    public static function get(string $key, string $section = 'main') {
+        // Проверяем, загружен ли уже этот раздел
+        if (!isset(self::$translations[$section])) {
             $file = __DIR__ . '/../lang/' . self::$language . '/' . $section . '.php';
-            if (file_exists($file)) {
-                self::$translations[$section] = require $file;
+            
+            if (!file_exists($file)) {
+                error_log("Language file not found: {$file}");
+                return $key; // Возвращаем ключ, если файл не найден
+            }
+            
+            self::$translations[$section] = require $file;
+            
+            if (!is_array(self::$translations[$section])) {
+                error_log("Invalid language file format: {$file}");
+                self::$translations[$section] = [];
             }
         }
-
+        
         return self::$translations[$section][$key] ?? $key;
     }
 

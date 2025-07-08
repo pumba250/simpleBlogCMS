@@ -31,7 +31,7 @@
 </div>
 <header class="w3-container w3-center w3-padding-32"> 
   <h1><b>MY BLOG</b></h1>
-  <p>{Lang::get('welcome')} of <span class="w3-tag">not young admin</span></p>
+  <p>{l_welcome} of <span class="w3-tag">not young admin</span></p>
 </header>
 <div class="w3-row">
 <div class="w3-col l8 s12">

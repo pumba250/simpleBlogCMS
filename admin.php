@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Admin
- * @version    0.8.2
+ * @version    0.9.0
  * 
  * @sections
  * - Управление пользователями
@@ -532,31 +532,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				}
 				break;
 			case 'install_update':
-    if (!$user->hasPermission(9, $currentUserRole)) {
-        $_SESSION['admin_error'] = Lang::get('not_perm', 'core');
-        logAction('Попытка установки обновления', "Недостаточно прав");
-    } else {
-        try {
-            // Сохраняем информацию об обновлении в сессии
-            $_SESSION['available_update'] = $updateInfo;
-            
-            if ($updater->performUpdate()) {
-                $_SESSION['admin_message'] = 'Обновление успешно установлено!';
-                logAction('Установка обновления', "Установлена версия: " . $updateInfo['new_version']);
-                
-                
-                // Перенаправляем с задержкой
-                echo '<meta http-equiv="refresh" content="3;url=?section=updates">';
-                exit;
-            } else {
-                throw new Exception("Не удалось выполнить обновление");
-            }
-        } catch (Exception $e) {
-            $_SESSION['admin_error'] = 'Ошибка обновления: '.$e->getMessage();
-            logAction('Ошибка обновления', $e->getMessage());
-        }
-    }
-    break;
+				if (!$user->hasPermission(9, $currentUserRole)) {
+					$_SESSION['admin_error'] = Lang::get('not_perm', 'core');
+					logAction('Попытка установки обновления', "Недостаточно прав");
+				} else {
+					try {
+						// Сохраняем информацию об обновлении в сессии
+						$_SESSION['available_update'] = $updateInfo;
+						
+						if ($updater->performUpdate()) {
+							$_SESSION['admin_message'] = 'Обновление успешно установлено!';
+							logAction('Установка обновления', "Установлена версия: " . $updateInfo['new_version']);
+							
+							
+							// Перенаправляем с задержкой
+							echo '<meta http-equiv="refresh" content="3;url=?section=updates">';
+							exit;
+						} else {
+							throw new Exception("Не удалось выполнить обновление");
+						}
+					} catch (Exception $e) {
+						$_SESSION['admin_error'] = 'Ошибка обновления: '.$e->getMessage();
+						logAction('Ошибка обновления', $e->getMessage());
+					}
+				}
+				break;
 		}
 	}
 }

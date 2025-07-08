@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Content
- * @version    0.8.2
+ * @version    0.9.0
  * 
  * @method int addComment(int $parentId, int $fParent, int $themeId, string $userName, string $userText) Добавляет комментарий
  * @method bool editComment(int $id, string $userText) Редактирует комментарий

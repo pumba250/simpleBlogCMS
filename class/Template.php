@@ -7,7 +7,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Views
- * @version    0.8.2
+ * @version    0.9.0
  * 
  * @method void assign(string $key, mixed $value) Назначает переменную
  * @method void assignMultiple(array $vars) Назначает несколько переменных
@@ -20,6 +20,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
 class Template {
     protected $variables = [];
     protected $templateDir;
+	protected $templateCache = [];
     //protected $config;
     
     public function __construct() {
@@ -66,7 +67,7 @@ class Template {
 			'templ' => $config['templ'],
 			'captcha_image_url' => '/class/captcha.php',
 			'allTags' => $news->GetAllTags(),
-			'lastThreeNews' => $news->getLastThreeNews(),
+			'lastThreeNewsHtml' => $news->getLastThreeNews(),
 			'user' => $user ?? null,
 			'auth_error' => $authError,
 			'flash' => $flash,
@@ -75,36 +76,7 @@ class Template {
 			'serverName' => htmlspecialchars($_SERVER['SERVER_NAME']),
 		];
 	}
-/*public function renderNewsList(array $newsItems, string $template): string {
-    $html = '';
-    foreach ($newsItems as $item) {
-        $html .= $this->renderNewsItem($item, $template);
-    }
-    return $html;
-}*/
 
-/*public function renderNewsItem(array $item, string $template): string {
-    // Обрабатываем шаблон для одной новости
-    $patterns = [];
-    $replacements = [];
-    
-    foreach ($item as $key => $value) {
-        $patterns[] = '/\{' . $key . '\}/';
-        if (is_array($value)) {
-            $replacements[] = implode(', ', $value);
-        } else {
-            $replacements[] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        }
-    }
-    
-    // Специальная обработка для {!content} (без экранирования)
-    if (isset($item['content'])) {
-        $patterns[] = '/\{!content\}/';
-        $replacements[] = $item['content'];
-    }
-    
-    return preg_replace($patterns, $replacements, $template);
-}*/
     /**
      * Рендерит шаблон с передачей переменных
      * 
@@ -165,6 +137,11 @@ class Template {
             '/\{\/if\}/' => '<?php endif; ?>',
             // Статические методы (Lang::get)
 			'/\{([A-Za-z_][A-Za-z0-9_]*)::([a-zA-Z0-9_]+)\(([^)]*)\)\}/' => '<?php echo $1::$2($3); ?>',
+			// Языковые переменные (из $lang)
+			'/\{l_([a-zA-Z0-9_]+)(?:\:([a-zA-Z0-9_]+))?\}/' => '<?php $key = \'$1\'; $section = !empty(\'$2\') ? \'$2\' : \'main\'; echo htmlspecialchars(Lang::get($key, $section), ENT_QUOTES, \'UTF-8\'); ?>',
+			/*'/\{l_([a-zA-Z0-9_]+)\}/' => '<?php echo htmlspecialchars(Lang::get(\'$1\', \'main\'), ENT_QUOTES, \'UTF-8\'); ?>',*/
+			// Конфигурационные переменные (из $config)
+        '/\{c_([a-zA-Z0-9_]+)\}/' => '<?php echo $config[\'$1\'] ?? \'\'; ?>',
             // Циклы
             '/\{foreach\s+\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\s+as\s+\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\}/' => '<?php foreach ($$1 as $$2): ?>',
            '/\{for \$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\s*=\s*([^\s]+)\s+to\s+([^\}]+)\s*\}/' => '<?php for ($1 = $2; $1 <= $3; $1++): ?>',
@@ -259,34 +236,105 @@ class Template {
 	
 	// Добавляем в класс Template
 public function renderTemplateString(string $template, array $data): string {
-    // Обрабатываем основные плейсхолдеры
-    foreach ($data as $key => $value) {
-        // Экранированные плейсхолдеры {key}
-        $template = str_replace(
-            '{'.$key.'}', 
-            is_array($value) ? implode(', ', $value) : htmlspecialchars($value, ENT_QUOTES, 'UTF-8'),
-            $template
-        );
-        
-        // Неэкранированные плейсхолдеры {!key}
-        $template = str_replace(
-            '{!'.$key.'}', 
-            is_array($value) ? implode(', ', $value) : $value,
-            $template
-        );
-    }
-
-    // Обрабатываем вложенные свойства объектов {user.name}
+	// Обрабатываем языковые переменные {l_key:section}
     $template = preg_replace_callback(
-        '/\{([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)\}/',
+        '/\{l_([a-zA-Z0-9_]+)(?:\:([a-zA-Z0-9_]+))?\}/',
+        function($matches) {
+            $key = $matches[1];
+            $section = $matches[2] ?? 'main';
+            return htmlspecialchars(Lang::get($key, $section), ENT_QUOTES, 'UTF-8');
+        },
+        $template
+    );
+    // Обработка вложенных данных (например, {news.author.name})
+    $template = preg_replace_callback(
+        '/\{([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*)\}/',
         function($matches) use ($data) {
-            $var = $data[$matches[1]] ?? null;
-            if (is_array($var)) {
-                return htmlspecialchars($var[$matches[2]] ?? '', ENT_QUOTES, 'UTF-8');
-            } elseif (is_object($var)) {
-                return htmlspecialchars($var->{$matches[2]} ?? '', ENT_QUOTES, 'UTF-8');
+            $keys = explode('.', $matches[1]);
+            $value = $data;
+            foreach ($keys as $key) {
+                if (is_array($value)) {
+                    $value = $value[$key] ?? null;
+                } elseif (is_object($value)) {
+                    $value = $value->$key ?? null;
+                } else {
+                    return '';
+                }
             }
-            return '';
+            return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
+        },
+        $template
+    );
+
+    // Обработка {!var} (без экранирования)
+    $template = preg_replace_callback(
+        '/\{!([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*)\}/',
+        function($matches) use ($data) {
+            $keys = explode('.', $matches[1]);
+            $value = $data;
+            foreach ($keys as $key) {
+                if (is_array($value)) {
+                    $value = $value[$key] ?? null;
+                } elseif (is_object($value)) {
+                    $value = $value->$key ?? null;
+                } else {
+                    return '';
+                }
+            }
+            return $value ?? '';
+        },
+        $template
+    );
+
+    return $template;
+}
+public function renderTemplateId(string $template, $data): string {
+	// Обрабатываем языковые переменные {l_key:section}
+    $template = preg_replace_callback(
+        '/\{l_([a-zA-Z0-9_]+)(?:\:([a-zA-Z0-9_]+))?\}/',
+        function($matches) {
+            $key = $matches[1];
+            $section = $matches[2] ?? 'main';
+            return htmlspecialchars(Lang::get($key, $section), ENT_QUOTES, 'UTF-8');
+        },
+        $template
+    );
+    // Обработка вложенных данных (например, {news.author.name})
+    $template = preg_replace_callback(
+        '/\{([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*)\}/',
+        function($matches) use ($data) {
+            $keys = explode('.', $matches[1]);
+            $value = $data;
+            foreach ($keys as $key) {
+                if (is_array($value)) {
+                    $value = $value[$key] ?? null;
+                } elseif (is_object($value)) {
+                    $value = $value->$key ?? null;
+                } else {
+                    return '';
+                }
+            }
+            return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
+        },
+        $template
+    );
+
+    // Обработка {!var} (без экранирования)
+    $template = preg_replace_callback(
+        '/\{!([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*)\}/',
+        function($matches) use ($data) {
+            $keys = explode('.', $matches[1]);
+            $value = $data;
+            foreach ($keys as $key) {
+                if (is_array($value)) {
+                    $value = $value[$key] ?? null;
+                } elseif (is_object($value)) {
+                    $value = $value->$key ?? null;
+                } else {
+                    return '';
+                }
+            }
+            return $value ?? '';
         },
         $template
     );
@@ -295,18 +343,97 @@ public function renderTemplateString(string $template, array $data): string {
 }
 
 public function renderNewsList(array $newsItems, string $templateFile): string {
-    $template = file_get_contents($this->templateDir . '/' . $templateFile);
-    $result = '';
-
-    foreach ($newsItems as $item) {
-        $result .= $this->renderTemplateString($template, $item);
+	global $votes;
+    // Загрузка и кэширование шаблона
+    if (!isset($this->templateCache[$templateFile])) {
+        $path = $this->templateDir . '/' . ltrim($templateFile, '/');
+        $this->templateCache[$templateFile] = file_get_contents($path);
     }
+    $templateContent = $this->templateCache[$templateFile];
 
+    // Рендеринг каждой новости
+    $result = '';
+	
+    foreach ($newsItems as $item) {
+		$item['article_rating'] = $votes->getArticleRating($item['id']);
+		$item['hasVotedArticle'] = isset($_SESSION['user']) ? $votes->hasUserVotedForArticle($item['id'], $_SESSION['user']['id']) : false;
+        $result .= $this->renderTemplateString($templateContent, $item);
+    }
     return $result;
 }
 
-public function renderNewsItem(array $newsItem, string $templateFile): string {
-    $template = file_get_contents($this->templateDir . '/' . $templateFile);
-    return $this->renderTemplateString($template, $newsItem);
+/*public function renderNewsItem(array $newsItem, string $templateFile): string {
+    if (!isset($this->templateCache[$templateFile])) {
+        $path = $this->templateDir . '/' . ltrim($templateFile, '/');
+        $this->templateCache[$templateFile] = file_get_contents($path);
+    }
+    return $this->renderTemplateString($this->templateCache[$templateFile], $newsItem);
+}*/
+/**
+ * Рендерит одну новость (поддерживает и массивы, и объекты)
+ * 
+ * @param array|object $newsItem Данные новости
+ * @param string $templateFile Шаблон для рендеринга
+ * @return string
+ */
+public function renderNewsItem($newsItem, string $templateFile): string {
+	global $votes;
+    if (!isset($this->templateCache[$templateFile])) {
+        $path = $this->templateDir . '/' . ltrim($templateFile, '/');
+		if (!file_exists($path)) {
+            throw new \RuntimeException("Template file not found: $path");
+        }
+        $this->templateCache[$templateFile] = file_get_contents($path);
+    }
+	$newsItem['article_rating'] = $votes->getArticleRating($newsItem['id']);
+	$newsItem['hasVotedArticle'] = isset($_SESSION['user']) ? $votes->hasUserVotedForArticle($newsItem['id'], $_SESSION['user']['id']) : false;
+	
+    return $this->renderTemplateId($this->templateCache[$templateFile], $newsItem);
+}
+/**
+ * Обрабатывает массив комментариев для вывода
+ */
+public function processComments(array $comments, string $templateFile): string {
+    global $votes;
+    $processed = '';
+    if (!isset($this->templateCache[$templateFile])) {
+        $path = $this->templateDir . '/' . ltrim($templateFile, '/');
+        $this->templateCache[$templateFile] = file_get_contents($path);
+    }
+    $templateContent = $this->templateCache[$templateFile];
+    
+    foreach ($comments as $comment) {
+        // Подготовка данных для шаблона
+        $data = [
+            'id' => $comment['id'], // Оставляем оригинальный ID
+            'theme_id' => $comment['theme_id'] ?? '',
+            'user_name' => $comment['user_name'] ?? '',
+            'user_text' => $comment['user_text'] ?? '',
+            'created_at' => $comment['created_at'] ?? '',
+            'comm_rating' => $votes->getCommentRating($comment['id']),
+            'voted' => isset($_SESSION['user']) ? $votes->hasUserVoted($comment['id'], $_SESSION['user']['id']) : false,
+            'csrf_token' => $_SESSION['csrf_token'] ?? ''
+        ];
+        $processed .= $this->renderTemplateString($templateContent, $data);
+    }
+    
+    return $processed;
+}
+
+protected function formatDate(string $date): string {
+    // Ваша логика форматирования даты
+    return date('d.m.Y H:i', strtotime($date));
+}
+
+
+/**
+ * Конвертирует объект в массив (рекурсивно)
+ */
+protected function objectToArray($object): array {
+    if (is_object($object)) {
+        $object = get_object_vars($object);
+    }
+    
+    return is_array($object) ? array_map([$this, 'objectToArray'], $object) : $object;
 }
 }

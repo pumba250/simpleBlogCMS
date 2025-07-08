@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Content
- * @version    0.8.2
+ * @version    0.9.0
  * 
  * @method array getAllNews(int $limit, int $offset) Получает новости с пагинацией
  * @method array searchNews(string $query, int $limit = 10, int $offset = 0) Ищет новости
@@ -49,7 +49,7 @@ class News {
     }
 
 	public function getAllNews($limit, $offset) {
-		$stmt = $this->pdo->prepare("SELECT id, title, LEFT(content, 320) AS excerpt, content, created_at FROM {$this->dbPrefix}blogs ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
+		$stmt = $this->pdo->prepare("SELECT id, title, LEFT(content, 320) AS content, created_at FROM {$this->dbPrefix}blogs ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
 		$stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
 		$stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
 		$stmt->execute();
@@ -60,7 +60,7 @@ class News {
     try {
         $searchQuery = '%' . $query . '%';
         $stmt = $this->pdo->prepare("
-            SELECT id, title, LEFT(content, 320) AS excerpt, created_at 
+            SELECT id, title, LEFT(content, 320) AS content, created_at 
             FROM {$this->dbPrefix}blogs 
             WHERE title LIKE :query OR content LIKE :query
             ORDER BY created_at DESC
@@ -125,11 +125,30 @@ class News {
 		$stmt->execute();
 		return $stmt->fetchColumn();
     }
-	public function getLastThreeNews() {
-    $stmt = $this->pdo->prepare("SELECT * FROM {$this->dbPrefix}blogs ORDER BY RAND() DESC LIMIT 3");
-	$stmt->execute();
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-	}
+public function getLastThreeNews() {
+    $stmt = $this->pdo->prepare("SELECT id, title, created_at FROM {$this->dbPrefix}blogs ORDER BY RAND() DESC LIMIT 3");
+    $stmt->execute();
+    $last = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    $lastThreeNewsHtml = '';
+    foreach ($last as $item) {
+        $lastThreeNewsHtml .= '<li class="w3-padding">';
+        $lastThreeNewsHtml .= '<span class="w3-large"><a href="?id=' . htmlspecialchars($item['id']) . '">' 
+                            . htmlspecialchars($item['title']) . '</a></span><br>';
+        $lastThreeNewsHtml .= '<span>' . htmlspecialchars($item['created_at']) . '</span>';
+        $lastThreeNewsHtml .= '</li>';
+    }
+    
+    return new class($lastThreeNewsHtml) {
+        private $html;
+        public function __construct($html) { 
+            $this->html = $html; 
+        }
+        public function __toString() { 
+            return $this->html; 
+        }
+    };
+}
 	public function generateTags($title, $content) {
 		$tags = [];
 		
@@ -273,7 +292,23 @@ class News {
 	public function GetAllTags() {
 		$stmt = $this->pdo->prepare("SELECT DISTINCT(`name`) FROM {$this->dbPrefix}tags");
 		$stmt->execute();
-		return $stmt->fetchAll(PDO::FETCH_ASSOC);
+		$tags = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+		$allTagsHtml = '';
+		foreach ($tags as $tag) {
+			$allTagsHtml .= '
+			<span class="w3-tag w3-light-grey w3-small w3-margin-bottom"><a class="w3-button" href="?tags=' . urlencode($tag['name']) . '">' . htmlspecialchars($tag['name']) . '</a></span>';
+		}
+		
+		return new class($allTagsHtml) {
+			private $html;
+			public function __construct($html) { 
+				$this->html = $html; 
+			}
+			public function __toString() { 
+				return $this->html; 
+			}
+		};
 	}
 	public function addTag($name) {
         try {
@@ -348,7 +383,7 @@ class News {
 		}
 
 		$stmt = $this->pdo->prepare("
-			SELECT b.id, b.title, LEFT(b.content, 320) AS excerpt, b.content, b.created_at
+			SELECT b.id, b.title, LEFT(b.content, 320) AS content, b.created_at
 			FROM {$this->dbPrefix}blogs b
 			JOIN {$this->dbPrefix}blogs_tags bt ON b.id = bt.blogs_id
 			WHERE bt.tag_id = ?

@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Core
- * @version    0.8.2
+ * @version    0.9.0
  * 
  * @router
  *  GET  /             - Главная страница блога
@@ -80,7 +80,6 @@ if (isset($config['backup_schedule']) && $config['backup_schedule'] !== 'disable
 }
 require 'class/Cache.php';
 Cache::init($config);
-require 'class/Template.php';
 require 'class/User.php';
 require 'class/Contact.php';
 require 'class/Comments.php';
@@ -90,6 +89,7 @@ require 'class/Parse.php';
 require 'class/Mailer.php';
 require 'class/Pagination.php';
 require 'class/Core.php';
+require 'class/Template.php';
 // Инициализация объектов
 $user = new User($pdo, $template);
 $votes = new Votes($pdo);
@@ -142,7 +142,6 @@ if (empty($_SESSION['csrf_token'])) {
 			$metaKeywords = $news->generateMetaKeywords($newsItem['content'], 'article', [
 				'title' => $newsItem['title']
 			]);
-			$lastThreeNews = $news->getLastThreeNews();
 			$totalComments = $comments->countComments($newsId);
 			$currentCommentPage = (int)($_GET['comment_page'] ?? 1);
 
@@ -169,21 +168,26 @@ if (empty($_SESSION['csrf_token'])) {
 			$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 		$pageVars = [
 			'pageTitle' => $pageTitle,
-			'commentsList' => $commentsList,
 			'metaDescription' => $metaDescription,
 			'metaKeywords' => $metaKeywords,
-			'news' => $newsItem,
-			'articleRating' => $articleRating,
-			'votes' => $votes,
 			];
 			$template->assignMultiple(array_merge($commonVars, $pageVars));
+			$template->assign('news.id', $newsId);
 			$template->assign('pagination', new class($paginationHtml) {
 				private $html;
 				public function __construct($html) { $this->html = $html; }
 				public function __toString() { return $this->html; }
 			});
-			$output = $template->render('news.tpl');
+			/*$output = $template->render('news.tpl');
         Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
+        echo $output;*/
+		
+		$output = $template->render('header.tpl');
+		$output .= $template->renderNewsItem($newsItem, 'news.tpl');
+		$output .= $template->processComments($commentsList, 'comment.tpl');
+		$output .= $template->render('add_comment.tpl');
+		$output .= $template->render('footer.tpl');
+		Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
         echo $output;
 		} elseif (isset($_GET['tags'])) {
 			// Обработка тегов
@@ -204,13 +208,13 @@ if (empty($_SESSION['csrf_token'])) {
 			]);
 			$newsByTags = $news->getNewsByTag($tag);
 			foreach ($newsByTags as &$item) {
-				if (isset($item['excerpt'])) {
-					$item['excerpt'] = $parse->userblocks(
-						$item['excerpt'],
+				if (isset($item['content'])) {
+					$item['content'] = $parse->userblocks(
+						$item['content'],
 						$config,
 						$_SESSION['user'] ?? null  // Передаем данные пользователя
 					);
-					$item['excerpt'] = $parse->truncateHTML($item['excerpt']);
+					$item['content'] = $parse->truncateHTML($item['content']);
 				}
 			}
 			unset($item);
@@ -225,9 +229,11 @@ if (empty($_SESSION['csrf_token'])) {
 			'votes' => $votes,
 			];
 			$template->assignMultiple(array_merge($commonVars, $pageVars));
-			$output = $template->render('home.tpl');
-        Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
-        echo $output;
+			$output = $template->render('header.tpl');
+			$output .= $template->renderNewsList($newsByTags, 'news_item.tpl');
+			$output .= $template->render('footer.tpl');
+			Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
+			echo $output;
 		} else {
 			// Загрузка главной страницы
 			$userPrefix = isset($_SESSION['user_id']) ? 'user_' . $_SESSION['user_id'] : 'guest';
@@ -254,13 +260,13 @@ if (empty($_SESSION['csrf_token'])) {
 
 			$paginationHtml = Pagination::render($pagination, "/");
 			foreach ($allNews as &$item) {
-				if (isset($item['excerpt'])) {
-					$item['excerpt'] = $parse->userblocks(
-						$item['excerpt'],
+				if (isset($item['content'])) {
+					$item['content'] = $parse->userblocks(
+						$item['content'],
 						$config,
 						$_SESSION['user'] ?? null  // Передаем данные пользователя
 					);
-					$item['excerpt'] = $parse->truncateHTML($item['excerpt']);
+					$item['content'] = $parse->truncateHTML($item['content']);
 				}
 			}
 			unset($item);
@@ -280,8 +286,13 @@ if (empty($_SESSION['csrf_token'])) {
 				public function __construct($html) { $this->html = $html; }
 				public function __toString() { return $this->html; }
 			});
-			$output = $template->render('home.tpl');
+			/*$output = $template->render('home.tpl');
         Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
+        echo $output;*/
+		$output = $template->render('header.tpl');
+		$output .= $template->renderNewsList($allNews, 'news_item.tpl');
+		$output .= $template->render('footer.tpl');
+		Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
         echo $output;
 		}
 		
@@ -306,7 +317,10 @@ if (empty($_SESSION['csrf_token'])) {
                     'pageTitle' => $pageTitle,
                 ];
                 $template->assignMultiple(array_merge($commonVars, $pageVars));
-                echo $template->render('forgot_password.tpl');
+                $output = $template->render('header.tpl');
+				$output .= $template->render('forgot_password.tpl');
+				$output .= $template->render('footer.tpl');
+				echo $output;
                 break;
                 
             case 'request_reset':
@@ -330,7 +344,10 @@ if (empty($_SESSION['csrf_token'])) {
                         'token' => $_GET['token']
                     ];
                     $template->assignMultiple(array_merge($commonVars, $pageVars));
-                    echo $template->render('reset_password.tpl');
+                    $output = $template->render('header.tpl');
+					$output .= $template->render('reset_password.tpl');
+					$output .= $template->render('footer.tpl');
+					echo $output;
                     break;
                 }
                 
@@ -348,7 +365,7 @@ if (empty($_SESSION['csrf_token'])) {
 				if (!empty($searchQuery)) {
 				
 					// Обработка поиска
-					$pageTitle = Lang::get('search_results', 'core') . htmlspecialchars($searchQuery) . ' | ' . $baseTitle;
+					$pageTitle = Lang::get('search_results', 'core')  . htmlspecialchars($searchQuery) . ' | ' . $baseTitle;
 					$metaDescription = $news->generateMetaDescription('', 'search', [
 						'query' => $searchQuery
 					]);
@@ -366,13 +383,13 @@ if (empty($_SESSION['csrf_token'])) {
 					);
 					$searchResults = $news->searchNews($searchQuery, $pagination['per_page'], $pagination['offset']);
 					foreach ($searchResults as &$item) {
-						if (isset($item['excerpt'])) {
-							$item['excerpt'] = $parse->userblocks(
-								$item['excerpt'],
+						if (isset($item['content'])) {
+							$item['content'] = $parse->userblocks(
+								$item['content'],
 								$config,
 								$_SESSION['user'] ?? null  // Передаем данные пользователя
 							);
-							$item['excerpt'] = $parse->truncateHTML($item['excerpt']);
+							$item['content'] = $parse->truncateHTML($item['content']);
 						}
 					}
 					unset($item);
@@ -385,9 +402,6 @@ if (empty($_SESSION['csrf_token'])) {
 					$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
 					'pageTitle' => $pageTitle,
-					'searchQuery' => htmlspecialchars($searchQuery),
-					'news' => $searchResults,
-					'totalResults' => $totalResults,
 					'metaDescription' => $metaDescription,
 					'metaKeywords' => $metaKeywords,
 					];
@@ -397,8 +411,10 @@ if (empty($_SESSION['csrf_token'])) {
 						public function __construct($html) { $this->html = $html; }
 						public function __toString() { return $this->html; }
 					});
-					echo $template->render('search.tpl');
-					
+					$output = $template->render('header.tpl');
+					$output .= $template->renderNewsList($searchResults, 'search.tpl');
+					$output .= $template->render('footer.tpl');
+					echo $output;
 				}
 				break;
 			case 'login':
@@ -412,7 +428,10 @@ if (empty($_SESSION['csrf_token'])) {
 				'metaKeywords' => $metaKeywords,
 				];
 				$template->assignMultiple(array_merge($commonVars, $pageVars));
-				echo $template->render('login.tpl');
+				$output = $template->render('header.tpl');
+				$output .= $template->render('login.tpl');
+				$output .= $template->render('footer.tpl');
+				echo $output;
                 break;
             case 'register':
 				$pageTitle = Lang::get('register', 'core') . ' | ' . $baseTitle;
@@ -425,7 +444,10 @@ if (empty($_SESSION['csrf_token'])) {
 				'metaKeywords' => $metaKeywords,
 				];
 				$template->assignMultiple(array_merge($commonVars, $pageVars));
-				echo $template->render('register.tpl');
+				$output = $template->render('header.tpl');
+				$output .= $template->render('register.tpl');
+				$output .= $template->render('footer.tpl');
+				echo $output;
                 break;
             case 'contact':
 				$pageTitle = Lang::get('contact', 'core') . ' | ' . $baseTitle;
@@ -438,7 +460,10 @@ if (empty($_SESSION['csrf_token'])) {
 				'metaKeywords' => $metaKeywords,
 				];
 				$template->assignMultiple(array_merge($commonVars, $pageVars));
-				echo $template->render('contact.tpl');
+				$output = $template->render('header.tpl');
+				$output .= $template->render('contact.tpl');
+				$output .= $template->render('footer.tpl');
+				echo $output;
                 break;
             default:
                 // Обработка 404 ошибки
