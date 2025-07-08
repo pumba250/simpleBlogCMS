@@ -5,7 +5,7 @@
  * @package    SimpleBlog
  * @subpackage Services
  * @category   Maintenance
- * @version    0.9.0
+ * @version    0.8.2
  * 
  * @method bool|array checkForUpdates() Проверяет обновления
  * @method bool performUpdate() Выполняет обновление
@@ -22,6 +22,9 @@ class Updater {
     private $githubRepo;
     
     public function __construct($pdo, $config) {
+		if (session_status() === PHP_SESSION_NONE) {
+			session_start();
+		}
         $this->pdo = $pdo;
         $this->config = $config;
         $this->lastCheckFile = __DIR__.'/../cache/last_update_check';
@@ -36,7 +39,6 @@ public function checkForUpdates() {
     if ($this->config['disable_update_check'] ?? true) {
         return false;
     }
-	//@unlink($this->lastCheckFile);
     // Проверяем временной интервал
     if (file_exists($this->lastCheckFile)) {
         $lastCheck = filemtime($this->lastCheckFile);
@@ -88,13 +90,11 @@ public function checkForUpdates() {
                 'release_url' => $release['html_url'],
                 'is_important' => $this->isImportantUpdate($release['body'])
             ];
-			if ($updateInfo) {
-				if (session_status() === PHP_SESSION_NONE) {
-					session_start();
-				}
-				$_SESSION['available_update'] = $updateInfo;
-				@touch($this->lastCheckFile);
-			}
+			
+			$_SESSION['available_update'] = $updateInfo;
+			file_put_contents($this->lastCheckFile, json_encode($updateInfo)); // Сохраняем в файл
+			@touch($this->lastCheckFile); // Обновляем время модификации файла
+			
             return $updateInfo;
         }
     } catch (Exception $e) {
@@ -186,13 +186,15 @@ public function checkForUpdates() {
 		try {
 			// Явный вывод ошибок
 			echo "Начало процесса обновления...<br>";
-			
+			if (empty($_SESSION['available_update'])) {
+				$this->checkForUpdates();
+			}
 			// Получаем информацию об обновлении
-			$updateInfo = $this->checkForUpdates();
+			$updateInfo = $this->getUpdateInfo();
 			echo "Информация об обновлении: " . print_r($updateInfo, true) . "<br>";
 			
 			if (!$updateInfo || !isset($updateInfo['download_url'])) {
-				throw new Exception("Нет корректной информации об обновлении");
+				throw new Exception("Нет корректной информации об обновлении. Проверьте файл: " . $this->lastCheckFile);
 			}
 
 			// Создаем резервную копию
@@ -229,7 +231,9 @@ public function checkForUpdates() {
 			if (file_exists($tempFile)) {
 				unlink($tempFile);
 			}
-
+			if (file_exists($this->lastCheckFile)) {
+				unlink($this->lastCheckFile);
+			}
 			echo "Обновление успешно завершено!<br>";
 			return true;
 
@@ -349,8 +353,25 @@ public function checkForUpdates() {
      * Получает информацию о доступном обновлении
      */
     public function getUpdateInfo() {
-        return $_SESSION['available_update'] ?? null;
-    }
+		if (!empty($_SESSION['available_update'])) {
+			return $_SESSION['available_update'];
+		}
+
+		// Если в сессии нет, проверяем файл
+		if (file_exists($this->lastCheckFile)) {
+			$fileContent = file_get_contents($this->lastCheckFile);
+			if ($fileContent !== false) {
+				$updateInfo = json_decode($fileContent, true);
+				if (json_last_error() === JSON_ERROR_NONE) {
+					$_SESSION['available_update'] = $updateInfo; // Восстанавливаем в сессии
+					return $updateInfo;
+				}
+			}
+		}
+
+		// Если ничего нет, возвращаем null
+		return null;
+	}
     /**
  * Обновляет версию в конфигурационном файле
  * 
