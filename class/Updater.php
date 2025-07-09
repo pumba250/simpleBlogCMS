@@ -225,7 +225,7 @@ public function checkForUpdates() {
 			// Загружаем обновление
 			echo date('Y-m-d H:i:s') . " - Загрузка обновления...\n";
 			$tempFile = $this->downloadUpdate($updateInfo['download_url']);
-			echo date('Y-m-d H:i:s') . " - Обновление успешно загружено (" . round(filesize($tempFile)/1024 . " KB)\n";
+			echo date('Y-m-d H:i:s') . " - Обновление успешно загружено (" . round(filesize($tempFile)/1024) . " KB)\n";
 			
 			// Проверка хеша
 			if (!empty($updateInfo['sha256'])) {
