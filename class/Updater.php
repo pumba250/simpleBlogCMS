@@ -5,7 +5,7 @@
  * @package    SimpleBlog
  * @subpackage Services
  * @category   Maintenance
- * @version    0.8.2
+ * @version    0.9.1
  * 
  * @method bool|array checkForUpdates() Проверяет обновления
  * @method bool performUpdate() Выполняет обновление
@@ -197,70 +197,93 @@ public function checkForUpdates() {
 	 */
 	public function performUpdate() {
 		try {
-			// Явный вывод ошибок
-			echo "Начало процесса обновления...<br>";
+			echo "<div style='font-family: monospace; white-space: pre;'>"; // Для лучшего форматирования
+			
+			echo "=== Начало процесса обновления ===\n";
+			echo date('Y-m-d H:i:s') . " - Инициализация...\n";
+			
 			if (empty($_SESSION['available_update'])) {
+				echo date('Y-m-d H:i:s') . " - Проверка доступных обновлений...\n";
 				$this->checkForUpdates();
 			}
+			
 			// Получаем информацию об обновлении
+			echo date('Y-m-d H:i:s') . " - Получение информации об обновлении...\n";
 			$updateInfo = $this->getUpdateInfo();
-			echo "Информация об обновлении: " . print_r($updateInfo, true) . "<br>";
 			
 			if (!$updateInfo || !isset($updateInfo['download_url'])) {
 				throw new Exception("Нет корректной информации об обновлении. Проверьте файл: " . $this->lastCheckFile);
 			}
-
+			
+			echo date('Y-m-d H:i:s') . " - Доступно обновление с версии {$updateInfo['current_version']} на версию {$updateInfo['new_version']}\n";
+			
 			// Создаем резервную копию
-			echo "Создание резервной копии...<br>";
+			echo date('Y-m-d H:i:s') . " - Создание резервной копии системы...\n";
 			$backupFile = $this->createBackup();
-			echo "Резервная копия создана: $backupFile<br>";
-
+			echo date('Y-m-d H:i:s') . " - Резервная копия успешно создана: " . basename($backupFile) . "\n";
+			
 			// Загружаем обновление
-			echo "Загрузка обновления...<br>";
+			echo date('Y-m-d H:i:s') . " - Загрузка обновления...\n";
 			$tempFile = $this->downloadUpdate($updateInfo['download_url']);
-			echo "Обновление загружено во временный файл: $tempFile<br>";
-
+			echo date('Y-m-d H:i:s') . " - Обновление успешно загружено (" . round(filesize($tempFile)/1024 . " KB)\n";
+			
 			// Проверка хеша
 			if (!empty($updateInfo['sha256'])) {
-				echo "Проверка хеша...<br>";
+				echo date('Y-m-d H:i:s') . " - Проверка целостности файла...\n";
 				$fileHash = hash_file('sha256', $tempFile);
 				if ($fileHash !== $updateInfo['sha256']) {
 					throw new Exception("Хеш не совпадает! Ожидалось: {$updateInfo['sha256']}, получено: $fileHash");
 				}
-				echo "Хеш верный<br>";
+				echo date('Y-m-d H:i:s') . " - Проверка целостности пройдена успешно\n";
 			}
-
+			
 			// Применяем обновление
-			echo "Применение обновления...<br>";
+			echo date('Y-m-d H:i:s') . " - Применение обновления...\n";
 			$this->applyUpdate($tempFile);
-			echo "Обновление применено<br>";
-
+			echo date('Y-m-d H:i:s') . " - Файлы обновления успешно применены\n";
+			
 			// Обновляем версию в конфиге
-			echo "Обновление конфигурации...<br>";
+			echo date('Y-m-d H:i:s') . " - Обновление версии в конфигурации...\n";
 			$this->updateConfigVersion($updateInfo['new_version']);
-			echo "Версия в конфиге обновлена<br>";
-
+			echo date('Y-m-d H:i:s') . " - Версия в конфигурации обновлена на {$updateInfo['new_version']}\n";
+			
 			// Очистка
 			if (file_exists($tempFile)) {
 				unlink($tempFile);
+				echo date('Y-m-d H:i:s') . " - Временный файл обновления удален\n";
 			}
 			if (file_exists($this->lastCheckFile)) {
 				unlink($this->lastCheckFile);
+				echo date('Y-m-d H:i:s') . " - Кэш проверки обновлений очищен\n";
 			}
-			echo "Обновление успешно завершено!<br>";
+			
+			echo date('Y-m-d H:i:s') . " - Обновление успешно завершено!\n";
+			echo "=== Конец процесса обновления ===\n";
+			echo "</div>";
+			
+			// Очищаем буфер вывода, чтобы сообщения отображались сразу
+			while (ob_get_level()) {
+				ob_end_flush();
+			}
+			flush();
+			
 			return true;
-
+			
 		} catch (Exception $e) {
-			// Логируем ошибку
-			error_log("Ошибка обновления: " . $e->getMessage());
-			echo "<strong>Ошибка:</strong> " . $e->getMessage() . "<br>";
+			echo date('Y-m-d H:i:s') . " - <strong>ОШИБКА:</strong> " . $e->getMessage() . "\n";
 			
 			// Восстановление из резервной копии
 			if (!empty($backupFile) && file_exists($backupFile)) {
-				echo "Попытка восстановления из резервной копии...<br>";
-				$this->restoreBackup($backupFile);
+				echo date('Y-m-d H:i:s') . " - Попытка восстановления из резервной копии...\n";
+				try {
+					$this->restoreBackup($backupFile);
+					echo date('Y-m-d H:i:s') . " - Восстановление из резервной копии успешно завершено\n";
+				} catch (Exception $restoreEx) {
+					echo date('Y-m-d H:i:s') . " - <strong>ОШИБКА ВОССТАНОВЛЕНИЯ:</strong> " . $restoreEx->getMessage() . "\n";
+				}
 			}
 			
+			echo "</div>";
 			return false;
 		}
 	}
