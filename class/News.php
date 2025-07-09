@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Content
- * @version    0.9.0
+ * @version    0.9.1
  * 
  * @method array getAllNews(int $limit, int $offset) Получает новости с пагинацией
  * @method array searchNews(string $query, int $limit = 10, int $offset = 0) Ищет новости

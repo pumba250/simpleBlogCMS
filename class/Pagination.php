@@ -7,7 +7,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Utilities
- * @version    0.9.0
+ * @version    0.9.1
  * 
  * @method static array calculate(int $totalItems, int $perPage, int $currentPage) Рассчитывает данные пагинации
  * @method static string render(array $paginationData, string $baseUrl, string $pageParam = 'page') Генерирует HTML пагинации

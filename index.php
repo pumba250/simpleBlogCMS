@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Core
- * @version    0.9.0
+ * @version    0.9.1
  * 
  * @router
  *  GET  /             - Главная страница блога

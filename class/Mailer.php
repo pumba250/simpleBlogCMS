@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Services
  * @category   Communication
- * @version    0.9.0
+ * @version    0.9.1
  * 
  * @method static bool send(string $to, string $subject, string $body, bool $isHtml = true) Отправляет email
  */

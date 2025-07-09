@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Utilities
- * @version    0.9.0
+ * @version    0.9.1
  * 
  * @method string truncateHTML(string $text, int $size = 300, string $finisher = '...') Обрезает HTML
  * @method string userblocks(string $content, array $config, array|null $user = null) Обрабатывает пользовательские блоки

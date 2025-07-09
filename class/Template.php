@@ -7,7 +7,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Views
- * @version    0.9.0
+ * @version    0.9.1
  * 
  * @method void assign(string $key, mixed $value) Назначает переменную
  * @method void assignMultiple(array $vars) Назначает несколько переменных

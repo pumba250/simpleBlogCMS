@@ -35,20 +35,19 @@ class Updater {
      * Проверяет обновления через GitHub Releases
      */
 public function checkForUpdates() {
-	
     if ($this->config['disable_update_check'] ?? true) {
         return false;
     }
+
     // Проверяем временной интервал
     if (file_exists($this->lastCheckFile)) {
         $lastCheck = filemtime($this->lastCheckFile);
-        $interval = $this->config['update_check_interval'] ?? 0; // По умолчанию 24 часа
+        $interval = $this->config['update_check_interval'] ?? 86400; // 24 часа по умолчанию
         
         if ((time() - $lastCheck) < $interval) {
-            if (isset($_SESSION['available_update'])) {
-                return $_SESSION['available_update'];
-            }
-            return false; // Ещё не время проверять
+            $cachedData = json_decode(file_get_contents($this->lastCheckFile), true);
+            // Возвращаем данные из кэша, если они есть, иначе false
+            return $cachedData['has_update'] ? $cachedData : false;
         }
     }
 
@@ -77,31 +76,45 @@ public function checkForUpdates() {
         if (json_last_error() !== JSON_ERROR_NONE || !isset($release['tag_name'])) {
             throw new Exception("Invalid GitHub response format");
         }
+
         $currentVersion = $this->normalizeVersion($this->config['version']);
         $latestVersion = $this->normalizeVersion($release['tag_name']);
         
+        $result = [
+            'has_update' => false,
+            'last_checked' => time(),
+            'current_version' => $this->config['version'],
+            'latest_version' => $release['tag_name']
+        ];
+
         if (version_compare($currentVersion, $latestVersion, '<')) {
-            $updateInfo = [
-                'current_version' => $this->config['version'],
-                'new_version' => $release['tag_name'],
-                'release_date' => date('d.m.Y', strtotime($release['published_at'])),
-                'changelog' => $this->parseReleaseNotes($release['body']),
-                'download_url' => $release['zipball_url'],
-                'release_url' => $release['html_url'],
-                'is_important' => $this->isImportantUpdate($release['body'])
-            ];
-			
-			$_SESSION['available_update'] = $updateInfo;
-			file_put_contents($this->lastCheckFile, json_encode($updateInfo)); // Сохраняем в файл
-			@touch($this->lastCheckFile); // Обновляем время модификации файла
-			
-            return $updateInfo;
+            $result['has_update'] = true;
+            $result['new_version'] = $release['tag_name'];
+            $result['release_date'] = date('d.m.Y', strtotime($release['published_at']));
+            $result['changelog'] = $this->parseReleaseNotes($release['body']);
+            $result['download_url'] = $release['zipball_url'];
+            $result['release_url'] = $release['html_url'];
+            $result['is_important'] = $this->isImportantUpdate($release['body']);
+            
+            $_SESSION['available_update'] = $result;
         }
+
+        // Сохраняем результат проверки в файл
+        file_put_contents($this->lastCheckFile, json_encode($result));
+        @touch($this->lastCheckFile); // Обновляем время модификации файла
+        
+        return $result['has_update'] ? $result : false;
     } catch (Exception $e) {
         error_log("GitHub check failed: ".$e->getMessage());
+        // Сохраняем информацию о неудачной проверке
+        $result = [
+            'has_update' => false,
+            'last_checked' => time(),
+            'error' => $e->getMessage()
+        ];
+        file_put_contents($this->lastCheckFile, json_encode($result));
+        return false;
     }
-    
-    return false;
 }
 
     /**

@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Admin
- * @version    0.9.0
+ * @version    0.9.1
  * 
  * @sections
  * - Управление пользователями
@@ -26,6 +26,9 @@ session_start([
     'cookie_samesite' => 'Strict',
     'use_strict_mode' => true
 ]);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && stripos($_SERVER['CONTENT_TYPE'], 'application/x-www-form-urlencoded') === false) {
+    die("Invalid Content-Type");
+}
 require 'class/Lang.php';
 Lang::init();
 
@@ -542,11 +545,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						
 						if ($updater->performUpdate()) {
 							$_SESSION['admin_message'] = 'Обновление успешно установлено!';
-							logAction('Установка обновления', "Установлена версия: " . $updateInfo['new_version']);
+							logAction('Установка обновления', "Установлена версия: " . $_SESSION['available_update']['new_version']);
 							
 							
 							// Перенаправляем с задержкой
-							echo '<meta http-equiv="refresh" content="3;url=?section=updates">';
+							echo '<meta http-equiv="refresh" content="5;url=?section=updates">';
 							exit;
 						} else {
 							throw new Exception("Не удалось выполнить обновление");
