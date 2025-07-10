@@ -405,7 +405,7 @@ public function processComments(array $comments, string $templateFile): string {
             'theme_id' => $comment['theme_id'] ?? '',
             'user_name' => $comment['user_name'] ?? '',
             'user_text' => $comment['user_text'] ?? '',
-            'created_at' => $comment['created_at'] ?? '',
+            'created_at' => $this->formatDate($comment['created_at'] ?? ''),
             'comm_rating' => $votes->getCommentRating($comment['id']),
             'voted' => isset($_SESSION['user']) ? $votes->hasUserVoted($comment['id'], $_SESSION['user']['id']) : false,
             'csrf_token' => $_SESSION['csrf_token'] ?? ''
@@ -416,9 +416,50 @@ public function processComments(array $comments, string $templateFile): string {
     return $processed;
 }
 
-protected function formatDate(string $date): string {
-    // Ваша логика форматирования даты
-    return date('d.m.Y H:i', strtotime($date));
+protected function formatDate($date): string {
+    try {
+        // Если дата пустая или некорректная
+        if (empty($date)) {
+            return 'дата неизвестна';
+        }
+
+        $timestamp = is_numeric($date) ? (int)$date : strtotime($date);
+        
+        // Если не удалось распознать дату
+        if ($timestamp === false) {
+            return 'неверная дата';
+        }
+
+        $now = time();
+        $today = strtotime('today', $now);
+        $yesterday = strtotime('yesterday', $now);
+
+        // Относительное время
+        if ($timestamp >= $today) {
+            return 'сегодня в ' . date('H:i', $timestamp);
+        }
+        if ($timestamp >= $yesterday) {
+            return 'вчера в ' . date('H:i', $timestamp);
+        }
+
+        // Полное форматирование с локализацией
+        if (class_exists('IntlDateFormatter')) {
+            $formatter = new IntlDateFormatter(
+                'ru_RU',
+                IntlDateFormatter::LONG,
+                IntlDateFormatter::SHORT,
+                date_default_timezone_get(),
+                IntlDateFormatter::GREGORIAN,
+                'd MMMM yyyy, HH:mm'
+            );
+            return $formatter->format($timestamp);
+        }
+
+        return date('d.m.Y H:i', $timestamp);
+    } catch (Exception $e) {
+        error_log("Date formatting error: " . $e->getMessage());
+        return 'ошибка даты';
+    }
 }
 
 

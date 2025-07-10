@@ -1,7 +1,7 @@
                     <div class="w3-panel w3-border w3-light-grey w3-padding" style="margin-bottom: 16px;">
                         <div class="w3-row">
                             <div class="w3-col m10">
-                                <strong>{user_name}:</strong>
+                                <strong>{user_name}:</strong><br /><small class="w3-opacity">{created_at}</small>
                                 <p>{user_text}</p>
                             </div>
                             <div class="w3-col m2">
