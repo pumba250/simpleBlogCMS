@@ -116,7 +116,7 @@ private function startSession() {
         global $config;
         Mailer::init($config);
         
-        $verificationUrl = "http://{$_SERVER['HTTP_HOST']}/?action=verify_email&token=$token";
+        $verificationUrl = "https://{$_SERVER['HTTP_HOST']}/?action=verify_email&token=$token";
         $subject = Lang::get('verify_email_subject', 'core');
         
         $message = '
@@ -183,7 +183,7 @@ private function startSession() {
         global $config;
         Mailer::init($config);
         
-        $resetUrl = "http://{$_SERVER['HTTP_HOST']}/?action=reset_password&token=$token";
+        $resetUrl = "https://{$_SERVER['HTTP_HOST']}/?action=reset_password&token=$token";
         $subject = Lang::get('reset_email_subject', 'core');
         
         $message = '
