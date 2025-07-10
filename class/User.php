@@ -50,7 +50,7 @@ private function startSession() {
      * Обновить пользователя
      */
     public function updateUser($id, $username, $email, $isadmin) {
-	global $dbPrefix;
+	global $dbPrefix, $config;
         try {
             $stmt = $this->pdo->prepare("UPDATE {$dbPrefix}users SET username = ?, email = ?, isadmin = ? WHERE id = ?");
             return $stmt->execute([$username, $email, $isadmin, $id]);

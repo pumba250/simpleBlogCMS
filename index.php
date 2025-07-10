@@ -91,13 +91,14 @@ require 'class/Pagination.php';
 require 'class/Core.php';
 require 'class/Template.php';
 // Инициализация объектов
-$user = new User($pdo, $template);
+
 $votes = new Votes($pdo);
 $contact = new Contact($pdo);
 $news = new News($pdo);
 $comments = new Comments($pdo);
 $parse = new parse();
 $template = new Template();
+$user = new User($pdo, $template);
 $baseTitle = $config['home_title'];
 $pageTitle = $baseTitle;
 $core = new Core($pdo, $config, $template);
