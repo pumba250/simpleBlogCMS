@@ -5,7 +5,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * 
  * @package    SimpleBlog
  * @subpackage Core
- * @version    0.9.1
+ * @version    0.9.2
  * 
  * @method array getAllUsers() Получает всех пользователей
  * @method bool hasPermission(int $requiredRole, int $currentRole) Проверяет права
@@ -50,7 +50,7 @@ private function startSession() {
      * Обновить пользователя
      */
     public function updateUser($id, $username, $email, $isadmin) {
-	global $dbPrefix, $config;
+	global $dbPrefix;
         try {
             $stmt = $this->pdo->prepare("UPDATE {$dbPrefix}users SET username = ?, email = ?, isadmin = ? WHERE id = ?");
             return $stmt->execute([$username, $email, $isadmin, $id]);
@@ -116,7 +116,7 @@ private function startSession() {
         global $config;
         Mailer::init($config);
         
-        $verificationUrl = "https://{$_SERVER['HTTP_HOST']}/?action=verify_email&token=$token";
+        $verificationUrl = "http://{$_SERVER['HTTP_HOST']}/?action=verify_email&token=$token";
         $subject = Lang::get('verify_email_subject', 'core');
         
         $message = '
@@ -183,7 +183,7 @@ private function startSession() {
         global $config;
         Mailer::init($config);
         
-        $resetUrl = "https://{$_SERVER['HTTP_HOST']}/?action=reset_password&token=$token";
+        $resetUrl = "http://{$_SERVER['HTTP_HOST']}/?action=reset_password&token=$token";
         $subject = Lang::get('reset_email_subject', 'core');
         
         $message = '

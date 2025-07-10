@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Performance
- * @version    0.9.1
+ * @version    0.9.2
  * 
  * @method static bool   has(string $key)                  Проверяет наличие данных в кэше
  * @method static mixed  get(string $key)                  Получает данные из кэша

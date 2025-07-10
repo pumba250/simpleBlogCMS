@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Interaction
- * @version    0.9.1
+ * @version    0.9.2
  * 
  * @method bool voteComment(int $id, string $voteType, int $userId) Голосует за комментарий
  * @method bool hasUserVoted(int $commentId, int $userId) Проверяет голос пользователя
