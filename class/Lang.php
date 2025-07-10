@@ -1,16 +1,17 @@
 <?php
 if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
 /**
- * Класс для работы с языковыми файлами
+ * Класс для работы с языковыми файлами и локализацией
  * 
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Internationalization
  * @version    0.9.2
  * 
- * @method static void init() Инициализирует языковую систему
- * @method static void setLanguage(string $lang) Устанавливает язык
- * @method static string get(string $key, string $section = 'main') Получает перевод
+ * @method static void   init() Инициализирует языковую систему (определяет язык из сессии/браузера)
+ * @method static void   setLanguage(string $lang) Устанавливает язык (если файлы локализации существуют)
+ * @method static string get(string $key, string $section = 'main') Получает перевод по ключу из указанного раздела
+ * @method static string detectLanguage() Определяет язык браузера (приватный)
  */
 class Lang {
     protected static $translations = [];

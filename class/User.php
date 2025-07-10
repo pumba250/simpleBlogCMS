@@ -1,22 +1,35 @@
 <?php
 if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
 /**
- * Класс для работы с пользователями
+ * Класс для работы с пользователями и аутентификацией
  * 
  * @package    SimpleBlog
  * @subpackage Core
+ * @category   Authentication
  * @version    0.9.2
  * 
- * @method array getAllUsers() Получает всех пользователей
- * @method bool hasPermission(int $requiredRole, int $currentRole) Проверяет права
- * @method bool updateUser(int $id, string $username, string $email, int $isadmin) Обновляет пользователя
- * @method bool deleteUser(int $id) Удаляет пользователя
- * @method bool register(string $username, string $password, string $email) Регистрирует пользователя
- * @method bool verifyEmail(string $token) Подтверждает email
- * @method bool sendPasswordReset(string $email) Отправляет сброс пароля
- * @method bool resetPassword(string $token, string $newPassword) Сбрасывает пароль
- * @method array|bool login(string $username, string $password) Авторизует пользователя
- * @method void logout() Выход из системы
+ * @method void   __construct(PDO $pdo) Инициализирует систему пользователей
+ * @method array  getAllUsers() Получает список всех пользователей
+ * @method bool   hasPermission(int $requiredRole, int $currentRole) Проверяет права доступа
+ * @method bool   updateUser(int $id, string $username, string $email, int $isadmin) Обновляет данные пользователя
+ * @method bool   deleteUser(int $id) Удаляет пользователя
+ * @method bool   register(string $username, string $password, string $email) Регистрирует нового пользователя
+ * @method bool   verifyEmail(string $token) Подтверждает email пользователя
+ * @method bool   sendPasswordReset(string $email) Отправляет ссылку для сброса пароля
+ * @method bool   resetPassword(string $token, string $newPassword) Сбрасывает пароль пользователя
+ * @method array|bool login(string $username, string $password) Выполняет вход пользователя
+ * @method void   logout() Выполняет выход пользователя
+ * @method void   startSession() Инициализирует сессию (приватный)
+ * @method bool   sendVerificationEmail(string $username, string $email, string $token) Отправляет email подтверждения (приватный)
+ * @method bool   sendResetEmail(string $username, string $email, string $token) Отправляет email сброса пароля (приватный)
+ * 
+ * Вспомогательные функции для работы с пользователями
+ * 
+ * @method void   flash(?string $message = null) Устанавливает/выводит flash-сообщение
+ * @method string formatDate(string $dateString) Форматирует дату
+ * @method string getRandomColor() Генерирует случайный цвет
+ * @method void   setFlash(string $type, string $message) Устанавливает типизированное flash-сообщение
+ * @method string e(string $string) Экранирует HTML-спецсимволы (аналог htmlspecialchars)
  */
 class User {
     private $pdo;

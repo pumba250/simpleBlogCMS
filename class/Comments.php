@@ -9,19 +9,20 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @version    0.9.2
  * 
  * @method int addComment(int $parentId, int $fParent, int $themeId, string $userName, string $userText) Добавляет комментарий
- * @method bool editComment(int $id, string $userText) Редактирует комментарий
+ * @method bool editComment(int $id, string $userText) Редактирует текст комментария
  * @method bool deleteComment(int $id) Удаляет комментарий
- * @method array getComments(int $themeId, int $limit = 10, int $offset = 0, bool $moderatedOnly = true) Получает комментарии
+ * @method array getComments(int $themeId, int $limit = 10, int $offset = 0, bool $moderatedOnly = true) Получает комментарии для темы
  * @method array AllComments(int $limit = 10, int $offset = 0) Получает все комментарии (админка)
- * @method int countComments(int $themeId, bool $moderatedOnly = true) Считает комментарии
- * @method int countAllComments() Считает все комментарии
- * @method bool toggleModeration(int $id) Переключает модерацию
- * @method bool voteComment(int $id, string $voteType) Голосование за комментарий
+ * @method int countComments(int $themeId, bool $moderatedOnly = true) Считает комментарии для темы
+ * @method int countAllComments() Считает все комментарии в системе
+ * @method bool toggleModeration(int $id) Переключает статус модерации
+ * @method bool voteComment(int $id, string $voteType) Голосование за/против комментария
  * @method bool approveComment(int $commentId) Одобряет комментарий
  * @method bool rejectComment(int $commentId) Отклоняет комментарий
  * @method array getPendingComments() Получает комментарии на модерации
  * @method int countPendingComments() Считает комментарии на модерации
- * @method bool getCommentStatus(int $id) Получает статус комментария
+ * @method bool getCommentStatus(int $id) Получает статус модерации комментария
+ * @method array getCommentsPaginationData(int $themeId, int $currentPage = 1, bool $moderatedOnly = true) Рассчитывает данные пагинации
  */
 class Comments {
     private $pdo;

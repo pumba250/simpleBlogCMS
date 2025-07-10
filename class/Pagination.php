@@ -1,6 +1,5 @@
 <?php
 if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
-
 /**
  * Класс для работы с пагинацией
  * 
@@ -9,8 +8,8 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @category   Utilities
  * @version    0.9.2
  * 
- * @method static array calculate(int $totalItems, int $perPage, int $currentPage) Рассчитывает данные пагинации
- * @method static string render(array $paginationData, string $baseUrl, string $pageParam = 'page') Генерирует HTML пагинации
+ * @method static array  calculate(int $totalItems, string $type, int $currentPage, array $config) Рассчитывает параметры пагинации
+ * @method static string render(array $paginationData, string $baseUrl, string $pageParam = 'page') Генерирует HTML-код пагинации
  */
 class Pagination {
     const TYPE_NEWS = 'news';

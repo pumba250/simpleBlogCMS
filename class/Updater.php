@@ -1,15 +1,29 @@
 <?php
 /**
- * Класс для обновлений системы
+ * Система обновлений CMS
  * 
  * @package    SimpleBlog
  * @subpackage Services
  * @category   Maintenance
  * @version    0.9.2
  * 
- * @method bool|array checkForUpdates() Проверяет обновления
- * @method bool performUpdate() Выполняет обновление
- * @method array getUpdateInfo() Получает информацию об обновлении
+ * @method void   __construct(PDO $pdo, array $config) Инициализирует систему обновлений
+ * @method bool|array checkForUpdates() Проверяет наличие обновлений
+ * @method bool performUpdate() Выполняет процесс обновления
+ * @method array getUpdateInfo() Получает информацию о доступном обновлении
+ * @method string normalizeVersion(string $version) Нормализует номер версии
+ * @method string parseReleaseNotes(string $body) Обрабатывает примечания к релизу
+ * @method bool isImportantUpdate(string $body) Проверяет критичность обновления
+ * @method string getAssetHash(string $assetUrl) Получает хеш файла обновления
+ * @method string cleanVersion(string $version) Очищает номер версии
+ * @method string downloadUpdate(string $url) Загружает файл обновления
+ * @method void applyUpdate(string $tempFile) Применяет обновление
+ * @method bool updateConfigVersion(string $newVersion) Обновляет версию в конфиге
+ * @method string createBackup() Создает резервную копию
+ * @method void copyDirectory(string $src, string $dst) Копирует директорию
+ * @method void removeDirectory(string $dir) Удаляет директорию
+ * @method void executeUpdateSql(string $file) Выполняет SQL-скрипт
+ * @method bool restoreBackup(string $backupFile) Восстанавливает из резервной копии
  */
 if (!defined('IN_SIMPLECMS')) {
     die('Прямой доступ запрещен');

@@ -8,9 +8,9 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @category   Contact
  * @version    0.9.2
  * 
- * @method bool saveMessage(string $name, string $email, string $message) Сохраняет сообщение
- * @method array getAllMessages() Получает все сообщения
- * @method bool deleteMessage(int $id) Удаляет сообщение
+ * @method bool   saveMessage(string $name, string $email, string $message) Сохраняет контактное сообщение в БД
+ * @method array  getAllMessages() Получает все сообщения (сортировка по дате создания)
+ * @method bool   deleteMessage(int $id) Удаляет сообщение по ID
  */
 class Contact {
     private $pdo;

@@ -1,14 +1,16 @@
 <?php
 if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
 /**
- * Класс для отправки email
+ * Класс для отправки электронной почты
  * 
  * @package    SimpleBlog
  * @subpackage Services
  * @category   Communication
  * @version    0.9.2
  * 
- * @method static bool send(string $to, string $subject, string $body, bool $isHtml = true) Отправляет email
+ * @method static void   init(array $config) Инициализирует конфигурацию почтовой системы
+ * @method static bool   send(string $to, string $subject, string $body, bool $isHtml = true) Отправляет email
+ * @method static string wrapHtml(string $subject, string $content) Форматирует контент в HTML-шаблон (приватный)
  */
 class Mailer {
     private static $config;

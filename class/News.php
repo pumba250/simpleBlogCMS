@@ -8,29 +8,30 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @category   Content
  * @version    0.9.2
  * 
- * @method array getAllNews(int $limit, int $offset) Получает новости с пагинацией
- * @method array searchNews(string $query, int $limit = 10, int $offset = 0) Ищет новости
- * @method int countSearchResults(string $query) Считает результаты поиска
- * @method array getAllAdm(int $limit = 0, int $offset = 0) Получает все новости (админка)
- * @method int getTotalNewsCount() Получает количество новостей
- * @method array getLastThreeNews() Получает 3 последние новости
- * @method array generateTags(string $title, string $content) Генерирует теги
- * @method bool addBlog(string $title, string $content, array $tags = []) Добавляет статью
- * @method array getNewsWithTags() Получает новости с тегами
- * @method bool updateNews(int $id, string $title, string $content, array $tags) Обновляет новость
- * @method bool updateBlog(int $id, string $title, string $content, array $tags = []) Обновляет блог
- * @method bool deleteNews(int $id) Удаляет новость
- * @method bool deleteBlog(int $id) Удаляет блог
- * @method array GetAllTags() Получает все теги
- * @method bool addTag(string $name) Добавляет тег
- * @method bool deleteTag(int $id) Удаляет тег
+ * @method array getAllNews(int $limit, int $offset) Получает новости с пагинацией (ограничение и смещение)
+ * @method array searchNews(string $query, int $limit = 10, int $offset = 0) Ищет новости по запросу
+ * @method int countSearchResults(string $query) Возвращает количество результатов поиска
+ * @method array getAllAdm() Получает все новости для админки (с тегами)
+ * @method int getTotalNewsCount() Возвращает общее количество новостей
+ * @method array getLastThreeNews() Возвращает 3 последние новости в HTML-формате
+ * @method array generateTags(string $title, string $content) Генерирует теги из заголовка и текста
+ * @method bool addBlog(string $title, string $content, array $tags = []) Добавляет новую запись в блог
+ * @method array getNewsWithTags() Получает новости с тегами (не реализовано в текущей версии)
+ * @method bool updateBlog(int $id, string $title, string $content, array $tags = []) Обновляет запись в блоге
+ * @method bool deleteNews(int $id) Удаляет новость (устаревший метод)
+ * @method bool deleteBlog(int $id) Удаляет запись из блога
+ * @method array GetAllTags() Возвращает все теги в HTML-формате
+ * @method bool addTag(string $name) Добавляет новый тег
+ * @method bool deleteTag(int $id) Удаляет тег по ID
  * @method void removeUnusedTags() Удаляет неиспользуемые теги
- * @method void removeTags(int $newsId) Удаляет теги у новости
+ * @method void removeTags(int $newsId) Удаляет все теги у указанной новости
  * @method array getNewsById(int $id) Получает новость по ID
- * @method array getTagsByNewsId(int $newsId) Получает теги новости
+ * @method array getTagsByNewsId(int $newsId) Возвращает теги для указанной новости
  * @method array getNewsByTag(string $tag) Получает новости по тегу
- * @method string generateMetaDescription(string $content, string $type = 'default', array $additionalData = []) Генерирует meta description
- * @method string generateMetaKeywords(string $content, string $type = 'home', array $additionalData = []) Генерирует meta keywords
+ * @method string generateMetaDescription(string $content, string $type = 'default', array $additionalData = []) Генерирует meta-описание
+ * @method string generateMetaKeywords(string $content, string $type = 'default', array $additionalData = []) Генерирует meta-ключевые слова
+ * @method array getAllNewsCached(int $limit, int $offset) Получает новости из кэша или БД (с пагинацией)
+ * @method array getNewsByIdCached(int $id) Получает новость по ID из кэша или БД
  */
 class News {
     private $pdo;
@@ -399,6 +400,7 @@ public function getLastThreeNews() {
 
 	// Функция для генерации metaDescription
 	public function generateMetaDescription($content, $type = 'default', $additionalData = []) {
+		global $config;
 		$defaultDescription = $config['metaDescription'] ?? '';
 		
 		switch ($type) {
@@ -435,6 +437,7 @@ public function getLastThreeNews() {
 
 	// Функция для генерации metaKeywords
 	public function generateMetaKeywords($content, $type = 'default', $additionalData = []) {
+		global $config;
 		$defaultKeywords = $config['metaKeywords'] ?? '';
 		
 		switch ($type) {

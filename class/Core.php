@@ -1,13 +1,21 @@
 <?php
 /**
- * Основной класс для обработки запросов.
+ * Основной класс для обработки запросов
  * 
- * Этот класс отвечает за обработку POST-запросов, включая регистрацию, авторизацию, 
- * отправку комментариев, голосования, обратную связь и сброс пароля. 
- * Также обеспечивает проверку CSRF-токена и валидацию данных.
+ * @package    SimpleBlog
+ * @subpackage Core
+ * @category   System
+ * @version    0.9.2
  * 
- * @version 0.9.2
- * @author pumba250
+ * @method void   __construct(PDO $pdo, array $config, Template $template) Инициализирует зависимости
+ * @method void   handlePostRequest() Обрабатывает все POST-запросы (основной публичный метод)
+ * @method void   handleCommentPost() Обрабатывает отправку комментария (приватный)
+ * @method void   handleVotePost() Обрабатывает голосования (приватный)
+ * @method void   handleRegistration() Обрабатывает регистрацию пользователя (приватный)
+ * @method void   handleLogin() Обрабатывает авторизацию (приватный)
+ * @method void   handleContact() Обрабатывает форму обратной связи (приватный)
+ * @method void   handlePasswordResetRequest() Обрабатывает запрос сброса пароля (приватный)
+ * @method void   handlePasswordReset() Обрабатывает сброс пароля (приватный)
  */
 class Core {
     private $pdo;

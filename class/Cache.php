@@ -14,6 +14,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @method static bool   delete(string $key)               Удаляет данные из кэша
  * @method static void   clear()                           Очищает весь кэш
  * @method static string getCacheKey(string $identifier)   Генерирует ключ кэша
+ * @method static void   init(array $config)               Инициализирует кэш с указанной конфигурацией
  */
 class Cache {
     private static $driver;

@@ -1,21 +1,28 @@
 <?php
 if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
-
 /**
- * Класс шаблонизатора с поддержкой синтаксиса {}
+ * Шаблонизатор системы с поддержкой расширенного синтаксиса
  * 
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Views
  * @version    0.9.2
  * 
- * @method void assign(string $key, mixed $value) Назначает переменную
- * @method void assignMultiple(array $vars) Назначает несколько переменных
+ * @method void   __construct() Инициализирует шаблонизатор
+ * @method void   assign(string $key, mixed $value) Назначает переменную шаблона
+ * @method void   assignMultiple(array $vars) Назначает несколько переменных
  * @method string render(string $templateFile, array $additionalVars = []) Рендерит шаблон
- * @method array getCommonTemplateVars(array $config, News $news, ?User $user) Получает общие переменные
- * @method bool changeTemplate(string $newTemplate, array $availableTemplates, array &$config, string $configPath) Меняет шаблон
- * @method array getAvailableTemplates(string $templatesDir) Получает доступные шаблоны
- * @method string formatSize(int $bytes) Форматирует размер
+ * @method array  getCommonTemplateVars(array $config, News $news, ?User $user) Возвращает общие переменные
+ * @method bool   changeTemplate(string $newTemplate, array $availableTemplates, array &$config, string $configPath) Изменяет активный шаблон
+ * @method array  getAvailableTemplates(string $templatesDir) Возвращает список доступных шаблонов
+ * @method string formatSize(int $bytes) Форматирует размер в байтах
+ * @method string renderTemplateString(string $template, array $data) Рендерит строку шаблона
+ * @method string renderTemplateId(string $template, array $data) Альтернативный рендеринг шаблона
+ * @method string renderNewsList(array $newsItems, string $templateFile) Рендерит список новостей
+ * @method string renderNewsItem(array|object $newsItem, string $templateFile) Рендерит одну новость
+ * @method string processComments(array $comments, string $templateFile) Обрабатывает комментарии
+ * @method string formatDate(string $date) Форматирует дату
+ * @method array  objectToArray(object $object) Конвертирует объект в массив
  */
 class Template {
     protected $variables = [];
