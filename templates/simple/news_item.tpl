@@ -4,7 +4,7 @@
         <h5><span class="w3-opacity">{created_at}</span></h5>
     </div>
     <div class="w3-container">
-        <p>{!content}...</p>
+        <p>{!content}...{no_news_message}</p>
         <div class="w3-bar">
             <span class="w3-bar-item w3-small">
                 <i class="fa fa-thumbs-up"></i> {article_rating.likes}

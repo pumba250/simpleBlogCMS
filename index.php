@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Core
- * @version    0.9.1
+ * @version    0.9.2
  * 
  * @router
  *  GET  /             - Главная страница блога
@@ -129,9 +129,22 @@ if (empty($_SESSION['csrf_token'])) {
 				echo Cache::get($cacheKey);
 				exit;
 			}
-			$userPrefix = isset($_SESSION['user_id']) ? 'user_' . $_SESSION['user_id'] : 'guest';
-			$cacheKey = $userPrefix . '_news_page_'. $newsId .'_' . ($_SESSION['lang'] ?? 'ru');
 			$newsItem = $news->getNewsByIdCached($newsId); // Получаем одну новость
+			if (!$newsItem) {
+				header($_SERVER["SERVER_PROTOCOL"] . " 404 Not Found");
+				$pageTitle = Lang::get('error404', 'core') . ' | ' . $baseTitle;
+				$metaDescription = $news->generateMetaDescription('', 'error404');
+				$metaKeywords = $news->generateMetaKeywords('', 'error404');
+				$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+				$pageVars = [
+					'pageTitle' => Lang::get('error404', 'core'),
+					'metaDescription' => $metaDescription,
+					'metaKeywords' => $metaKeywords,
+				];
+				$template->assignMultiple(array_merge($commonVars, $pageVars));
+				echo $template->render('404.tpl');
+				exit;
+			}
 			// Обрабатываем контент
 			$newsItem['content'] = $parse->userblocks($newsItem['content'], $config, $_SESSION['user'] ?? null);
 			$newsItem['content'] = $parse->truncateHTML($newsItem['content'], 100000);
@@ -166,7 +179,7 @@ if (empty($_SESSION['csrf_token'])) {
 			$articleRating = $votes->getArticleRating($newsId);
 			// Передаем данные в шаблон
 			$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
-		$pageVars = [
+			$pageVars = [
 			'pageTitle' => $pageTitle,
 			'metaDescription' => $metaDescription,
 			'metaKeywords' => $metaKeywords,
@@ -178,7 +191,8 @@ if (empty($_SESSION['csrf_token'])) {
 				public function __construct($html) { $this->html = $html; }
 				public function __toString() { return $this->html; }
 			});
-			/*$output = $template->render('news.tpl');
+			
+		/*$output = $template->render('news.tpl');
         Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
         echo $output;*/
 		
@@ -225,9 +239,11 @@ if (empty($_SESSION['csrf_token'])) {
 			'pageTitle' => $pageTitle,
 			'metaDescription' => $metaDescription,
 			'metaKeywords' => $metaKeywords,
-			'news' => $newsByTags,
 			'votes' => $votes,
 			];
+			if (empty($newsByTags)) {
+				$template->assign('no_news_message', 'Нет новостей');
+			}
 			$template->assignMultiple(array_merge($commonVars, $pageVars));
 			$output = $template->render('header.tpl');
 			$output .= $template->renderNewsList($newsByTags, 'news_item.tpl');

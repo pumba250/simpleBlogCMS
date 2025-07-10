@@ -520,7 +520,7 @@ private function updateConfigVersion($newVersion) {
         $backupFile = $backupDir.'backup_pre_update_'.date('Y-m-d_His').'.sql';
         
         // Создаем резервную копию БД
-        dbBackup(__DIR__.'/../'.$backupFile, true);
+        dbBackup(__DIR__.'/../'.$backupFile, false);
         
         return $backupFile;
     }

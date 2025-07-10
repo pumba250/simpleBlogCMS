@@ -7,7 +7,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Views
- * @version    0.9.1
+ * @version    0.9.2
  * 
  * @method void assign(string $key, mixed $value) Назначает переменную
  * @method void assignMultiple(array $vars) Назначает несколько переменных
@@ -200,8 +200,8 @@ class Template {
                 $fullPath = $templatesDir.'/'.$item;
                 if ($item != '.' && $item != '..' && is_dir($fullPath)) {
                     if (file_exists($fullPath.'/footer.tpl') && 
-                        file_exists($fullPath.'/header.tpl') && 
-                        file_exists($fullPath.'/home.tpl')) {
+                        file_exists($fullPath.'/header.tpl')/* && 
+                        file_exists($fullPath.'/news_item.tpl')*/) {
                         $availableTemplates[] = $item;
                     }
                 }
@@ -350,10 +350,12 @@ public function renderNewsList(array $newsItems, string $templateFile): string {
         $this->templateCache[$templateFile] = file_get_contents($path);
     }
     $templateContent = $this->templateCache[$templateFile];
-
+// Если нет новостей, возвращаем сообщение
+    if (empty($newsItems)) {
+        return '<div class="w3-card-4 w3-margin w3-white"><div class="w3-container w3-padding"><h3><b>'. Lang::get('nonews') .'</b></h3></div></div><hr>';
+    }
     // Рендеринг каждой новости
     $result = '';
-	
     foreach ($newsItems as $item) {
 		$item['article_rating'] = $votes->getArticleRating($item['id']);
 		$item['hasVotedArticle'] = isset($_SESSION['user']) ? $votes->hasUserVotedForArticle($item['id'], $_SESSION['user']['id']) : false;
@@ -362,13 +364,6 @@ public function renderNewsList(array $newsItems, string $templateFile): string {
     return $result;
 }
 
-/*public function renderNewsItem(array $newsItem, string $templateFile): string {
-    if (!isset($this->templateCache[$templateFile])) {
-        $path = $this->templateDir . '/' . ltrim($templateFile, '/');
-        $this->templateCache[$templateFile] = file_get_contents($path);
-    }
-    return $this->renderTemplateString($this->templateCache[$templateFile], $newsItem);
-}*/
 /**
  * Рендерит одну новость (поддерживает и массивы, и объекты)
  * 
@@ -385,6 +380,7 @@ public function renderNewsItem($newsItem, string $templateFile): string {
         }
         $this->templateCache[$templateFile] = file_get_contents($path);
     }
+    
 	$newsItem['article_rating'] = $votes->getArticleRating($newsItem['id']);
 	$newsItem['hasVotedArticle'] = isset($_SESSION['user']) ? $votes->hasUserVotedForArticle($newsItem['id'], $_SESSION['user']['id']) : false;
 	
