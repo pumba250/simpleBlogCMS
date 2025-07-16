@@ -188,13 +188,13 @@ public function getLastThreeNews() {
 	/**
 	 * Добавить новую запись блога
 	 */
-	public function addBlog($title, $content, $tags = []) {
+	public function addBlog($title, $content, $tags = [], $authorId = null) {
 		try {
 			$this->pdo->beginTransaction();
 			
 			// Добавляем запись
-			$stmt = $this->pdo->prepare("INSERT INTO {$this->dbPrefix}blogs (title, content) VALUES (?, ?)");
-			$stmt->execute([$title, $content]);
+			$stmt = $this->pdo->prepare("INSERT INTO {$this->dbPrefix}blogs (title, content, author_id) VALUES (?, ?, ?)");
+			$stmt->execute([$title, $content, $authorId]);
 			$blogId = $this->pdo->lastInsertId();
 			
 			// Get auto-generated tags

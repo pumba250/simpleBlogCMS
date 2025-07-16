@@ -298,7 +298,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $title = htmlspecialchars(trim($_POST['title']));
                 $content = nl2br(trim($_POST['content']));
                 
-                if ($news->addBlog($title, $content, $tags)) {
+                if ($news->addBlog($title, $content, $tags, $_SESSION['user']['id'] ?? null)) {
                     logAction('Добавление записи блога', "Добавлена новая запись: $title");
                     $_SESSION['admin_message'] = Lang::get('blog_add', 'core');
                 } else {
