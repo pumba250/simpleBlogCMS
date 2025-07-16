@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Core
- * @version    0.9.2
+ * @version    0.9.3
  * 
  * @router
  *  GET  /             - Главная страница блога
@@ -339,7 +339,40 @@ if (empty($_SESSION['csrf_token'])) {
 				$output .= $template->render('footer.tpl');
 				echo $output;
                 break;
-                
+            case 'profile':
+				if (!isset($_SESSION['user_id'])) {
+					$_SESSION['flash'] = Lang::get('auth_required', 'core');
+					header('Location: /?action=login');
+					exit;
+				}
+
+				// Получаем данные пользователя
+				$userData = $user->getUserById($_SESSION['user_id']);
+
+				// Получаем последние статьи пользователя (если есть связь с новостями)
+				$userNews = $news->getNewsByAuthor($_SESSION['user_id'], 5); // 5 последних статей
+
+				// Получаем последние комментарии пользователя
+				$userComments = $comments->getCommentsByUser($_SESSION['user_id'], 5); // 5 последних комментариев
+
+				// Формируем данные для шаблона
+				$pageTitle = Lang::get('profile', 'core') . ' | ' . $baseTitle;
+				$metaDescription = $news->generateMetaDescription('', 'profile');
+				$metaKeywords = $news->generateMetaKeywords('', 'profile');
+
+				$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+				$pageVars = [
+					'pageTitle' => $pageTitle,
+					'metaDescription' => $metaDescription,
+					'metaKeywords' => $metaKeywords,
+					'userData' => $userData,
+					'userNews' => $userNews,
+					'userComments' => $userComments,
+				];
+
+				$template->assignMultiple(array_merge($commonVars, $pageVars));
+				echo $template->render('profile.tpl');
+				break;
             case 'request_reset':
                 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
                     if ($user->sendPasswordReset($_POST['email'])) {

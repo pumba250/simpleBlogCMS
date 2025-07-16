@@ -6,8 +6,9 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Content
- * @version    0.9.2
+ * @version    0.9.3
  * 
+ * @method bool  getNewsByAuthor(int $userId, int $limit) Получает новости по автору с ограничением
  * @method array getAllNews(int $limit, int $offset) Получает новости с пагинацией (ограничение и смещение)
  * @method array searchNews(string $query, int $limit = 10, int $offset = 0) Ищет новости по запросу
  * @method int countSearchResults(string $query) Возвращает количество результатов поиска
@@ -48,7 +49,17 @@ class News {
         }
         $this->dbPrefix = $config['db_prefix'];
     }
-
+public function getNewsByAuthor($userId, $limit = 5) {
+    $stmt = $this->pdo->prepare("
+        SELECT id, title, created_at 
+        FROM {$this->dbPrefix}blogs 
+        WHERE author_id = ? 
+        ORDER BY created_at DESC 
+        LIMIT ?
+    ");
+    $stmt->execute([$userId, $limit]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 	public function getAllNews($limit, $offset) {
 		$stmt = $this->pdo->prepare("SELECT id, title, LEFT(content, 320) AS content, created_at FROM {$this->dbPrefix}blogs ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
 		$stmt->bindParam(':limit', $limit, PDO::PARAM_INT);

@@ -280,7 +280,7 @@ public function checkForUpdates() {
 				ob_end_flush();
 			}
 			flush();
-			
+			sendStatistics('update', $updateInfo['new_version']);
 			return true;
 			
 		} catch (Exception $e) {
@@ -646,4 +646,21 @@ private function updateConfigVersion($newVersion) {
 			throw new Exception("Ошибка восстановления из резервной копии: " . $e->getMessage());
 		}
 	}
+}
+function sendStatistics($action, $version) {
+    $secret = 'your_secret_key_here'; // Должен совпадать с SECRET_KEY на сервере
+    $hash = hash_hmac('sha256', $action.$version, $secret);
+    
+    $url = 'https://release.yunisov.tech/statistics.php?' . http_build_query([
+        'action' => $action,
+        'version' => $version,
+        'hash' => $hash
+    ]);
+    
+    // Отправка с таймаутом 2 секунды (не блокирующая)
+    $context = stream_context_create([
+        'http' => ['timeout' => 2]
+    ]);
+    
+    @file_get_contents($url, false, $context);
 }

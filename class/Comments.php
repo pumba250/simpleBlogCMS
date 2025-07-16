@@ -6,8 +6,9 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Content
- * @version    0.9.2
+ * @version    0.9.3
  * 
+ * @method bool getCommentsByUser(int $userId, $limit) Получает комментарии по автору с ограничением
  * @method int addComment(int $parentId, int $fParent, int $themeId, string $userName, string $userText) Добавляет комментарий
  * @method bool editComment(int $id, string $userText) Редактирует текст комментария
  * @method bool deleteComment(int $id) Удаляет комментарий
@@ -33,7 +34,18 @@ class Comments {
         global $dbPrefix;
         $this->dbPrefix = $dbPrefix;
     }
-
+public function getCommentsByUser($userId, $limit = 5) {
+    $stmt = $this->pdo->prepare("
+        SELECT c.id, c.theme_id, c.user_text, c.created_at, b.title as post_title 
+        FROM {$this->dbPrefix}comments c
+        LEFT JOIN {$this->dbPrefix}blogs b ON c.theme_id = b.id
+        WHERE c.user_name = (SELECT username FROM {$this->dbPrefix}users WHERE id = ?)
+        ORDER BY c.created_at DESC 
+        LIMIT ?
+    ");
+    $stmt->execute([$userId, $limit]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
     public function addComment($parentId, $fParent, $themeId, $userName, $userText) {
 		global $dbPrefix;
         $stmt = $this->pdo->prepare("INSERT INTO `{$this->dbPrefix}comments` (parent_id, f_parent, created_at, theme_id, user_name, user_text, moderation, plus, minus) VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0)");

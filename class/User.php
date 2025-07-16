@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Authentication
- * @version    0.9.2
+ * @version    0.9.3
  * 
  * @method void   __construct(PDO $pdo) Инициализирует систему пользователей
  * @method array  getAllUsers() Получает список всех пользователей
@@ -14,6 +14,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @method bool   updateUser(int $id, string $username, string $email, int $isadmin) Обновляет данные пользователя
  * @method bool   deleteUser(int $id) Удаляет пользователя
  * @method bool   register(string $username, string $password, string $email) Регистрирует нового пользователя
+ * @method bool   getUserById(int $id) Получает данные пользователя по ID
  * @method bool   verifyEmail(string $token) Подтверждает email пользователя
  * @method bool   sendPasswordReset(string $email) Отправляет ссылку для сброса пароля
  * @method bool   resetPassword(string $token, string $newPassword) Сбрасывает пароль пользователя
@@ -124,7 +125,17 @@ private function startSession() {
         
         return false;
     }
-
+	public function getUserById($userId) {
+		global $dbPrefix;
+		$stmt = $this->pdo->prepare("
+			SELECT id, username, email, isadmin, created_at, avatar 
+			FROM {$dbPrefix}users 
+			WHERE id = ? 
+			LIMIT 1
+		");
+		$stmt->execute([$userId]);
+		return $stmt->fetch(PDO::FETCH_ASSOC);
+	}
     private function sendVerificationEmail($username, $email, $token) {
         global $config;
         Mailer::init($config);
