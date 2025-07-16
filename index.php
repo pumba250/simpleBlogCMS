@@ -340,26 +340,27 @@ if (empty($_SESSION['csrf_token'])) {
 				echo $output;
                 break;
             case 'profile':
-				if (!isset($_SESSION['user_id'])) {
+			
+				if (!isset($_SESSION['user']['id'])) {
 					$_SESSION['flash'] = Lang::get('auth_required', 'core');
 					header('Location: /?action=login');
 					exit;
 				}
 
 				// Получаем данные пользователя
-				$userData = $user->getUserById($_SESSION['user_id']);
+				$userData = $user->getUserById($_SESSION['user']['id']);
 
 				// Получаем последние статьи пользователя (если есть связь с новостями)
-				$userNews = $news->getNewsByAuthor($_SESSION['user_id'], 5); // 5 последних статей
+				$userNews = $news->getNewsByAuthor($_SESSION['user']['id'], 5); // 5 последних статей
 
 				// Получаем последние комментарии пользователя
-				$userComments = $comments->getCommentsByUser($_SESSION['user_id'], 5); // 5 последних комментариев
-
+				$userComments = $comments->getCommentsByUser($_SESSION['user']['id'], 5); // 5 последних комментариев
+				$userNewsCount = count($userNews);
+				$userCommentsCount = count($userComments);
 				// Формируем данные для шаблона
 				$pageTitle = Lang::get('profile', 'core') . ' | ' . $baseTitle;
 				$metaDescription = $news->generateMetaDescription('', 'profile');
 				$metaKeywords = $news->generateMetaKeywords('', 'profile');
-
 				$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
 					'pageTitle' => $pageTitle,
@@ -368,6 +369,8 @@ if (empty($_SESSION['csrf_token'])) {
 					'userData' => $userData,
 					'userNews' => $userNews,
 					'userComments' => $userComments,
+					'userNewsCount' => $userNewsCount,
+					'userCommentsCount' => $userCommentsCount,
 				];
 
 				$template->assignMultiple(array_merge($commonVars, $pageVars));

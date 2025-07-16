@@ -12,6 +12,7 @@
 	  <p><form class="mt-5" method="post" action="/admin.php?logout=1"></p>
         <p>{l_hiuser}, {$user.username}!<button type="submit" class="btn btn-primary">{l_logoutuser}</button></form></p>
 		{if $user['isadmin'] >= 7}<p><a href="/admin.php">{l_admpanel}</a></p>{/if}
+		<p><a href="?action=profile">{l_profile:core}</a></p>
 			{else}
 		{if $auth_error}
             <div class="w3-red">

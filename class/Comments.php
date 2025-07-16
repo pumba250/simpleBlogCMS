@@ -43,7 +43,14 @@ public function getCommentsByUser($userId, $limit = 5) {
         ORDER BY c.created_at DESC 
         LIMIT ?
     ");
-    $stmt->execute([$userId, $limit]);
+    // Явное приведение типов для безопасности
+    $userId = (int)$userId;
+    $limit = (int)$limit;
+    
+    $stmt->bindValue(1, $userId, PDO::PARAM_INT);
+    $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+    
+    $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
     public function addComment($parentId, $fParent, $themeId, $userName, $userText) {

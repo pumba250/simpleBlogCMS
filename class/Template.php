@@ -182,7 +182,7 @@ class Template {
         '/\{if\s+([^}]+)\}/' => '<?php if ($1): ?>',
         
         // Обработка тернарных операторов
-        '/\{\$([a-zA-Z0-9_]+)\s*\?\s*([^:]+)\s*:\s*([^}]+)\}/' => '<?php echo $$1 ? $2 : $3; ?>',
+        '/\\{\\$(?<var>[a-zA-Z0-9_]+(?:\\.[a-zA-Z0-9_]+)*)\\s*\\?\\s*(?<true>[^:]+)\\s*:\\s*(?<false>[^}]+)\\}/' => '<?php $parts = explode(".", "$1"); $val = $this->variables[array_shift($parts)] ?? null; foreach ($parts as $part) {$val = is_array($val) ? ($val[$part] ?? null) : (is_object($val) ? ($val->$part ?? null) : null);}echo $val ? "$2" : "$3";?>',
             // Вывод без экранирования
             '/\{!\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\}/' => '<?php echo $$1; ?>',
 			'/\{!\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\.([a-zA-Z0-9_\x7f-\xff]+)\}/' => '<?php echo $$1[\'$2\']; ?>',
