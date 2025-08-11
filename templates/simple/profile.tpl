@@ -1,5 +1,5 @@
+{* version 0.9.4 *}
 {include "header.tpl"}
-
 <div class="w3-card-4 w3-margin w3-white">
     <h2 class="w3-text-grey w3-padding-16">
         <i class="fa fa-user fa-fw w3-margin-right w3-xxlarge"></i>
@@ -37,16 +37,17 @@
                     </div>
                     
                     <!-- Социальные сети -->
-                    <div class="w3-card w3-round w3-white w3-margin-top" style="padding: 15px;">
+                    <!--<div class="w3-card w3-round w3-white w3-margin-top" style="padding: 15px;">
                         <h4>{l_social_networks:core}</h4>
                         <div class="w3-padding">
                             {foreach $supportedSocials as $social}
                                 {*assign var="linked" value=false*}
                                 {foreach $socialLinks as $link}
+								{$link}
                                     {if $link.social_type == $social}
                                         {*assign var="linked" value=true*}
                                         <div class="w3-padding-small w3-light-grey w3-margin-bottom w3-round">
-                                            <i class="fa fa-{$social} w3-margin-right"></i>
+                                            <i class="fa-brands fa-{$social} w3-margin-right"></i>
                                             {$link.social_username ?: $link.social_id}
                                             <a href="?action=profile&unlink_social={$social}" 
                                                class="w3-right w3-button w3-tiny w3-red">
@@ -58,8 +59,8 @@
                                 
                                 {if !$linked}
                                     <div class="w3-padding-small w3-light-grey w3-margin-bottom w3-round">
-                                        <i class="fa fa-{$social} w3-margin-right"></i>
-                                        <a href="?action=link_social&type={$social}" 
+                                        <i class="fa-brands fa-{$social} w3-margin-right"></i>
+                                        <a href="?action=profile&link_social={$social}" 
                                            class="w3-button w3-tiny w3-dark-grey">
                                             {l_link_account:core}
                                         </a>
@@ -67,7 +68,7 @@
                                 {/if}
                             {/foreach}
                         </div>
-                    </div>
+                    </div>-->
                 </div>
                 
                 <div class="w3-col m9">
