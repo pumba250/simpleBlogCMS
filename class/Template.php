@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Views
- * @version    0.9.2
+ * @version    0.9.4
  * 
  * @method void   __construct() Инициализирует шаблонизатор
  * @method void   assign(string $key, mixed $value) Назначает переменную шаблона

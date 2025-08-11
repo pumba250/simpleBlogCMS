@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Core
- * @version    0.9.3
+ * @version    0.9.4
  * 
  * @router
  *  GET  /             - Главная страница блога
@@ -196,7 +196,6 @@ if (empty($_SESSION['csrf_token'])) {
 		/*$output = $template->render('news.tpl');
         Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
         echo $output;*/
-		
 		$output = $template->render('header.tpl');
 		$output .= $template->renderNewsItem($newsItem, 'news.tpl');
 		$output .= $template->processComments($commentsList, 'comment.tpl');
@@ -340,37 +339,82 @@ if (empty($_SESSION['csrf_token'])) {
 				echo $output;
                 break;
             case 'profile':
-			
 				if (!isset($_SESSION['user']['id'])) {
 					$_SESSION['flash'] = Lang::get('auth_required', 'core');
 					header('Location: /?action=login');
 					exit;
 				}
 
-				// Получаем данные пользователя
+				// Обработка POST-запроса на обновление профиля
+				if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+					$username = trim($_POST['username'] ?? '');
+					$email = trim($_POST['email'] ?? '');
+					
+					// Обработка загрузки аватара
+					$avatar = null;
+					if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+						$uploadDir = 'uploads/avatars/';
+						if (!is_dir($uploadDir)) {
+							mkdir($uploadDir, 0755, true);
+						}
+						
+						$ext = pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION);
+						$filename = 'user_' . $_SESSION['user']['id'] . '_' . time() . '.' . $ext;
+						$targetPath = $uploadDir . $filename;
+						
+						if (move_uploaded_file($_FILES['avatar']['tmp_name'], $targetPath)) {
+							$avatar = $targetPath;
+						}
+					}
+					
+					if ($user->updateProfile($_SESSION['user']['id'], $username, $email, $avatar)) {
+						$_SESSION['flash'] = Lang::get('profile_updated', 'core');
+						$_SESSION['user']['username'] = $username;
+						header('Location: /?action=profile');
+						exit;
+					} else {
+						$_SESSION['flash'] = Lang::get('profile_update_error', 'core');
+					}
+				}
+
+				// Обработка привязки соцсетей
+				if (isset($_GET['link_social'])) {
+					$socialType = $_GET['link_social'];
+					// Здесь должна быть реализация OAuth для конкретной соцсети
+					// Это упрощенный пример
+					$_SESSION['flash'] = Lang::get('social_link_started', 'core') . ': ' . $socialType;
+				}
+
+				if (isset($_GET['unlink_social'])) {
+					if ($user->removeSocialLink($_SESSION['user']['id'], $_GET['unlink_social'])) {
+						$_SESSION['flash'] = Lang::get('social_unlinked', 'core');
+					} else {
+						$_SESSION['flash'] = Lang::get('social_unlink_error', 'core');
+					}
+					header('Location: /?action=profile');
+					exit;
+				}
+
+				// Получаем данные для профиля
 				$userData = $user->getUserById($_SESSION['user']['id']);
+				$userNews = $news->getNewsByAuthor($_SESSION['user']['id'], 5);
+				$userComments = $comments->getCommentsByUser($_SESSION['user']['id'], 5);
+				$socialLinks = $user->getSocialLinks($_SESSION['user']['id']);
+				// Если avatar не установлен, задаем значение по умолчанию
+				if (!isset($userData['avatar']) || empty($userData['avatar'])) {
+					$userData['avatar'] = 'images/avatar_g.png';
+				}
 
-				// Получаем последние статьи пользователя (если есть связь с новостями)
-				$userNews = $news->getNewsByAuthor($_SESSION['user']['id'], 5); // 5 последних статей
-
-				// Получаем последние комментарии пользователя
-				$userComments = $comments->getCommentsByUser($_SESSION['user']['id'], 5); // 5 последних комментариев
-				$userNewsCount = count($userNews);
-				$userCommentsCount = count($userComments);
 				// Формируем данные для шаблона
 				$pageTitle = Lang::get('profile', 'core') . ' | ' . $baseTitle;
-				$metaDescription = $news->generateMetaDescription('', 'profile');
-				$metaKeywords = $news->generateMetaKeywords('', 'profile');
 				$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
 					'pageTitle' => $pageTitle,
-					'metaDescription' => $metaDescription,
-					'metaKeywords' => $metaKeywords,
 					'userData' => $userData,
 					'userNews' => $userNews,
 					'userComments' => $userComments,
-					'userNewsCount' => $userNewsCount,
-					'userCommentsCount' => $userCommentsCount,
+					'socialLinks' => $socialLinks,
+					'supportedSocials' => ['telegram', 'github', 'twitter'] // Поддерживаемые соцсети
 				];
 
 				$template->assignMultiple(array_merge($commonVars, $pageVars));

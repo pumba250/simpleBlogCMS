@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Authentication
- * @version    0.9.3
+ * @version    0.9.4
  * 
  * @method void   __construct(PDO $pdo) Инициализирует систему пользователей
  * @method array  getAllUsers() Получает список всех пользователей
@@ -247,6 +247,77 @@ private function startSession() {
         }
         
         return false;
+    }
+	/**
+     * Обновляет данные профиля пользователя
+     */
+    public function updateProfile($userId, $username, $email, $avatar = null) {
+        global $dbPrefix;
+        
+        try {
+            if ($avatar) {
+                $stmt = $this->pdo->prepare("UPDATE {$dbPrefix}users SET username = ?, email = ?, avatar = ? WHERE id = ?");
+                return $stmt->execute([$username, $email, $avatar, $userId]);
+            } else {
+                $stmt = $this->pdo->prepare("UPDATE {$dbPrefix}users SET username = ?, email = ? WHERE id = ?");
+                return $stmt->execute([$username, $email, $userId]);
+            }
+        } catch (Exception $e) {
+            error_log("Profile update error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Добавляет/обновляет привязку социальной сети
+     */
+    public function setSocialLink($userId, $socialType, $socialId, $username = null) {
+        global $dbPrefix;
+        
+        try {
+            // Проверяем существующую привязку
+            $stmt = $this->pdo->prepare("SELECT id FROM {$dbPrefix}user_social WHERE user_id = ? AND social_type = ?");
+            $stmt->execute([$userId, $socialType]);
+            
+            if ($stmt->fetch()) {
+                // Обновляем существующую
+                $stmt = $this->pdo->prepare("UPDATE {$dbPrefix}user_social SET social_id = ?, social_username = ? WHERE user_id = ? AND social_type = ?");
+                return $stmt->execute([$socialId, $username, $userId, $socialType]);
+            } else {
+                // Добавляем новую
+                $stmt = $this->pdo->prepare("INSERT INTO {$dbPrefix}user_social (user_id, social_type, social_id, social_username) VALUES (?, ?, ?, ?)");
+                return $stmt->execute([$userId, $socialType, $socialId, $username]);
+            }
+        } catch (Exception $e) {
+            error_log("Social link error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Получает привязанные социальные сети пользователя
+     */
+    public function getSocialLinks($userId) {
+        global $dbPrefix;
+        
+        $stmt = $this->pdo->prepare("SELECT social_type, social_id, social_username FROM {$dbPrefix}user_social WHERE user_id = ?");
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Удаляет привязку социальной сети
+     */
+    public function removeSocialLink($userId, $socialType) {
+        global $dbPrefix;
+        
+        try {
+            $stmt = $this->pdo->prepare("DELETE FROM {$dbPrefix}user_social WHERE user_id = ? AND social_type = ?");
+            return $stmt->execute([$userId, $socialType]);
+        } catch (Exception $e) {
+            error_log("Remove social link error: " . $e->getMessage());
+            return false;
+        }
     }
 
 	public function login($username, $password) {

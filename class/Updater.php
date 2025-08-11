@@ -5,7 +5,7 @@
  * @package    SimpleBlog
  * @subpackage Services
  * @category   Maintenance
- * @version    0.9.2
+ * @version    0.9.4
  * 
  * @method void   __construct(PDO $pdo, array $config) Инициализирует систему обновлений
  * @method bool|array checkForUpdates() Проверяет наличие обновлений

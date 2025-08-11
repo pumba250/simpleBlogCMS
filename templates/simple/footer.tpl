@@ -1,16 +1,14 @@
 </div>
-    
-
 <!-- Introduction menu -->
 <div class="w3-col l4">
   <!-- About Card -->
   {if !$isCached}
   <div class="w3-card w3-margin w3-margin-top">
-  {if $user}<img src="{$user['avatar'] ?: '/images/avatar_g.png'}" style="width:120px">{/if}
     <div class="w3-container w3-white"><?php flash(); ?>
 	{if $user}
+	<img class="w3-margin-top w3-circle" src="{$user['avatar'] ?: '/images/avatar_g.png'}" style="width:60px">
 	  <p><form class="mt-5" method="post" action="/admin.php?logout=1"></p>
-        <p>{l_hiuser}, {$user.username}!<button type="submit" class="btn btn-primary">{l_logoutuser}</button></form></p>
+        <p>{l_hiuser}, {$user.username}!<button type="submit" class="w3-button w3-gray">{l_logoutuser}</button></form></p>
 		{if $user['isadmin'] >= 7}<p><a href="/admin.php">{l_admpanel}</a></p>{/if}
 		<p><a href="?action=profile">{l_profile:core}</a></p>
 			{else}
@@ -56,6 +54,7 @@
 		{/if}
 	<p><a href="/">{l_main}</a></p>
 	<p><a href="?action=contact">{l_contact}</a></p>
+	<p><a href="https://github.com/pumba250/simpleBlog/releases" target=_new>{l_us_git:core}</a></p>
     </div>
   </div><hr>
   {/if}
@@ -69,7 +68,7 @@
 			<input type="hidden" name="action" value="search">
             <input type="text" name="search" placeholder="{l_findarea}" 
                    value="{if isset($_GET['search'])} {$_GET.search}{/if}">
-            <button type="submit" class="w3-button w3-dark-grey">{l_find}</button>
+            <button type="submit" class="w3-button w3-gray">{l_find}</button>
         </form>
     </div>
 </div>
