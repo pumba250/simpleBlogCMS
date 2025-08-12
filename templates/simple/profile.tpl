@@ -74,25 +74,29 @@
                 <div class="w3-col m9">
                     <!-- Основные данные -->
                     <div class="w3-card w3-padding w3-round-large w3-white">
-                        <h4>{l_personal_info:core}</h4>
-                        
-                        <div class="w3-row-padding w3-margin-bottom">
-                            <div class="w3-half">
-                                <label>{l_username:core}</label>
-                                <input class="w3-input w3-border" type="text" name="username" 
-                                       value="{$userData.username}" required>
-                            </div>
-                            <div class="w3-half">
-                                <label>{l_email:core}</label>
-                                <input class="w3-input w3-border" type="email" name="email" 
-                                       value="{$userData.email}" required>
-                            </div>
-                        </div>
-                        
-                        <button type="submit" class="w3-button w3-dark-grey">
-                            {l_save_changes:core}
-                        </button>
-                    </div>
+						<h4>{l_personal_info:core}</h4>
+						<form method="post" enctype="multipart/form-data">
+							<div class="w3-row-padding w3-margin-bottom">
+								<div class="w3-half">
+									<label>{l_username:core}</label>
+									<input class="w3-input w3-border" type="text" name="username" value="{$userData.username}" required>
+								</div>
+								<div class="w3-half">
+									<label>{l_email:core}</label>
+									<input class="w3-input w3-border" type="email" name="email" value="{$userData.email}" required id="email-field">
+								</div>
+								<div class="w3-half" id="current-password-group">
+									<label>{l_current_password:core}</label>
+									<input class="w3-input w3-border" id="current_password" type="password" name="current_password">
+									<small class="w3-text-grey">{l_current_password_required:core}</small>
+								</div>
+							</div>
+							
+							<button type="submit" class="w3-button w3-dark-grey">
+								{l_save_changes:core}
+							</button>
+						</form>
+					</div>
                     
                     <!-- Статистика -->
                     <div class="w3-row-padding w3-margin-top">

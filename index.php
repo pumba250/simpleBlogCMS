@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Core
- * @version    0.9.4
+ * @version    0.9.3
  * 
  * @router
  *  GET  /             - Главная страница блога
@@ -171,7 +171,7 @@ if (empty($_SESSION['csrf_token'])) {
 				$pagination['per_page'],
 				$pagination['offset']
 			);
-
+//var_dump($commentsList);
 			$paginationHtml = Pagination::render(
 				$pagination, 
 				"?id=$newsId", 
@@ -349,6 +349,7 @@ if (empty($_SESSION['csrf_token'])) {
 				if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					$username = trim($_POST['username'] ?? '');
 					$email = trim($_POST['email'] ?? '');
+					$currentPassword = trim($_POST['current_password'] ?? '');
 					
 					// Обработка загрузки аватара
 					$avatar = null;
@@ -362,14 +363,53 @@ if (empty($_SESSION['csrf_token'])) {
 						$filename = 'user_' . $_SESSION['user']['id'] . '_' . time() . '.' . $ext;
 						$targetPath = $uploadDir . $filename;
 						
-						if (move_uploaded_file($_FILES['avatar']['tmp_name'], $targetPath)) {
+						// Проверка типа файла и размера
+						$allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+						$maxSize = 2 * 1024 * 1024; // 2MB
+						
+						if (in_array($_FILES['avatar']['type'], $allowedTypes) && 
+							$_FILES['avatar']['size'] <= $maxSize &&
+							move_uploaded_file($_FILES['avatar']['tmp_name'], $targetPath)) {
 							$avatar = $targetPath;
+							
+							// Удаляем старый аватар, если он существует
+							if (!empty($_SESSION['user']['avatar'])) {
+								@unlink($_SESSION['user']['avatar']);
+							}
+						} else {
+							$_SESSION['flash'] = Lang::get('avatar_upload_error', 'core');
+							header('Location: /?action=profile');
+							exit;
 						}
 					}
 					
-					if ($user->updateProfile($_SESSION['user']['id'], $username, $email, $avatar)) {
+					// Проверяем, изменился ли email
+					$emailChanged = ($email !== $_SESSION['user']['email']);
+					
+					// Если email изменился, проверяем текущий пароль
+					if ($emailChanged && empty($currentPassword)) {
+						$_SESSION['flash'] = Lang::get('current_password_required', 'core');
+						header('Location: /?action=profile');
+						exit;
+					}
+					
+					// Обновляем профиль
+					if ($user->updateProfile($_SESSION['user']['id'], $username, $email, $avatar, $emailChanged ? $currentPassword : null)) {
 						$_SESSION['flash'] = Lang::get('profile_updated', 'core');
+						
+						// Обновляем данные в сессии
 						$_SESSION['user']['username'] = $username;
+						$_SESSION['user']['email'] = $email;
+						if ($avatar) {
+							$_SESSION['user']['avatar'] = $avatar;
+						}
+						
+						// Если email изменился, разлогиниваем пользователя или отмечаем email как неверифицированный
+						if ($emailChanged) {
+							$_SESSION['user']['email_verified'] = false;
+							$_SESSION['flash'] = Lang::get('email_change_success_verify', 'core');
+						}
+						
 						header('Location: /?action=profile');
 						exit;
 					} else {
@@ -380,9 +420,9 @@ if (empty($_SESSION['csrf_token'])) {
 				// Обработка привязки соцсетей
 				if (isset($_GET['link_social'])) {
 					$socialType = $_GET['link_social'];
-					// Здесь должна быть реализация OAuth для конкретной соцсети
-					// Это упрощенный пример
+					$core->handleSocialAuth($socialType);
 					$_SESSION['flash'] = Lang::get('social_link_started', 'core') . ': ' . $socialType;
+					exit;
 				}
 
 				if (isset($_GET['unlink_social'])) {
@@ -414,12 +454,15 @@ if (empty($_SESSION['csrf_token'])) {
 					'userNews' => $userNews,
 					'userComments' => $userComments,
 					'socialLinks' => $socialLinks,
-					'supportedSocials' => ['telegram', 'github', 'twitter'] // Поддерживаемые соцсети
+					'supportedSocials' => ['telegram', 'github', 'google'] // Поддерживаемые соцсети
 				];
 
 				$template->assignMultiple(array_merge($commonVars, $pageVars));
 				echo $template->render('profile.tpl');
 				break;
+			case 'oauth_callback':
+				$this->handleOAuthCallback();
+				exit;
             case 'request_reset':
                 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
                     if ($user->sendPasswordReset($_POST['email'])) {

@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Authentication
- * @version    0.9.4
+ * @version    0.9.3
  * 
  * @method void   __construct(PDO $pdo) Инициализирует систему пользователей
  * @method array  getAllUsers() Получает список всех пользователей
@@ -251,48 +251,174 @@ private function startSession() {
 	/**
      * Обновляет данные профиля пользователя
      */
-    public function updateProfile($userId, $username, $email, $avatar = null) {
-        global $dbPrefix;
+    public function updateProfile($userId, $username, $email, $avatar = null, $currentPassword = null) {
+    global $dbPrefix;
+    
+    try {
+        // Проверяем, изменился ли email
+        $stmtCurrent = $this->pdo->prepare("SELECT email FROM {$dbPrefix}users WHERE id = ?");
+        $stmtCurrent->execute([$userId]);
+        $currentEmail = $stmtCurrent->fetchColumn();
         
-        try {
-            if ($avatar) {
-                $stmt = $this->pdo->prepare("UPDATE {$dbPrefix}users SET username = ?, email = ?, avatar = ? WHERE id = ?");
-                return $stmt->execute([$username, $email, $avatar, $userId]);
-            } else {
-                $stmt = $this->pdo->prepare("UPDATE {$dbPrefix}users SET username = ?, email = ? WHERE id = ?");
-                return $stmt->execute([$username, $email, $userId]);
-            }
-        } catch (Exception $e) {
-            error_log("Profile update error: " . $e->getMessage());
-            return false;
-        }
-    }
+        $emailChanged = ($currentEmail !== $email);
+        $verificationToken = null;
+        $updates = [];
+        $params = [];
+        
+        // Если email изменился, выполняем дополнительные проверки
+        if ($emailChanged) {
+            // Проверяем, не занят ли новый email
+            $stmtCheck = $this->pdo->prepare("SELECT COUNT(*) FROM {$dbPrefix}users WHERE email = ? AND id != ?");
+            $stmtCheck->execute([$email, $userId]);
+            $exists = $stmtCheck->fetchColumn();
 
+            if ($exists) {
+                flash(Lang::get('email_exists', 'core'));
+                return false;
+            }
+            
+            // Требуем текущий пароль для смены email
+            if (!$currentPassword) {
+                flash(Lang::get('current_password_required', 'core'));
+                return false;
+            }
+            
+            // Проверяем текущий пароль
+            $stmtPass = $this->pdo->prepare("SELECT password FROM {$dbPrefix}users WHERE id = ?");
+            $stmtPass->execute([$userId]);
+            $user = $stmtPass->fetch();
+            
+            if (!$user || !password_verify($currentPassword, $user['password'])) {
+                flash(Lang::get('invalid_password', 'core'));
+                return false;
+            }
+            
+            // Генерируем токен верификации
+            $verificationToken = bin2hex(random_bytes(32));
+            $updates[] = 'verification_token = ?';
+            $updates[] = 'email_verified = 0';
+            $params[] = $verificationToken;
+        }
+        
+        // Добавляем обновление username
+        $updates[] = 'username = ?';
+        $params[] = $username;
+        
+        // Добавляем обновление email
+        $updates[] = 'email = ?';
+        $params[] = $email;
+        
+        // Добавляем аватар, если есть
+        if ($avatar) {
+            $updates[] = 'avatar = ?';
+            $params[] = $avatar;
+        }
+        
+        // Добавляем ID пользователя в параметры
+        $params[] = $userId;
+        
+        // Формируем и выполняем SQL запрос
+        $sql = "UPDATE {$dbPrefix}users SET " . implode(', ', $updates) . " WHERE id = ?";
+        $stmt = $this->pdo->prepare($sql);
+        $result = $stmt->execute($params);
+        
+        // Если email изменился, отправляем письмо для подтверждения
+        if ($result && $emailChanged) {
+            $this->sendVerificationEmail($username, $email, $verificationToken);
+            flash(Lang::get('email_change_success_verify', 'core'));
+        } elseif ($result) {
+            flash(Lang::get('profile_update_success', 'core'));
+        }
+        
+        return $result;
+        
+    } catch (Exception $e) {
+        error_log("Profile update error: " . $e->getMessage());
+        flash(Lang::get('profile_update_error', 'core'));
+        return false;
+    }
+}
+
+	public function changeEmail($userId, $newEmail, $password) {
+		global $dbPrefix, $config;
+		
+		// Сначала проверяем правильность пароля
+		$stmt = $this->pdo->prepare("SELECT password FROM {$dbPrefix}users WHERE id = ?");
+		$stmt->execute([$userId]);
+		$user = $stmt->fetch();
+		
+		if (!$user || !password_verify($password, $user['password'])) {
+			flash(Lang::get('invalid_password', 'core'));
+			return false;
+		}
+		
+		// Проверяем, не занят ли новый email
+		$stmtCheck = $this->pdo->prepare("SELECT COUNT(*) FROM {$dbPrefix}users WHERE email = ? AND id != ?");
+		$stmtCheck->execute([$newEmail, $userId]);
+		$exists = $stmtCheck->fetchColumn();
+
+		if ($exists) {
+			flash(Lang::get('email_exists', 'core'));
+			return false;
+		}
+		
+		// Генерируем новый токен верификации
+		$verificationToken = bin2hex(random_bytes(32));
+		
+		// Обновляем email и устанавливаем статус неверифицированным
+		$stmtUpdate = $this->pdo->prepare("UPDATE {$dbPrefix}users SET email = ?, verification_token = ?, email_verified = 0 WHERE id = ?");
+		
+		if ($stmtUpdate->execute([$newEmail, $verificationToken, $userId])) {
+			// Получаем имя пользователя для письма
+			$stmtUsername = $this->pdo->prepare("SELECT username FROM {$dbPrefix}users WHERE id = ?");
+			$stmtUsername->execute([$userId]);
+			$username = $stmtUsername->fetchColumn();
+			
+			$this->sendVerificationEmail($username, $newEmail, $verificationToken);
+			flash(Lang::get('email_change_success_verify', 'core'));
+			return true;
+		}
+		
+		return false;
+	}
     /**
      * Добавляет/обновляет привязку социальной сети
      */
     public function setSocialLink($userId, $socialType, $socialId, $username = null) {
-        global $dbPrefix;
+    global $dbPrefix;
+    
+    try {
+        error_log("Attempting to link social: user_id=$userId, type=$socialType, id=$socialId, username=$username");
         
-        try {
-            // Проверяем существующую привязку
-            $stmt = $this->pdo->prepare("SELECT id FROM {$dbPrefix}user_social WHERE user_id = ? AND social_type = ?");
-            $stmt->execute([$userId, $socialType]);
-            
-            if ($stmt->fetch()) {
-                // Обновляем существующую
-                $stmt = $this->pdo->prepare("UPDATE {$dbPrefix}user_social SET social_id = ?, social_username = ? WHERE user_id = ? AND social_type = ?");
-                return $stmt->execute([$socialId, $username, $userId, $socialType]);
-            } else {
-                // Добавляем новую
-                $stmt = $this->pdo->prepare("INSERT INTO {$dbPrefix}user_social (user_id, social_type, social_id, social_username) VALUES (?, ?, ?, ?)");
-                return $stmt->execute([$userId, $socialType, $socialId, $username]);
-            }
-        } catch (Exception $e) {
-            error_log("Social link error: " . $e->getMessage());
-            return false;
+        // Проверяем существующую привязку
+        $stmt = $this->pdo->prepare("SELECT id FROM {$dbPrefix}user_social WHERE user_id = ? AND social_type = ?");
+        $stmt->execute([$userId, $socialType]);
+        $existing = $stmt->fetch();
+        
+        if ($existing) {
+            error_log("Updating existing social link: ID ".$existing['id']);
+            $stmt = $this->pdo->prepare("UPDATE {$dbPrefix}user_social SET 
+                social_id = ?, 
+                social_username = ? 
+                WHERE id = ?");
+            $result = $stmt->execute([$socialId, $username, $existing['id']]);
+        } else {
+            error_log("Creating new social link");
+            $stmt = $this->pdo->prepare("INSERT INTO {$dbPrefix}user_social 
+                (user_id, social_type, social_id, social_username) 
+                VALUES (?, ?, ?, ?)");
+            $result = $stmt->execute([$userId, $socialType, $socialId, $username]);
         }
+        
+        error_log("Operation result: ".($result ? "success" : "failed"));
+        error_log("PDO errorInfo: ".json_encode($this->pdo->errorInfo()));
+        
+        return $result;
+    } catch (Exception $e) {
+        error_log("Social link error: ".$e->getMessage());
+        return false;
     }
+}
 
     /**
      * Получает привязанные социальные сети пользователя
