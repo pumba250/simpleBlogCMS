@@ -1,10 +1,14 @@
                     <div class="w3-panel w3-border w3-light-grey w3-padding" style="margin-bottom: 16px;">
                         <div class="w3-row">
-                            <div class="w3-col m10">
-                                <strong>{user_name}:</strong>
-                                <p>{user_text}</p>
+                            <div class="w3-col m11">
+								<div class="w3-row">
+									<div class="w3-col m2">
+									<img src="{avatar}" class="w3-circle" style="width:55px;" alt="Avatar" /><br /><strong>{user_name}:</strong><br /><small class="w3-opacity w3-tiny">{created_at}</small>
+									</div>
+									<div class="w3-col m9">{user_text}</div>
+								</div>
                             </div>
-                            <div class="w3-col m2">
+                            <div class="w3-col m1">
                                 <div class="w3-right">
                                     <form method="post" action="?id={theme_id}" class="w3-bar-item">
                                         <input type="hidden" name="vote_comment" value="{id}_plus">
