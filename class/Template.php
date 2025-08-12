@@ -412,6 +412,7 @@ public function processComments(array $comments, string $templateFile): string {
             'theme_id' => $comment['theme_id'] ?? '',
             'user_name' => $comment['user_name'] ?? '',
             'user_text' => $comment['user_text'] ?? '',
+			'avatar' => !empty($comment['avatar']) ? $comment['avatar'] : 'images/avatar_g.png',
             'created_at' => $this->formatDate($comment['created_at'] ?? ''),
             'comm_rating' => $votes->getCommentRating($comment['id']),
             'voted' => isset($_SESSION['user']) ? $votes->hasUserVoted($comment['id'], $_SESSION['user']['id']) : false,
