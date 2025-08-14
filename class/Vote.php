@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Interaction
- * @version    0.9.2
+ * @version    0.9.6
  * 
  * @method void   __construct(PDO $pdo) Инициализирует систему голосования
  * @method bool   voteComment(int $id, string $voteType, int $userId) Голосует за комментарий

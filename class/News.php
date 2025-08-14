@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Content
- * @version    0.9.3
+ * @version    0.9.6
  * 
  * @method bool  getNewsByAuthor(int $userId, int $limit) Получает новости по автору с ограничением
  * @method array getAllNews(int $limit, int $offset) Получает новости с пагинацией (ограничение и смещение)

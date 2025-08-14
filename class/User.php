@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Authentication
- * @version    0.9.3
+ * @version    0.9.6
  * 
  * @method void   __construct(PDO $pdo) Инициализирует систему пользователей
  * @method array  getAllUsers() Получает список всех пользователей

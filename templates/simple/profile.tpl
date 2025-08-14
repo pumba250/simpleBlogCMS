@@ -1,5 +1,3 @@
-{* version 0.9.4 *}
-{include "header.tpl"}
 <div class="w3-card-4 w3-margin w3-white">
     <h2 class="w3-text-grey w3-padding-16">
         <i class="fa fa-user fa-fw w3-margin-right w3-xxlarge"></i>
@@ -135,5 +133,3 @@
         </form>
     </div>
 </div>
-
-{include "footer.tpl"}

@@ -5,7 +5,7 @@
  * @package    SimpleBlog
  * @subpackage Core
  * @category   System
- * @version    0.9.2
+ * @version    0.9.6
  * 
  * @method void   __construct(PDO $pdo, array $config, Template $template) Инициализирует зависимости
  * @method void   handlePostRequest() Обрабатывает все POST-запросы (основной публичный метод)

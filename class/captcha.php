@@ -1,6 +1,32 @@
 <?php
 session_start();
 
+// Получаем настройки цветов из конфига или используем значения по умолчанию
+$config = file_exists('config/config.php') ? require 'config/config.php' : [];
+
+// Парсим цвета из настроек
+function parseColor($colorStr, $default) {
+    $parts = explode(',', $colorStr);
+    if (count($parts) === 3) {
+        return array_map('intval', $parts);
+    }
+    return explode(',', $default);
+}
+
+// Если это запрос предпросмотра, берем цвета из GET-параметров
+if (isset($_GET['preview'])) {
+    $bgColor = isset($_GET['bg_color']) ? parseColor($_GET['bg_color'], '10,10,26') : parseColor($config['captcha_bg_color'] ?? '10,10,26', '10,10,26');
+    $textColor = isset($_GET['text_color']) ? parseColor($_GET['text_color'], '11,227,255') : parseColor($config['captcha_text_color'] ?? '11,227,255', '11,227,255');
+    $accentColor = isset($_GET['accent_color']) ? parseColor($_GET['accent_color'], '188,19,254') : parseColor($config['captcha_accent_color'] ?? '188,19,254', '188,19,254');
+    $noiseColor = isset($_GET['noise_color']) ? parseColor($_GET['noise_color'], '50,50,80') : parseColor($config['captcha_noise_color'] ?? '50,50,80', '50,50,80');
+} else {
+    // Иначе берем из конфига
+    $bgColor = parseColor($config['captcha_bg_color'] ?? '10,10,26', '10,10,26');
+    $textColor = parseColor($config['captcha_text_color'] ?? '11,227,255', '11,227,255');
+    $accentColor = parseColor($config['captcha_accent_color'] ?? '188,19,254', '188,19,254');
+    $noiseColor = parseColor($config['captcha_noise_color'] ?? '50,50,80', '50,50,80');
+}
+
 // Генерация случайного математического выражения
 $num1 = rand(100, 300);
 $num2 = rand(10, 50);
@@ -13,12 +39,13 @@ $width = 140;
 $height = 40;
 $image = imagecreatetruecolor($width, $height);
 
-// Цветовая палитра (футуристичные цвета)
-$bgColor = imagecolorallocate($image, 10, 10, 26);    // Темно-синий фон
-$textColor = imagecolorallocate($image, 11, 227, 255); // Неоново-синий текст
-$accentColor = imagecolorallocate($image, 188, 19, 254); // Неоново-фиолетовый
-$noiseColor = imagecolorallocate($image, 50, 50, 80);   // Шум
+// Создание цветов из RGB
+$bgColor = imagecolorallocate($image, $bgColor[0], $bgColor[1], $bgColor[2]);
+$textColor = imagecolorallocate($image, $textColor[0], $textColor[1], $textColor[2]);
+$accentColor = imagecolorallocate($image, $accentColor[0], $accentColor[1], $accentColor[2]);
+$noiseColor = imagecolorallocate($image, $noiseColor[0], $noiseColor[1], $noiseColor[2]);
 
+// Остальной код остается без изменений...
 // Заполнение фона
 imagefilledrectangle($image, 0, 0, $width, $height, $bgColor);
 

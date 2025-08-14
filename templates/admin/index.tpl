@@ -483,7 +483,6 @@ function insertHideTag() {
                         <?endforeach;?>
                     </tbody>
                 </table>
-                
             <?elseif ($section == 'users'):?>
                 <!-- Раздел пользователей -->
                 <h2><?= Lang::get('control', 'admin') ?> <?= Lang::get('user', 'admin') ?></h2>
@@ -1061,6 +1060,104 @@ document.addEventListener('keydown', function(e) {
 							<h3><?= Lang::get('system_settings', 'admin') ?></h3>
 						</div>
 						<div class="card-body">
+						<!-- Новая секция настроек капчи -->
+						<div class="card mt-4" style="border: 1px solid rgba(0,0,0,.125);padding-bottom: 15px;">
+							<div class="card-header bg-info">
+								<div class="d-flex justify-content-between align-items-center">
+									<h4 class="mb-0">Настройки капчи</h4>
+									<button id="toggle-captcha-settings" class="btn btn-primary">
+										Показать настройки
+									</button>
+								</div>
+							</div>
+							
+							<div id="captcha-settings-content" style="display: none;">
+								<div class="card-body">
+									<form method="POST" id="captcha-settings-form">
+										<input type="hidden" name="csrf_token" value="<?=$csrf_token?>">
+										<input type="hidden" name="action" value="update_captcha_settings">
+										
+										<div class="row">
+											<div class="col-md-6">
+												<div class="form-group">
+													<label>Цвет фона (RGB):</label>
+													<input type="text" name="bg_color" style="width:120px;" class="form-control" 
+														   value="<?= $currentSettings['captcha_bg_color'] ?? '10,10,26' ?>">
+												</div>
+												
+												<div class="form-group">
+													<label>Цвет текста (RGB):</label>
+													<input type="text" name="text_color" style="width:120px;" class="form-control" 
+														   value="<?= $currentSettings['captcha_text_color'] ?? '11,227,255' ?>">
+												</div>
+											</div>
+											<div class="col-md-6">
+												<div class="form-group">
+													<label>Акцентный цвет (RGB):</label>
+													<input type="text" name="accent_color" style="width:120px;" class="form-control" 
+														   value="<?= $currentSettings['captcha_accent_color'] ?? '188,19,254' ?>">
+												</div>
+												
+												<div class="form-group">
+													<label>Цвет шума (RGB):</label>
+													<input type="text" name="noise_color" style="width:120px;" class="form-control" 
+														   value="<?= $currentSettings['captcha_noise_color'] ?? '50,50,80' ?>">
+												</div>
+											</div>
+										</div>
+										
+										<button type="submit" class="btn btn-primary">Сохранить настройки</button>
+										<button type="button" class="btn btn-secondary" onclick="updateCaptchaPreview()">Обновить предпросмотр</button>
+									</form>
+									
+									<div class="mt-4">
+										<h5>Предпросмотр капчи:</h5>
+										<div id="captcha-preview-container" style="background: #f8f9fa; padding: 20px; border-radius: 5px;">
+											<img id="captcha-preview" src="/class/captcha.php?preview=1" style="border: 1px solid #ddd;">
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						
+						<script>
+						function updateCaptchaPreview() {
+							const bgColor = document.querySelector('#captcha-settings-form [name="bg_color"]').value;
+							const textColor = document.querySelector('#captcha-settings-form [name="text_color"]').value;
+							const accentColor = document.querySelector('#captcha-settings-form [name="accent_color"]').value;
+							const noiseColor = document.querySelector('#captcha-settings-form [name="noise_color"]').value;
+							
+							const params = new URLSearchParams();
+							params.append('bg_color', bgColor);
+							params.append('text_color', textColor);
+							params.append('accent_color', accentColor);
+							params.append('noise_color', noiseColor);
+							params.append('preview', '1');
+							
+							document.getElementById('captcha-preview').src = '/class/captcha.php?' + params.toString();
+						}
+						
+						document.addEventListener('DOMContentLoaded', function() {
+							const toggleBtn = document.getElementById('toggle-captcha-settings');
+							const settingsContent = document.getElementById('captcha-settings-content');
+							
+							toggleBtn.addEventListener('click', function() {
+								if (settingsContent.style.display === 'none') {
+									settingsContent.style.display = 'block';
+									toggleBtn.textContent = 'Скрыть настройки';
+									updateCaptchaPreview(); // Обновляем предпросмотр при открытии
+								} else {
+									settingsContent.style.display = 'none';
+									toggleBtn.textContent = 'Показать настройки';
+								}
+							});
+							
+							// Обновляем предпросмотр при изменении полей
+							document.querySelectorAll('#captcha-settings-form input').forEach(input => {
+								input.addEventListener('change', updateCaptchaPreview);
+							});
+						});
+						</script>
 							<form method="POST">
 								<input type="hidden" name="csrf_token" value="<?=$csrf_token?>">
 								<input type="hidden" name="action" value="edit_settings">
@@ -1103,7 +1200,6 @@ document.addEventListener('keydown', function(e) {
 									<input type="text" name="mail_from_name" class="form-control" value="<?=htmlspecialchars($currentSettings['mail_from_name'] ?? '')?>">
 									<small class="text-muted"><?= Lang::get('mail_from_name_desc', 'admin') ?></small>
 								</div>
-								
 								<div class="card mb-4">
 									<div class="card-header bg-light">
 										<h4><?= Lang::get('cache_settings', 'admin') ?></h4>

@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Contact
- * @version    0.9.2
+ * @version    0.9.6
  * 
  * @method bool   saveMessage(string $name, string $email, string $message) Сохраняет контактное сообщение в БД
  * @method array  getAllMessages() Получает все сообщения (сортировка по дате создания)

@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Views
- * @version    0.9.4
+ * @version    0.9.6
  * 
  * @method void   __construct() Инициализирует шаблонизатор
  * @method void   assign(string $key, mixed $value) Назначает переменную шаблона
@@ -28,11 +28,12 @@ class Template {
     protected $variables = [];
     protected $templateDir;
 	protected $templateCache = [];
-    //protected $config;
+
     
     public function __construct() {
         global $templ;
         $this->config = $config;
+		$this->news = $news;
         $this->templateDir = "templates/{$templ}";
         
         if (!is_dir($this->templateDir)) {
@@ -481,4 +482,8 @@ protected function objectToArray($object): array {
     
     return is_array($object) ? array_map([$this, 'objectToArray'], $object) : $object;
 }
+public function renderFooter(array $footerData) {
+    return $this->render('footer.tpl', $footerData);
+}
+
 }

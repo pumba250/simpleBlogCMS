@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Content
- * @version    0.9.3
+ * @version    0.9.6
  * 
  * @method bool getCommentsByUser(int $userId, $limit) Получает комментарии по автору с ограничением
  * @method int addComment(int $parentId, int $fParent, int $themeId, string $userName, string $userText) Добавляет комментарий

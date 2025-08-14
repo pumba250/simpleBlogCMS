@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Services
  * @category   Communication
- * @version    0.9.2
+ * @version    0.9.6
  * 
  * @method static void   init(array $config) Инициализирует конфигурацию почтовой системы
  * @method static bool   send(string $to, string $subject, string $body, bool $isHtml = true) Отправляет email

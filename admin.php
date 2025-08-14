@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Admin
- * @version    0.9.4
+ * @version    0.9.6
  * 
  * @sections
  * - Управление пользователями
@@ -29,6 +29,8 @@ session_start([
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && stripos($_SERVER['CONTENT_TYPE'], 'application/x-www-form-urlencoded') === false) {
     die("Invalid Content-Type");
 }
+require 'class/ErrorHandler.php';
+ErrorHandler::init($config['debug'] ?? false);
 require 'class/Lang.php';
 Lang::init();
 
@@ -43,16 +45,13 @@ if (file_exists('install.php')) {
 }
 $config = require 'config/config.php';
 
-try {
     $host = $config['host'];
     $database = $config['database'];
     $db_user = $config['db_user'];
     $db_pass = $config['db_pass'];
     $pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8", $db_user, $db_pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    echo "Connection failed: " . $e->getMessage();
-}
+
 $dbPrefix = $config['db_prefix'] ?? '';
 $backupDir = $config['backup_dir'];
 $maxBackups = $config['max_backups'];
@@ -66,7 +65,7 @@ function logAction($action, $details = null) {
     }
     $user_id = isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
     $username = isset($_SESSION['user']['username']) ? $_SESSION['user']['username'] : 'Система';
-    try {
+    
         $stmt = $pdo->prepare("INSERT INTO {$dbPrefix}admin_logs (user_id, username, action, details, ip_address) 
                               VALUES (:user_id, :username, :action, :details, :ip)");
         return $stmt->execute([
@@ -76,10 +75,7 @@ function logAction($action, $details = null) {
             ':details' => $details,
             ':ip' => $_SERVER['REMOTE_ADDR']
         ]);
-    } catch (PDOException $e) {
-        error_log("Ошибка записи лога: " . $e->getMessage());
-        return false;
-    }
+    
 }
 if (isset($_GET['logout'])) {
     if (isset($pdo)) {
@@ -98,7 +94,7 @@ if (!isset($_SESSION['user']) || !$_SESSION['user']['isadmin']) {
     $details = "Попытка доступа к админ-панели";
     // Проверяем, есть ли соединение с БД
     if (isset($pdo)) {
-        try {
+        
             // Записываем в лог
             $stmt = $pdo->prepare("INSERT INTO {$dbPrefix}admin_logs 
                                  (action, details, ip_address) 
@@ -108,9 +104,7 @@ if (!isset($_SESSION['user']) || !$_SESSION['user']['isadmin']) {
                 ':details' => $details,
                 ':ip' => $ip
             ]);
-        } catch (PDOException $e) {
-            error_log("Ошибка записи лога: " . $e->getMessage());
-        }
+        
     }
     header('Location: /');
     exit;
@@ -419,16 +413,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					logAction('Попытка удаления лога', "Удаление лога запрещено");
 				} else {
 					$id = (int)$_POST['id'];
-					try {
+					
 						$stmt = $pdo->prepare("DELETE FROM `{$dbPrefix}admin_logs` WHERE id = ?");
 						if ($stmt->execute([$id])) {
 							$_SESSION['admin_message'] = Lang::get('log_del', 'core');
 						} else {
 							$_SESSION['admin_error'] = Lang::get('log_del_err', 'core');
 						}
-					} catch (PDOException $e) {
-						$_SESSION['admin_error'] = Lang::get('log_err', 'core');
-					}
+					
 				}
 				break;
 			case 'create_backup':
@@ -457,7 +449,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						die("Только .sql файлы разрешены");
 					}
 					if (file_exists($file)) {
-						try {
+						
 							// Читаем SQL файл
 							$sql = file_get_contents($file);
 							
@@ -484,11 +476,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 							
 							$_SESSION['admin_message'] = Lang::get('backup_rest', 'core');
 							logAction('Восстановление БД', 'Из файла: ' . basename($file));
-						} catch (PDOException $e) {
-							$pdo->rollBack();
-							$_SESSION['admin_error'] = Lang::get('backup_rest_err', 'core') . ': ' . $e->getMessage();
-							error_log("Backup restore error: " . $e->getMessage());
-						}
+						
 					} else {
 						$_SESSION['admin_error'] = Lang::get('not_file', 'core');
 					}
@@ -539,7 +527,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					$_SESSION['admin_error'] = Lang::get('not_perm', 'core');
 					logAction('Попытка установки обновления', "Недостаточно прав");
 				} else {
-					try {
+					
 						// Сохраняем информацию об обновлении в сессии
 						$_SESSION['available_update'] = $updateInfo;
 						
@@ -554,10 +542,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						} else {
 							throw new Exception("Не удалось выполнить обновление");
 						}
-					} catch (Exception $e) {
-						$_SESSION['admin_error'] = 'Ошибка обновления: '.$e->getMessage();
-						logAction('Ошибка обновления', $e->getMessage());
-					}
+					
 				}
 				break;
 		}
@@ -573,7 +558,7 @@ $section = isset($_GET['section']) ? $_GET['section'] : 'server_info';
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $updateInfo = $updater->checkForUpdates();
-try {
+
     // Подготовка данных для шаблона
     $template->assign('pageTitle', $pageTitle);
     $template->assign('user', $_SESSION['user']);
@@ -593,6 +578,9 @@ try {
     // Загрузка данных в зависимости от раздела
     switch ($section) {
 		case 'blogs':
+		if (!$user->hasPermission(7, $currentUserRole)) {
+			throw new Exception(Lang::get('not_perm', 'core'));
+		}
 			if ($action === 'edit' && $id > 0) {
 				// Загрузка данных редактируемого блога
 				$editBlog = $news->getNewsById($id);
@@ -614,14 +602,34 @@ try {
 			$template->assign('allTags', $allTags);
 			$template->assign('updateInfo', $updateInfo);
 			break;
+		
+		case 'system_settings':
+			if (!$user->hasPermission(9, $currentUserRole)) {
+				throw new Exception(Lang::get('not_perm', 'core'));
+			}
 			
-        case 'system_settings':
+			// Добавляем обработку сохранения настроек капчи
+			if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_captcha_settings') {
+				$config['captcha_bg_color'] = $_POST['bg_color'] ?? '10,10,26';
+				$config['captcha_text_color'] = $_POST['text_color'] ?? '11,227,255';
+				$config['captcha_accent_color'] = $_POST['accent_color'] ?? '188,19,254';
+				$config['captcha_noise_color'] = $_POST['noise_color'] ?? '50,50,80';
+				
+				file_put_contents(__DIR__ . '/config/config.php', "<?php\nif (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен');}\nreturn " . var_export($config, true) . ";\n");
+				
+				$_SESSION['admin_message'] = 'Настройки капчи обновлены';
+				header("Location: ?section=system_settings");
+				exit;
+			}
+			
 			$template->assign('currentSettings', $config);
 			$template->assign('updateInfo', $updateInfo);
 			break;
 
 		case 'updates':
-		
+			if (!$user->hasPermission(9, $currentUserRole)) {
+				throw new Exception(Lang::get('not_perm', 'core'));
+			}
 			$updateInfo = $updater->checkForUpdates();
 			//var_dump($updateInfo);
 			$template->assign('updateInfo', $updateInfo);
@@ -629,6 +637,9 @@ try {
 			break;
 			
         case 'comments':
+			if (!$user->hasPermission(7, $currentUserRole)) {
+				throw new Exception(Lang::get('not_perm', 'core'));
+			}
 			$perPage = 15;
 			$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 			$offset = ($page - 1) * $perPage;
@@ -646,12 +657,18 @@ try {
             break;
             
         case 'contacts':
+			if (!$user->hasPermission(7, $currentUserRole)) {
+				throw new Exception(Lang::get('not_perm', 'core'));
+			}
             $contacts = $contact->getAllMessages();
             $template->assign('contacts', $contacts);
 			$template->assign('updateInfo', $updateInfo);
             break;
             
         case 'users':
+			if (!$user->hasPermission(9, $currentUserRole)) {
+				throw new Exception(Lang::get('not_perm', 'core'));
+			}
             $users = $user->getAllUsers();
             $template->assign('users', $users);
 			$template->assign('roleName', $roleName);
@@ -659,12 +676,18 @@ try {
             break;
             
         case 'tags':
+			if (!$user->hasPermission(7, $currentUserRole)) {
+				throw new Exception(Lang::get('not_perm', 'core'));
+			}
             $tags = $pdo->query("SELECT * FROM `{$dbPrefix}tags` ORDER by `name`")->fetchAll(PDO::FETCH_ASSOC);
             $template->assign('tags', $tags);
 			$template->assign('updateInfo', $updateInfo);
             break;
             
         case 'template_settings':
+			if (!$user->hasPermission(9, $currentUserRole)) {
+				throw new Exception(Lang::get('not_perm', 'core'));
+			}
             $templatesDir = 'templates';
             $configPath = 'config/config.php';
             $availableTemplates = $template->getAvailableTemplates($templatesDir);
@@ -682,6 +705,9 @@ try {
             break;
             
         case 'logs':
+			if (!$user->hasPermission(9, $currentUserRole)) {
+				throw new Exception(Lang::get('not_perm', 'core'));
+			}
             $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
             $limit = 20;
             $offset = ($page - 1) * $limit;
@@ -698,6 +724,9 @@ try {
             break;
 			
 		case 'server_info':
+			if (!$user->hasPermission(9, $currentUserRole)) {
+				throw new Exception(Lang::get('not_perm', 'core'));
+			}
 			// Информация о сервере
 			$serverInfo = [
 				'Web-сервер' => $_SERVER['SERVER_SOFTWARE'] ?? 'Неизвестно',
@@ -732,12 +761,11 @@ try {
 			break;
 	
 		case 'backups':
+			if (!$user->hasPermission(9, $currentUserRole)) {
+				throw new Exception(Lang::get('not_perm', 'core'));
+			}
 			if (isset($_GET['action']) && $_GET['action'] === 'download_backup') {
-				try {
-					if (!$user->hasPermission(9, $currentUserRole)) {
-						throw new Exception(Lang::get('not_perm', 'core'));
-					}
-
+				
 					if (empty($_GET['file'])) {
 						throw new Exception("Filename not specified");
 					}
@@ -786,12 +814,6 @@ try {
 					fclose($handle);
 					exit;
 					
-				} catch (Exception $e) {
-					error_log("Backup download failed: " . $e->getMessage());
-					$_SESSION['admin_error'] = "Ошибка загрузки: " . $e->getMessage();
-					header("Location: ?section=backups");
-					exit;
-				}
             }
 			$backups = [];
 			
@@ -812,14 +834,7 @@ try {
     
     echo $template->render('admin/index.tpl');
     
-} catch (Exception $e) {
-    logAction('Ошибка системы', "Ошибка в админ-панели: " . $e->getMessage());
-    error_log($e->getMessage());
-    header($_SERVER["SERVER_PROTOCOL"] . Lang::get('error500', 'core'));
-    $template->assign('pageTitle', Lang::get('error500', 'core'));
-    echo $template->render('admin/500.tpl');
-    exit;
-}
+
 
 $finish = microtime(1);
 echo 'generation time: ' . round($finish - $start, 5) . ' сек';

@@ -6,7 +6,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Internationalization
- * @version    0.9.2
+ * @version    0.9.6
  * 
  * @method static void   init() Инициализирует языковую систему (определяет язык из сессии/браузера)
  * @method static void   setLanguage(string $lang) Устанавливает язык (если файлы локализации существуют)

@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Core
- * @version    0.9.3
+ * @version    0.9.6
  * 
  * @router
  *  GET  /             - Главная страница блога
@@ -29,9 +29,11 @@ session_start([
     'cookie_httponly' => true,
     'cookie_samesite' => 'Lax', 
     'use_strict_mode' => true,
-    'cookie_lifetime' => 3600,
-    'gc_maxlifetime' => 3600 
+    'cookie_lifetime' => 7200,
+    'gc_maxlifetime' => 7200 
 ]);
+require 'class/ErrorHandler.php';
+ErrorHandler::init($config['debug'] ?? false);
 require 'class/Lang.php';
 Lang::init();
 
@@ -58,16 +60,13 @@ if (file_exists('install.php')) {
 	die;
 }
 $config = require 'config/config.php';
-try {
     $host = $config['host'];
     $database = $config['database'];
     $db_user = $config['db_user'];
     $db_pass = $config['db_pass'];
     $pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8", $db_user, $db_pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    echo "Connection failed";
-}
+
 $templ = $config['templ'];
 $dbPrefix = $config['db_prefix'];
 $backupDir = $config['backup_dir'];
@@ -89,6 +88,7 @@ require 'class/Parse.php';
 require 'class/Mailer.php';
 require 'class/Pagination.php';
 require 'class/Core.php';
+require 'class/FooterDataProvider.php';
 require 'class/Template.php';
 // Инициализация объектов
 
@@ -107,7 +107,6 @@ $core = new Core($pdo, $config, $template);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $core->handlePostRequest();
 }
-try {
 
 // Генерация CSRF-токена
 if (empty($_SESSION['csrf_token'])) {
@@ -185,7 +184,12 @@ if (empty($_SESSION['csrf_token'])) {
 			'metaDescription' => $metaDescription,
 			'metaKeywords' => $metaKeywords,
 			];
-			$template->assignMultiple(array_merge($commonVars, $pageVars));
+			$footerProvider = new FooterDataProvider($news, $user, $template, $config);
+
+			// Получаем данные для футера
+			$footerData = $footerProvider->prepareFooterData();
+
+			$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
 			$template->assign('news.id', $newsId);
 			$template->assign('pagination', new class($paginationHtml) {
 				private $html;
@@ -200,7 +204,8 @@ if (empty($_SESSION['csrf_token'])) {
 		$output .= $template->renderNewsItem($newsItem, 'news.tpl');
 		$output .= $template->processComments($commentsList, 'comment.tpl');
 		$output .= $template->render('add_comment.tpl');
-		$output .= $template->render('footer.tpl');
+		//$output .= $template->render('footer.tpl');
+		$output .= $template->renderFooter($footerData);
 		Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
         echo $output;
 		} elseif (isset($_GET['tags'])) {
@@ -244,10 +249,15 @@ if (empty($_SESSION['csrf_token'])) {
 			if (empty($newsByTags)) {
 				$template->assign('no_news_message', 'Нет новостей');
 			}
-			$template->assignMultiple(array_merge($commonVars, $pageVars));
+			$footerProvider = new FooterDataProvider($news, $user, $template, $config);
+
+			// Получаем данные для футера
+			$footerData = $footerProvider->prepareFooterData();
+
+			$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
 			$output = $template->render('header.tpl');
 			$output .= $template->renderNewsList($newsByTags, 'news_item.tpl');
-			$output .= $template->render('footer.tpl');
+			$output .= $template->renderFooter($footerData);
 			Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
 			echo $output;
 		} else {
@@ -296,7 +306,12 @@ if (empty($_SESSION['csrf_token'])) {
 			'news' => $allNews,
 			'votes' => $votes,
 			];
-			$template->assignMultiple(array_merge($commonVars, $pageVars));
+			$footerProvider = new FooterDataProvider($news, $user, $template, $config);
+
+			// Получаем данные для футера
+			$footerData = $footerProvider->prepareFooterData();
+
+			$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
 			$template->assign('pagination', new class($paginationHtml) {
 				private $html;
 				public function __construct($html) { $this->html = $html; }
@@ -307,7 +322,7 @@ if (empty($_SESSION['csrf_token'])) {
         echo $output;*/
 		$output = $template->render('header.tpl');
 		$output .= $template->renderNewsList($allNews, 'news_item.tpl');
-		$output .= $template->render('footer.tpl');
+		$output .= $template->renderFooter($footerData);
 		Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
         echo $output;
 		}
@@ -332,10 +347,15 @@ if (empty($_SESSION['csrf_token'])) {
                 $pageVars = [
                     'pageTitle' => $pageTitle,
                 ];
-                $template->assignMultiple(array_merge($commonVars, $pageVars));
+                $footerProvider = new FooterDataProvider($news, $user, $template, $config);
+
+			// Получаем данные для футера
+			$footerData = $footerProvider->prepareFooterData();
+
+			$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
                 $output = $template->render('header.tpl');
 				$output .= $template->render('forgot_password.tpl');
-				$output .= $template->render('footer.tpl');
+				$output .= $template->renderFooter($footerData);
 				echo $output;
                 break;
             case 'profile':
@@ -365,7 +385,7 @@ if (empty($_SESSION['csrf_token'])) {
 						
 						// Проверка типа файла и размера
 						$allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-						$maxSize = 2 * 1024 * 1024; // 2MB
+						$maxSize = 1 * 1024 * 1024; // 1MB
 						
 						if (in_array($_FILES['avatar']['type'], $allowedTypes) && 
 							$_FILES['avatar']['size'] <= $maxSize &&
@@ -457,8 +477,14 @@ if (empty($_SESSION['csrf_token'])) {
 					'supportedSocials' => ['telegram', 'github', 'google'] // Поддерживаемые соцсети
 				];
 
-				$template->assignMultiple(array_merge($commonVars, $pageVars));
-				echo $template->render('profile.tpl');
+				$footerProvider = new FooterDataProvider($news, $user, $template, $config);
+				// Получаем данные для футера
+				$footerData = $footerProvider->prepareFooterData();
+				$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
+				$output = $template->render('header.tpl');
+				$output .= $template->render('profile.tpl');
+				$output .= $template->renderFooter($footerData);
+				echo $output;
 				break;
 			case 'oauth_callback':
 				$this->handleOAuthCallback();
@@ -483,10 +509,15 @@ if (empty($_SESSION['csrf_token'])) {
                         'pageTitle' => $pageTitle,
                         'token' => $_GET['token']
                     ];
-                    $template->assignMultiple(array_merge($commonVars, $pageVars));
+                    $footerProvider = new FooterDataProvider($news, $user, $template, $config);
+
+			// Получаем данные для футера
+			$footerData = $footerProvider->prepareFooterData();
+
+			$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
                     $output = $template->render('header.tpl');
 					$output .= $template->render('reset_password.tpl');
-					$output .= $template->render('footer.tpl');
+					$output .= $template->renderFooter($footerData);
 					echo $output;
                     break;
                 }
@@ -545,7 +576,12 @@ if (empty($_SESSION['csrf_token'])) {
 					'metaDescription' => $metaDescription,
 					'metaKeywords' => $metaKeywords,
 					];
-					$template->assignMultiple(array_merge($commonVars, $pageVars));
+					$footerProvider = new FooterDataProvider($news, $user, $template, $config);
+
+			// Получаем данные для футера
+			$footerData = $footerProvider->prepareFooterData();
+
+			$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
 					$template->assign('pagination', new class($paginationHtml) {
 						private $html;
 						public function __construct($html) { $this->html = $html; }
@@ -553,7 +589,7 @@ if (empty($_SESSION['csrf_token'])) {
 					});
 					$output = $template->render('header.tpl');
 					$output .= $template->renderNewsList($searchResults, 'search.tpl');
-					$output .= $template->render('footer.tpl');
+					$output .= $template->renderFooter($footerData);
 					echo $output;
 				}
 				break;
@@ -567,10 +603,15 @@ if (empty($_SESSION['csrf_token'])) {
 				'metaDescription' => $metaDescription,
 				'metaKeywords' => $metaKeywords,
 				];
-				$template->assignMultiple(array_merge($commonVars, $pageVars));
+				$footerProvider = new FooterDataProvider($news, $user, $template, $config);
+
+			// Получаем данные для футера
+			$footerData = $footerProvider->prepareFooterData();
+
+			$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
 				$output = $template->render('header.tpl');
 				$output .= $template->render('login.tpl');
-				$output .= $template->render('footer.tpl');
+				$output .= $template->renderFooter($footerData);
 				echo $output;
                 break;
             case 'register':
@@ -583,10 +624,15 @@ if (empty($_SESSION['csrf_token'])) {
 				'metaDescription' => $metaDescription,
 				'metaKeywords' => $metaKeywords,
 				];
-				$template->assignMultiple(array_merge($commonVars, $pageVars));
+				$footerProvider = new FooterDataProvider($news, $user, $template, $config);
+
+			// Получаем данные для футера
+			$footerData = $footerProvider->prepareFooterData();
+
+			$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
 				$output = $template->render('header.tpl');
 				$output .= $template->render('register.tpl');
-				$output .= $template->render('footer.tpl');
+				$output .= $template->renderFooter($footerData);
 				echo $output;
                 break;
             case 'contact':
@@ -599,10 +645,15 @@ if (empty($_SESSION['csrf_token'])) {
 				'metaDescription' => $metaDescription,
 				'metaKeywords' => $metaKeywords,
 				];
-				$template->assignMultiple(array_merge($commonVars, $pageVars));
+				$footerProvider = new FooterDataProvider($news, $user, $template, $config);
+
+			// Получаем данные для футера
+			$footerData = $footerProvider->prepareFooterData();
+
+			$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
 				$output = $template->render('header.tpl');
 				$output .= $template->render('contact.tpl');
-				$output .= $template->render('footer.tpl');
+				$output .= $template->renderFooter($footerData);
 				echo $output;
                 break;
             default:
@@ -622,28 +673,6 @@ if (empty($_SESSION['csrf_token'])) {
                 exit;
         }
     }
-} catch (Exception $e) {
-    // Обработка ошибки 500
-    error_log(sprintf(
-    '[%s] Error in %s:%d - %s',
-    get_class($e),
-    $e->getFile(),
-    $e->getLine(),
-    $config['debug'] ? $e->getMessage() : 'Operation failed'
-)); // Логирование ошибки
-    header($_SERVER["SERVER_PROTOCOL"] . Lang::get('error500', 'core'));
-	$pageTitle = Lang::get('error500', 'core') . ' | ' . $baseTitle;
-	$metaDescription = $news->generateMetaDescription('', 'error500');
-    $metaKeywords = $news->generateMetaKeywords('', 'error500');
-	$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
-	$pageVars = [
-	'pageTitle' => Lang::get('error500', 'core'),
-	'metaDescription' => $metaDescription,
-	'metaKeywords' => $metaKeywords,
-	];
-	$template->assignMultiple(array_merge($commonVars, $pageVars));
-    echo $template->render('500.tpl');
-    exit;
-}
+
 $finish = microtime(1);
 //echo 'generation time: ' . round($finish - $start, 5) . ' сек';
