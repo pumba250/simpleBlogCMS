@@ -2,13 +2,13 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>{pageTitle}</title>
+    <title>{$pageTitle}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="{metaDescription}">
-    <meta name="keywords" content="{metaKeywords}">
+    <meta name="description" content="{$metaDescription}">
+    <meta name="keywords" content="{$metaKeywords}">
     <link rel="stylesheet" href="/css/w3.css">
-    <link rel="stylesheet" href="/templates/{templ}/css/modal.css">
-    <script src="/templates/{templ}/js/modal.js" defer></script>
+    <link rel="stylesheet" href="/templates/{$templ}/css/modal.css">
+    <script src="/templates/{$templ}/js/modal.js" defer></script>
     <style>
         body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
         .language-switcher { position: absolute; top: 20px; right: 20px; z-index: 1000; }

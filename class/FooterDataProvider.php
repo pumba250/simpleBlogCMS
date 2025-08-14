@@ -32,7 +32,7 @@ class FooterDataProvider {
         $data = [
             'auth_error' => $_SESSION['auth_error'] ?? null,
             'csrf_token' => $_SESSION['csrf_token'],
-            'captcha_image_url' => $this->config['captcha_image_url']
+            'captcha_image_url' => '/class/captcha.php'
         ];
 
         if ($currentUser) {
