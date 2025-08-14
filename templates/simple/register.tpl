@@ -15,7 +15,7 @@
     <label for="email"><i class="fas fa-envelope"></i> {l_email}:</label>
     <input type="email" name="email" id="email" placeholder="{l_email}" required><br>
     
-    <label for="question"><i class="fas fa-shield-alt"></i>{l_howcapcha} <img src="<?php echo $captcha_image_url; ?>" alt="{l_captcha}"></label>
+    <label for="question"><i class="fas fa-shield-alt"></i>{l_howcapcha} <img src="{$captcha_image_url}" alt="{l_captcha}"></label>
     <input type="text" name="captcha" required placeholder="{l_answer}"><br>
     
     <button type="submit"><i class="fas fa-sign-in-alt"></i> {l_doregister}</button>
