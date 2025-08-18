@@ -1,8 +1,9 @@
 <?php
 session_start();
-
+define('IN_SIMPLECMS', true);
 // Получаем настройки цветов из конфига или используем значения по умолчанию
-$config = file_exists('config/config.php') ? require 'config/config.php' : [];
+
+$config = require $_SERVER['DOCUMENT_ROOT'] . '/config/config.php';
 
 // Парсим цвета из настроек
 function parseColor($colorStr, $default) {

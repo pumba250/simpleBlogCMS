@@ -113,11 +113,17 @@ public function checkForUpdates() {
             $_SESSION['available_update'] = $result;
         }
 
-        // Сохраняем результат проверки в файл
-        file_put_contents($this->lastCheckFile, json_encode($result));
-        @touch($this->lastCheckFile); // Обновляем время модификации файла
-        
-        return $result['has_update'] ? $result : false;
+        // Убедимся, что директория существует
+		$dir = dirname($this->lastCheckFile);
+		if (!is_dir($dir)) {
+			mkdir($dir, 0755, true);
+		}
+
+		// Сохраняем результат проверки в файл
+		file_put_contents($this->lastCheckFile, json_encode($result));
+		@touch($this->lastCheckFile); // Обновляем время модификации файла
+
+		return $result['has_update'] ? $result : false;
     } catch (Exception $e) {
         error_log("GitHub check failed: ".$e->getMessage());
         // Сохраняем информацию о неудачной проверке
