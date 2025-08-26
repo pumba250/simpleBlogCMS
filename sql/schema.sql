@@ -1,56 +1,16 @@
-CREATE TABLE `{PREFIX_}blogs` (
- `id` int(11) NOT NULL AUTO_INCREMENT,
- `title` varchar(255) NOT NULL,
- `content` text NOT NULL,
- `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
- PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-CREATE TABLE `{PREFIX_}blogs_contacts` (
- `id` int(11) NOT NULL AUTO_INCREMENT,
- `name` varchar(100) NOT NULL,
- `email` varchar(100) NOT NULL,
- `message` text NOT NULL,
- `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
- PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-CREATE TABLE `{PREFIX_}blogs_tags` (
- `blogs_id` int(11) NOT NULL,
- `tag_id` int(11) NOT NULL,
- PRIMARY KEY (`blogs_id`,`tag_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-CREATE TABLE `{PREFIX_}comments` (
- `id` int(9) unsigned NOT NULL AUTO_INCREMENT,
- `parent_id` mediumint(9) unsigned NOT NULL DEFAULT '0',
- `f_parent` mediumint(9) unsigned NOT NULL DEFAULT '0',
- `created_at` int(10) unsigned NOT NULL,
- `theme_id` smallint(6) unsigned NOT NULL,
- `user_name` varchar(30) CHARACTER SET utf8 NOT NULL,
- `user_text` varchar(9999) COLLATE utf8_unicode_ci NOT NULL,
- `moderation` tinyint(3) unsigned NOT NULL DEFAULT '0',
- `plus` mediumint(9) NOT NULL DEFAULT '0',
- `minus` mediumint(9) NOT NULL DEFAULT '0',
- PRIMARY KEY (`id`),
- KEY `theme_id` (`theme_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-CREATE TABLE `{PREFIX_}tags` (
- `id` int(11) NOT NULL AUTO_INCREMENT,
- `name` varchar(255) NOT NULL,
- PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-CREATE TABLE `{PREFIX_}users` (
- `id` int(10) NOT NULL AUTO_INCREMENT,
- `username` varchar(100) NOT NULL,
- `password` varchar(60) NOT NULL,
- `email` varchar(80) NOT NULL,
- `isadmin` tinyint(1) NOT NULL,
- `avatar` varchar(100) NOT NULL DEFAULT '/images/avatar_g.png',
- `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
- `last_activity` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
- PRIMARY KEY (`id`),
- UNIQUE KEY `id` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+# ============================================================
+# simpleBlog
+# ============================================================
+# 
+# VERSION: v0.9.6
+#
+#
+
+#
+# Table `admin_logs`
+#
 CREATE TABLE `{PREFIX_}admin_logs` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `username` varchar(255) DEFAULT NULL,
   `action` varchar(50) NOT NULL,
@@ -60,15 +20,10 @@ CREATE TABLE `{PREFIX_}admin_logs` (
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-CREATE TABLE `{PREFIX_}comment_votes` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `comment_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `vote_type` enum('plus','minus') NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_vote` (`comment_id`,`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+#
+# Table `article_votes`
+#
 CREATE TABLE `{PREFIX_}article_votes` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `article_id` int(11) NOT NULL,
@@ -78,12 +33,132 @@ CREATE TABLE `{PREFIX_}article_votes` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_vote` (`article_id`,`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-ALTER TABLE `{PREFIX_}blogs` 
-ADD COLUMN `likes` INT NOT NULL DEFAULT 0 AFTER `content`,
-ADD COLUMN `dislikes` INT NOT NULL DEFAULT 0 AFTER `likes`,
-ADD COLUMN `author_id` int(11) DEFAULT NULL AFTER `created_at`;
-ALTER TABLE `{PREFIX_}users` 
-ADD COLUMN `email_verified` TINYINT(1) NOT NULL DEFAULT 0,
-ADD COLUMN `verification_token` VARCHAR(64) NULL,
-ADD COLUMN `reset_token` VARCHAR(64) NULL,
-ADD COLUMN `reset_expires` DATETIME NULL;
+
+#
+# Table `blog_images`
+#
+CREATE TABLE `{PREFIX_}blog_images` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `blog_id` int(11) NOT NULL,
+  `file_name` varchar(255) NOT NULL,
+  `file_path` varchar(255) NOT NULL,
+  `file_size` int(11) NOT NULL,
+  `mime_type` varchar(100) NOT NULL,
+  `is_main` tinyint(1) DEFAULT '0',
+  `uploaded_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `uploaded_by` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `blog_id` (`blog_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+#
+# Table `blogs`
+#
+CREATE TABLE `{PREFIX_}blogs` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) NOT NULL,
+  `content` text NOT NULL,
+  `likes` int(11) NOT NULL DEFAULT '0',
+  `dislikes` int(11) NOT NULL DEFAULT '0',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `author_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+#
+# Table `blogs_contacts`
+#
+CREATE TABLE `{PREFIX_}blogs_contacts` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `message` text NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+#
+# Table `blogs_tags`
+#
+CREATE TABLE `{PREFIX_}blogs_tags` (
+  `blogs_id` int(11) NOT NULL,
+  `tag_id` int(11) NOT NULL,
+  PRIMARY KEY (`blogs_id`,`tag_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+#
+# Table `comment_votes`
+#
+CREATE TABLE `{PREFIX_}comment_votes` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `comment_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `vote_type` enum('plus','minus') NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_vote` (`comment_id`,`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+#
+# Table `comments`
+#
+CREATE TABLE `{PREFIX_}comments` (
+  `id` int(9) unsigned NOT NULL AUTO_INCREMENT,
+  `parent_id` mediumint(9) unsigned NOT NULL DEFAULT '0',
+  `f_parent` mediumint(9) unsigned NOT NULL DEFAULT '0',
+  `created_at` int(10) unsigned NOT NULL,
+  `theme_id` smallint(6) unsigned NOT NULL,
+  `user_name` varchar(30) NOT NULL,
+  `user_text` varchar(9999) NOT NULL,
+  `moderation` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `plus` mediumint(9) NOT NULL DEFAULT '0',
+  `minus` mediumint(9) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `theme_id` (`theme_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+#
+# Table `tags`
+#
+CREATE TABLE `{PREFIX_}tags` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+#
+# Table `user_social`
+#
+CREATE TABLE `{PREFIX_}user_social` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `social_type` varchar(20) NOT NULL,
+  `social_id` varchar(255) NOT NULL,
+  `social_username` varchar(255) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `social_unique` (`social_type`,`social_id`),
+  KEY `user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+#
+# Table `users`
+#
+CREATE TABLE `{PREFIX_}users` (
+  `id` int(10) NOT NULL AUTO_INCREMENT,
+  `username` varchar(100) NOT NULL,
+  `password` varchar(60) NOT NULL,
+  `email` varchar(80) NOT NULL,
+  `avatar_path` varchar(255) DEFAULT NULL,
+  `isadmin` tinyint(1) NOT NULL,
+  `avatar` varchar(100) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `last_activity` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `email_verified` tinyint(1) NOT NULL DEFAULT '0',
+  `verification_token` varchar(64) DEFAULT NULL,
+  `reset_token` varchar(64) DEFAULT NULL,
+  `reset_expires` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `id` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
