@@ -712,7 +712,11 @@ $updateInfo = $updater->checkForUpdates();
             $limit = 20;
             $offset = ($page - 1) * $limit;
             
-            $logs = $pdo->query("SELECT * FROM `{$dbPrefix}admin_logs` ORDER BY created_at DESC LIMIT $limit OFFSET $offset")->fetchAll(PDO::FETCH_ASSOC);
+            $stmt = $pdo->prepare("SELECT * FROM `{$dbPrefix}admin_logs` ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
+			$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+			$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+			$stmt->execute();
+			$logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
             $totalLogs = $pdo->query("SELECT COUNT(*) FROM `{$dbPrefix}admin_logs`")->fetchColumn();
             
             $template->assign('logs', $logs);
@@ -837,4 +841,5 @@ $updateInfo = $updater->checkForUpdates();
 
 
 $finish = microtime(1);
+
 echo 'generation time: ' . round($finish - $start, 5) . ' сек';
