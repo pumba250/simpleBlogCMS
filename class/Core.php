@@ -1,23 +1,27 @@
 <?php
+if (!defined('IN_SIMPLECMS')) {
+    die('Прямой доступ запрещен');
+}
 /**
  * Основной класс для обработки запросов
  * 
  * @package    SimpleBlog
  * @subpackage Core
  * @category   System
- * @version    0.9.6
+ * @version    0.9.7
  * 
- * @method void   __construct(PDO $pdo, array $config, Template $template) Инициализирует зависимости
- * @method void   handlePostRequest() Обрабатывает все POST-запросы (основной публичный метод)
- * @method void   handleCommentPost() Обрабатывает отправку комментария (приватный)
- * @method void   handleVotePost() Обрабатывает голосования (приватный)
- * @method void   handleRegistration() Обрабатывает регистрацию пользователя (приватный)
- * @method void   handleLogin() Обрабатывает авторизацию (приватный)
- * @method void   handleContact() Обрабатывает форму обратной связи (приватный)
- * @method void   handlePasswordResetRequest() Обрабатывает запрос сброса пароля (приватный)
- * @method void   handlePasswordReset() Обрабатывает сброс пароля (приватный)
+ * @method void __construct(PDO $pdo, array $config, Template $template) Инициализирует зависимости
+ * @method void handlePostRequest() Обрабатывает все POST-запросы (основной публичный метод)
+ * @method void handleCommentPost() Обрабатывает отправку комментария (приватный)
+ * @method void handleVotePost() Обрабатывает голосования (приватный)
+ * @method void handleRegistration() Обрабатывает регистрацию пользователя (приватный)
+ * @method void handleLogin() Обрабатывает авторизацию (приватный)
+ * @method void handleContact() Обрабатывает форму обратной связи (приватный)
+ * @method void handlePasswordResetRequest() Обрабатывает запрос сброса пароля (приватный)
+ * @method void handlePasswordReset() Обрабатывает сброс пароля (приватный)
  */
-class Core {
+class Core
+{
     private $pdo;
     private $config;
     private $user;
@@ -28,7 +32,8 @@ class Core {
     private $parse;
     private $template;
 
-    public function __construct($pdo, $config, $template) {
+    public function __construct($pdo, $config, $template)
+    {
         $this->pdo = $pdo;
         $this->config = $config;
         $this->template = $template;
@@ -45,10 +50,12 @@ class Core {
     /**
      * Обработка POST-запросов
      */
-    public function handlePostRequest() {
+    public function handlePostRequest()
+    {
         if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
             die(Lang::get('invalid_csrf', 'core'));
         }
+		//$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
         // Обработка комментариев
         if (isset($_POST['user_text'])) {
@@ -87,7 +94,8 @@ class Core {
     /**
      * Обработка отправки комментария
      */
-    private function handleCommentPost() {
+    private function handleCommentPost()
+    {
         $themeId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
         $userName = isset($_SESSION['user']['username']) ? $_SESSION['user']['username'] : $_POST['user_name'];
         $userText = $_POST['user_text'];
@@ -102,8 +110,11 @@ class Core {
     /**
      * Обработка голосования
      */
-    private function handleVotePost() {
-        $newsId = isset($_POST['id']) ? (int)$_POST['id'] : (isset($_GET['id']) ? (int)$_GET['id'] : 0);
+    private function handleVotePost()
+    {
+        $newsId = isset($_POST['id']) 
+            ? (int)$_POST['id'] 
+            : (isset($_GET['id']) ? (int)$_GET['id'] : 0);
         
         if ($newsId === 0) {
             die(Lang::get('not_id', 'core'));
@@ -132,7 +143,8 @@ class Core {
     /**
      * Обработка регистрации
      */
-    private function handleRegistration() {
+    private function handleRegistration()
+    {
         $this->user->register($_POST['username'], $_POST['password'], $_POST['email']);
         header("Location: /");
         exit;
@@ -141,7 +153,8 @@ class Core {
     /**
      * Обработка авторизации
      */
-    private function handleLogin() {
+    private function handleLogin()
+    {
         $captchaValid = isset($_POST['captcha']) && $_POST['captcha'] == $_SESSION['captcha_answer'];
         $username = $_POST['username'] ?? '';
         $password = $_POST['password'] ?? '';
@@ -176,7 +189,8 @@ class Core {
     /**
      * Обработка формы обратной связи
      */
-    private function handleContact() {
+    private function handleContact()
+    {
         if (isset($_POST['captcha']) && $_POST['captcha'] == $_SESSION['captcha_answer']) {
             if ($this->contact->saveMessage($_POST['name'], $_POST['email'], $_POST['message'])) {
                 $_SESSION['flash'] = Lang::get('msg_send', 'core');
@@ -191,7 +205,8 @@ class Core {
     /**
      * Обработка запроса на сброс пароля
      */
-    private function handlePasswordResetRequest() {
+    private function handlePasswordResetRequest()
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
             if ($this->user->sendPasswordReset($_POST['email'])) {
                 $_SESSION['flash'] = Lang::get('reset_email_sent', 'core');
@@ -206,7 +221,8 @@ class Core {
     /**
      * Обработка сброса пароля
      */
-    private function handlePasswordReset() {
+    private function handlePasswordReset()
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['token'], $_POST['password'])) {
             if ($this->user->resetPassword($_POST['token'], $_POST['password'])) {
                 $_SESSION['flash'] = Lang::get('password_reset_success', 'core');

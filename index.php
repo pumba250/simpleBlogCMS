@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Core
- * @version    0.9.6
+ * @version    0.9.7
  * 
  * @router
  *  GET  /             - Главная страница блога
@@ -19,7 +19,6 @@
  * - Система кэширования
  */
 define('IN_SIMPLECMS', true);
-header("Content-Security-Policy: default-src 'self'; script-src 'self' https://".$_SERVER['SERVER_NAME']."; style-src 'self' 'unsafe-inline'; img-src 'self' data:;");
 header("X-Frame-Options: DENY");
 header("X-Content-Type-Options: nosniff");
 header("Referrer-Policy: strict-origin-when-cross-origin");
@@ -32,7 +31,15 @@ session_start([
     'cookie_lifetime' => 7200,
     'gc_maxlifetime' => 7200 
 ]);
-require 'class/ErrorHandler.php';
+$regenerateTime = 300;
+if (!isset($_SESSION['created'])) {
+    $_SESSION['created'] = time();
+    session_regenerate_id(true);
+} elseif (time() - $_SESSION['created'] > $regenerateTime) {
+    session_regenerate_id(true);
+    $_SESSION['created'] = time();
+}
+require 'class/ErrorHandler.php';;
 ErrorHandler::init($config['debug'] ?? false);
 require 'class/Lang.php';
 Lang::init();
@@ -84,6 +91,7 @@ require 'class/Contact.php';
 require 'class/Comments.php';
 require 'class/News.php';
 require 'class/Vote.php';
+require 'class/ImageUploader.php';
 require 'class/Parse.php';
 require 'class/Mailer.php';
 require 'class/Pagination.php';
@@ -91,18 +99,17 @@ require 'class/Core.php';
 require 'class/FooterDataProvider.php';
 require 'class/Template.php';
 // Инициализация объектов
-
 $votes = new Votes($pdo);
 $contact = new Contact($pdo);
 $news = new News($pdo);
 $comments = new Comments($pdo);
 $parse = new parse();
 $template = new Template();
+$imageUploader = new imageUploader($uploadDir, $maxSize);
 $user = new User($pdo, $template);
 $baseTitle = $config['home_title'];
 $pageTitle = $baseTitle;
 $core = new Core($pdo, $config, $template);
-
 // Обработка POST-запросов
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $core->handlePostRequest();
@@ -183,6 +190,7 @@ if (empty($_SESSION['csrf_token'])) {
 			'pageTitle' => $pageTitle,
 			'metaDescription' => $metaDescription,
 			'metaKeywords' => $metaKeywords,
+			'csrf_token' => $_SESSION['csrf_token'],
 			];
 			$footerProvider = new FooterDataProvider($news, $user, $template, $config);
 
@@ -196,7 +204,7 @@ if (empty($_SESSION['csrf_token'])) {
 				public function __construct($html) { $this->html = $html; }
 				public function __toString() { return $this->html; }
 			});
-			
+			//var_dump($commonVars);
 		/*$output = $template->render('news.tpl');
         Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
         echo $output;*/
@@ -294,9 +302,12 @@ if (empty($_SESSION['csrf_token'])) {
 					);
 					$item['content'] = $parse->truncateHTML($item['content']);
 				}
+				
+				//$mainContent .= $template->renderBuffered('news_item.tpl', $item);
 			}
 			unset($item);
 			$lastThreeNews = $news->getLastThreeNews();
+			
 			// Передача данных в шаблон
 			$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 		$pageVars = [
@@ -317,9 +328,7 @@ if (empty($_SESSION['csrf_token'])) {
 				public function __construct($html) { $this->html = $html; }
 				public function __toString() { return $this->html; }
 			});
-			/*$output = $template->render('home.tpl');
-        Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
-        echo $output;*/
+			
 		$output = $template->render('header.tpl');
 		$output .= $template->renderNewsList($allNews, 'news_item.tpl');
 		$output .= $template->renderFooter($footerData);
@@ -374,30 +383,23 @@ if (empty($_SESSION['csrf_token'])) {
 					// Обработка загрузки аватара
 					$avatar = null;
 					if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-						$uploadDir = 'uploads/avatars/';
-						if (!is_dir($uploadDir)) {
-							mkdir($uploadDir, 0755, true);
-						}
-						
-						$ext = pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION);
-						$filename = 'user_' . $_SESSION['user']['id'] . '_' . time() . '.' . $ext;
-						$targetPath = $uploadDir . $filename;
-						
-						// Проверка типа файла и размера
-						$allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-						$maxSize = 1 * 1024 * 1024; // 1MB
-						
-						if (in_array($_FILES['avatar']['type'], $allowedTypes) && 
-							$_FILES['avatar']['size'] <= $maxSize &&
-							move_uploaded_file($_FILES['avatar']['tmp_name'], $targetPath)) {
-							$avatar = $targetPath;
+					    try {
+							// Инициализируем загрузчик
+							$uploadDir = 'uploads/avatars/';
+							$maxSize = 2 * 1024 * 1024; // 2MB
+							$imageUploader = new ImageUploader($uploadDir, $maxSize);
 							
-							// Удаляем старый аватар, если он существует
-							if (!empty($_SESSION['user']['avatar'])) {
-								@unlink($_SESSION['user']['avatar']);
-							}
-						} else {
-							$_SESSION['flash'] = Lang::get('avatar_upload_error', 'core');
+							// Загружаем изображение. Базовое имя = 'user_' + ID пользователя
+							$baseFileName = 'user_' . $_SESSION['user']['id'];
+							$newAvatarPath = $imageUploader->upload($_FILES['avatar'], $baseFileName);
+							
+							// Если загрузка успешна, удаляем старый аватар и сохраняем путь к новому
+							ImageUploader::removeOldAvatar($_SESSION['user']['avatar'] ?? null);
+							$avatar = $newAvatarPath;
+							
+						} catch (RuntimeException $e) {
+							// Ловим и обрабатываем ошибки загрузки
+							$_SESSION['flash'] = Lang::get('avatar_upload_error', 'core') . ': ' . $e->getMessage();
 							header('Location: /?action=profile');
 							exit;
 						}
@@ -599,7 +601,7 @@ if (empty($_SESSION['csrf_token'])) {
 				$metaKeywords = $news->generateMetaKeywords('', 'login');
 				$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
-				'pageTitle' => Lang::get('auth', 'core'),
+				'pageTitle' => $pageTitle,
 				'metaDescription' => $metaDescription,
 				'metaKeywords' => $metaKeywords,
 				];
@@ -620,7 +622,7 @@ if (empty($_SESSION['csrf_token'])) {
 				$metaKeywords = $news->generateMetaKeywords('', 'register');
                 $commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
-				'pageTitle' => Lang::get('register', 'core'),
+				'pageTitle' => $pageTitle,
 				'metaDescription' => $metaDescription,
 				'metaKeywords' => $metaKeywords,
 				];
@@ -641,7 +643,7 @@ if (empty($_SESSION['csrf_token'])) {
 				$metaKeywords = $news->generateMetaKeywords('', 'contact');
                 $commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
-				'pageTitle' => Lang::get('contact', 'core'),
+				'pageTitle' => $pageTitle,
 				'metaDescription' => $metaDescription,
 				'metaKeywords' => $metaKeywords,
 				];
@@ -664,12 +666,17 @@ if (empty($_SESSION['csrf_token'])) {
 				$metaKeywords = $news->generateMetaKeywords('', 'error404');
 				$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
-				'pageTitle' => Lang::get('error404', 'core'),
+				'pageTitle' => $pageTitle,
 				'metaDescription' => $metaDescription,
 				'metaKeywords' => $metaKeywords,
 				];
+				$footerProvider = new FooterDataProvider($news, $user, $template, $config);
+
+				// Получаем данные для футера
+				$footerData = $footerProvider->prepareFooterData();
 				$template->assignMultiple(array_merge($commonVars, $pageVars));
-                echo $template->render('404.tpl');
+                $output = $template->render('404.tpl');
+				echo $output;
                 exit;
         }
     }

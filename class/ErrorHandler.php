@@ -7,7 +7,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Views
- * @version    0.9.6
+ * @version    0.9.7
  * 
  */
 class ErrorHandler {

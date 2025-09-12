@@ -1,6 +1,5 @@
 <?php
 if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
-
 class FooterDataProvider {
     private $news;
     private $user;

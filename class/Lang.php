@@ -1,23 +1,27 @@
 <?php
-if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
+if (!defined('IN_SIMPLECMS')) {
+    die('Прямой доступ запрещен');
+}
 /**
  * Класс для работы с языковыми файлами и локализацией
  * 
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Internationalization
- * @version    0.9.6
+ * @version    0.9.7
  * 
  * @method static void   init() Инициализирует языковую систему (определяет язык из сессии/браузера)
  * @method static void   setLanguage(string $lang) Устанавливает язык (если файлы локализации существуют)
  * @method static string get(string $key, string $section = 'main') Получает перевод по ключу из указанного раздела
  * @method static string detectLanguage() Определяет язык браузера (приватный)
  */
-class Lang {
+class Lang
+{
     protected static $translations = [];
     protected static $language = 'ru'; // Язык по умолчанию
 
-    public static function init() {
+    public static function init()
+    {
         // Определяем язык из сессии или браузера
         if (isset($_SESSION['lang'])) {
             self::$language = $_SESSION['lang'];
@@ -26,14 +30,16 @@ class Lang {
         }
     }
 
-    public static function setLanguage($lang) {
+    public static function setLanguage($lang)
+    {
         if (file_exists(__DIR__ . '/../lang/' . $lang)) {
             $_SESSION['lang'] = $lang;
             self::$language = $lang;
         }
     }
 
-    public static function get(string $key, string $section = 'main') {
+    public static function get(string $key, string $section = 'main')
+    {
         // Проверяем, загружен ли уже этот раздел
         if (!isset(self::$translations[$section])) {
             $file = __DIR__ . '/../lang/' . self::$language . '/' . $section . '.php';
@@ -54,9 +60,11 @@ class Lang {
         return self::$translations[$section][$key] ?? $key;
     }
 
-    private static function detectLanguage() {
+    private static function detectLanguage()
+    {
         $supported = ['en', 'ru'];
         $browserLang = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? 'en', 0, 2);
+        
         return in_array($browserLang, $supported) ? $browserLang : 'en';
     }
 }

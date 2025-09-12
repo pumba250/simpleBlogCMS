@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Admin
- * @version    0.9.6
+ * @version    0.9.7
  * 
  * @sections
  * - Управление пользователями
@@ -537,7 +537,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 							
 							
 							// Перенаправляем с задержкой
-							echo '<meta http-equiv="refresh" content="5;url=?section=updates">';
+							echo '<meta http-equiv="refresh" content="10;url=?section=updates">';
 							exit;
 						} else {
 							throw new Exception("Не удалось выполнить обновление");
@@ -594,10 +594,16 @@ $updateInfo = $updater->checkForUpdates();
 				$template->assign('editBlog', $editBlog);
 				
 			}
+			$perPage = 15;
+			$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+			$offset = ($page - 1) * $perPage;
 			$newsCount = $news->getTotalNewsCount();
-			$blogs = $news->getAllAdm();
+			$totalPages = ceil($newsCount / $perPage);
+			$blogs = $news->getAllAdm($perPage, $offset);
 			$allTags = $pdo->query("SELECT * FROM `{$dbPrefix}tags` ORDER by `name`")->fetchAll(PDO::FETCH_ASSOC);
 			$template->assign('newsCount', $newsCount);
+			$template->assign('totalPages', $totalPages);
+			$template->assign('currentPage', $page);
 			$template->assign('blogs', $blogs);
 			$template->assign('allTags', $allTags);
 			$template->assign('updateInfo', $updateInfo);
@@ -751,7 +757,7 @@ $updateInfo = $updater->checkForUpdates();
 			// Проверка важных PHP модулей
 			$phpModules = [
 				'PDO' => extension_loaded('pdo') ? '✓' : '✗',
-				'PDO MySQL' => extension_loaded('pdo_mysql') ? '✓' : '✗',
+				'Bzip2' => extension_loaded('bz2') ? '✓' : '✗',
 				'Gzip' => extension_loaded('gzip') ? '✓' : '✗',
 				'GD' => extension_loaded('gd') ? '✓' : '✗',
 				'Zlib' => extension_loaded('zlib') ? '✓' : '✗',
@@ -841,5 +847,4 @@ $updateInfo = $updater->checkForUpdates();
 
 
 $finish = microtime(1);
-
 echo 'generation time: ' . round($finish - $start, 5) . ' сек';

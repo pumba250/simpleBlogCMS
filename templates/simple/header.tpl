@@ -6,7 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="{$metaDescription}">
     <meta name="keywords" content="{$metaKeywords}">
-    <link rel="stylesheet" href="/css/w3.css">
+    <link rel="stylesheet" href="/templates/{$templ}/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/templates/{$templ}/css/all.min.css">
+    <link rel="stylesheet" href="/templates/{$templ}/css/w3.css">
     <link rel="stylesheet" href="/templates/{$templ}/css/modal.css">
     <script src="/templates/{$templ}/js/modal.js" defer></script>
     <style>
@@ -20,7 +22,12 @@
     </style>
 </head>
 <body class="w3-light-grey">
+
 <div class="w3-content" style="max-width:1400px">
+	<div class="language-switcher">
+        <a href="?lang=en" title="English">EN</a>
+        <a href="?lang=ru" title="Русский" class="active">RU</a>
+    </div>
 <header class="w3-container w3-center w3-padding-32"> 
     <h1><b>MY BLOG</b></h1>
   <p>{l_welcome} of <span class="w3-tag">not young admin</span></p>

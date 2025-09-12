@@ -1,12 +1,15 @@
 <?php
-if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
+if (!defined('IN_SIMPLECMS')) {
+    die('Прямой доступ запрещен');
+}
+
 /**
  * Класс для работы с кэшированием данных
  * 
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Performance
- * @version    0.9.6
+ * @version    0.9.7
  * 
  * @method static bool   has(string $key)                  Проверяет наличие данных в кэше
  * @method static mixed  get(string $key)                  Получает данные из кэша
@@ -16,13 +19,15 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @method static string getCacheKey(string $identifier)   Генерирует ключ кэша
  * @method static void   init(array $config)               Инициализирует кэш с указанной конфигурацией
  */
-class Cache {
+class Cache
+{
     private static $driver;
     private static $config;
     private static $enabled = true;
-    private static $cacheDir = __DIR__.'/../cache/';
+    private static $cacheDir = __DIR__ . '/../cache/';
 
-    public static function init(array $config) {
+    public static function init(array $config): void
+    {
         self::$config = $config;
         self::$enabled = $config['cache_enabled'] ?? true;
 
@@ -76,7 +81,8 @@ class Cache {
         }
     }
 
-    private static function ensureCacheDir(): void {
+    private static function ensureCacheDir(): void
+    {
         if (!is_dir(self::$cacheDir)) {
             if (!mkdir(self::$cacheDir, 0700, true)) {
                 throw new RuntimeException('Failed to create cache directory');
@@ -86,13 +92,15 @@ class Cache {
         }
     }
 
-    private static function validateCacheKey(string $key): void {
+    private static function validateCacheKey(string $key): void
+    {
         if (!preg_match('/^[a-f0-9]{32}$/', $key)) {
             throw new InvalidArgumentException('Invalid cache key format');
         }
     }
 
-    private static function getCacheFilePath(string $key): string {
+    private static function getCacheFilePath(string $key): string
+    {
         self::validateCacheKey($key);
         $file = self::$cacheDir . $key . '.cache';
         
@@ -105,8 +113,11 @@ class Cache {
         return $file;
     }
 
-    public static function has(string $key): bool {
-        if (!self::$enabled) return false;
+    public static function has(string $key): bool
+    {
+        if (!self::$enabled) {
+            return false;
+        }
 
         $key = self::getCacheKey($key);
         
@@ -124,10 +135,14 @@ class Cache {
             case 'file':
                 try {
                     $file = self::getCacheFilePath($key);
-                    if (!file_exists($file)) return false;
+                    if (!file_exists($file)) {
+                        return false;
+                    }
                     
                     $content = file_get_contents($file);
-                    if ($content === false) return false;
+                    if ($content === false) {
+                        return false;
+                    }
                     
                     $data = unserialize($content);
                     return isset($data['expire']) && $data['expire'] > time();
@@ -140,8 +155,11 @@ class Cache {
         return false;
     }
 
-    public static function get(string $key) {
-        if (!self::$enabled) return null;
+    public static function get(string $key)
+    {
+        if (!self::$enabled) {
+            return null;
+        }
 
         $key = self::getCacheKey($key);
         
@@ -160,10 +178,14 @@ class Cache {
             case 'file':
                 try {
                     $file = self::getCacheFilePath($key);
-                    if (!file_exists($file)) return null;
+                    if (!file_exists($file)) {
+                        return null;
+                    }
                     
                     $content = file_get_contents($file);
-                    if ($content === false) return null;
+                    if ($content === false) {
+                        return null;
+                    }
                     
                     $data = unserialize($content);
                     if (!is_array($data)) {
@@ -191,8 +213,11 @@ class Cache {
         return null;
     }
 
-    public static function set(string $key, $data, int $ttl = 3600): bool {
-        if (!self::$enabled) return false;
+    public static function set(string $key, $data, int $ttl = 3600): bool
+    {
+        if (!self::$enabled) {
+            return false;
+        }
 
         $key = self::getCacheKey($key);
         
@@ -217,7 +242,9 @@ class Cache {
                     
                     // Atomic write via temp file
                     $tempFile = tempnam(self::$cacheDir, 'tmp_');
-                    if ($tempFile === false) return false;
+                    if ($tempFile === false) {
+                        return false;
+                    }
                     
                     if (file_put_contents($tempFile, serialize($content), LOCK_EX) === false) {
                         unlink($tempFile);
@@ -240,8 +267,11 @@ class Cache {
         return false;
     }
 
-    public static function delete(string $key): bool {
-        if (!self::$enabled) return false;
+    public static function delete(string $key): bool
+    {
+        if (!self::$enabled) {
+            return false;
+        }
 
         $key = self::getCacheKey($key);
         
@@ -271,8 +301,11 @@ class Cache {
         return false;
     }
 
-    public static function clear(): void {
-        if (!self::$enabled) return;
+    public static function clear(): void
+    {
+        if (!self::$enabled) {
+            return;
+        }
 
         switch (self::$driver) {
             case 'redis':
@@ -290,7 +323,9 @@ class Cache {
             case 'file':
                 try {
                     $files = glob(self::$cacheDir . '*.cache');
-                    if ($files === false) return;
+                    if ($files === false) {
+                        return;
+                    }
                     
                     foreach ($files as $file) {
                         if (is_file($file) && strpos($file, '..') === false) {
@@ -303,7 +338,8 @@ class Cache {
         }
     }
 
-    public static function getCacheKey(string $identifier): string {
+    public static function getCacheKey(string $identifier): string
+    {
         return md5($identifier . (self::$config['cache_key_salt'] ?? 'simpleblog'));
     }
 }

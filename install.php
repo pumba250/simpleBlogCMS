@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Installer
- * @version    0.9.6
+ * @version    0.9.7
  * 
  * @security
  * - Валидация вводимых данных
@@ -209,12 +209,12 @@ return [
     'metaKeywords' => 'Здесь ключевые слова, через запятую (,)',
     'metaDescription' => 'Здесь описание вашего сайта',
     'mail_from' => 'no-reply@yourdomain.com',
-    'mail_from_name' => 'SimpleBlog Notifications',
+    'mail_from_name' => 'SimpleBlogCMS Notifications',
     'blogs_per_page' => 6,
     'comments_per_page' => 10,
-    'powered' => 'simpleBlog',
-    'version' => 'v0.9.6',
-	'github_repo' => 'pumba250/simpleBlog',
+    'powered' => 'simpleBlogCMS',
+    'version' => 'v0.9.7',
+	'github_repo' => 'pumba250/simpleBlogCMS',
 	'update_check_interval' => 43200, // 12 часов в секундах
 	'disable_update_check' => false,
     'install_ip' => '".addslashes($ip)."',
@@ -242,7 +242,7 @@ return [
             </style>
         </head>
         <body>
-            <h1>Установка SimpleBlog</h1>
+            <h1>Установка SimpleBlogCMS</h1>
             <p class=\"success\">Установка завершена успешно!</p>";
         
         if ($deleteFiles) {
@@ -271,7 +271,7 @@ return [
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Установка simpleBlog</title>
+    <title>Установка simpleBlogCMS</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -325,7 +325,7 @@ return [
     </style>
 </head>
 <body>
-    <h1>Установка simpleBlog</h1>
+    <h1>Установка simpleBlogCMS v0.9.7</h1>
     <form method="POST" autocomplete="off">
         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
         

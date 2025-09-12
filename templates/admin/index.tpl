@@ -418,6 +418,7 @@ function insertHideTag() {
                             <th>ID</th>
                             <th><?= Lang::get('blog_title', 'admin') ?></th>
                             <th><?= Lang::get('created_at', 'admin') ?></th>
+							<th><?= Lang::get('rating', 'admin') ?> (+/-)</th>
                             <th><?= Lang::get('blog_tags', 'admin') ?></th>
                             <th><?= Lang::get('actions', 'admin') ?></th>
                         </tr>
@@ -428,6 +429,7 @@ function insertHideTag() {
                             <td><?= $blog['id'];?></td>
                             <td><?= $blog['title'];?></td>
                             <td><?= $blog['created_at'];?></td>
+							<td><?=$blog['likes'];?>/<?=$blog['dislikes'];?></td>
                             <td>
                                 <?foreach ($blog['tags'] as $tag):?>
                                     <span style="background: #eee; padding: 3px 6px; border-radius: 3px; margin-right: 5px;"><?= $tag;?></span>
@@ -446,7 +448,19 @@ function insertHideTag() {
                         <?endforeach;?>
                     </tbody>
                 </table>
-				
+				<?if ($totalPages > 1):?>
+					<div class="admin-pagination">
+						<?if ($currentPage > 1):?>
+							<a class="btn btn-primary" href="?section=blogs&page=<?=$currentPage-1;?>">← <?= Lang::get('prev', 'admin') ?></a>
+						<?endif;?>
+						
+						<?= Lang::get('page', 'admin') ?> <?=$currentPage;?> <?= Lang::get('from', 'admin') ?> <?=$totalPages;?>
+						
+						<?if ($currentPage < $totalPages):?>
+							<a class="btn btn-primary" href="?section=blogs&page=<?=$currentPage+1;?>"><?= Lang::get('next', 'admin') ?> →</a>
+						<?endif;?>
+					</div>
+				<?endif;?>
             <?elseif ($section == 'contacts'):?>
                 <!-- Раздел обратной связи -->
                 <h2><?= Lang::get('feedback', 'admin') ?></h2>

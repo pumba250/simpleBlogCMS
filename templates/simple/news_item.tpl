@@ -5,6 +5,14 @@
     </div>
     <div class="w3-container">
         <p>{!content}</p>
+		<div class="w3-bar">
+            <span class="w3-bar-item w3-small">
+                <i class="fas fa-thumbs-up"></i> {article_rating.likes}
+            </span>
+            <span class="w3-bar-item w3-small">
+                <i class="fas fa-thumbs-down"></i> {article_rating.dislikes}
+            </span>
+        </div>
         <div class="w3-row">
             <div class="w3-col m8 s12">
                 <p><a href="?id={id}"><button class="w3-button w3-padding-large w3-white w3-border">
