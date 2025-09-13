@@ -1,0 +1,41 @@
+name: Generate Documentation
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: mbstring, dom, xml, simplexml
+        tools: composer
+
+    - name: Install PHP dependencies
+      run: |
+        composer require --dev phpdocumentor/phpdocumentor
+        composer require --dev squizlabs/php_codesniffer
+
+    - name: Generate documentation with phpDocumentor
+      run: |
+        ./vendor/bin/phpdoc -d ./class -d ./admin -t ./docs --template="clean"
+
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs
+        keep_files: true
