@@ -1,0 +1,36 @@
+name: Code Quality Check
+
+on: [push, pull_request]
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: mbstring, dom, xml
+        tools: composer
+
+    - name: Install dependencies
+      run: |
+        composer require --dev squizlabs/php_codesniffer
+        composer require --dev friendsofphp/php-cs-fixer
+
+    - name: Run PHP Code Sniffer
+      run: |
+        ./vendor/bin/phpcs --standard=PSR12 ./class --report=summary
+
+    - name: Run PHPStan (static analysis)
+      run: |
+        composer require --dev phpstan/phpstan
+        ./vendor/bin/phpstan analyse ./class --level=5
+
+    - name: Check for syntax errors
+      run: |
+        find ./class -name "*.php" -exec php -l {} \;
