@@ -8,7 +8,7 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Contact
- * @version    0.9.7
+ * @version    0.9.8
  * 
  * @method bool   saveMessage(string $name, string $email, string $message) Сохраняет контактное сообщение в БД
  * @method array  getAllMessages() Получает все сообщения (сортировка по дате создания)

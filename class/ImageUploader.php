@@ -7,7 +7,15 @@
  * 
  * @package    SimpleBlog
  * @category   FileUpload
- * @version    0.9.7
+ * @version    0.9.8
+ *
+ * @method void   __construct(string $uploadDir, int $maxFileSize = 1048576, array|null $allowedMimeTypes = null) Инициализирует загрузчик
+ * @method string upload(array $file, string $fileName)                              Безопасно загружает и проверяет изображение
+ * @method bool   isValidImage(string $filePath)                                     Проверяет, является ли файл действительным изображением
+ * @method string generateSafeFileName(string $baseName, string $extension)          Генерирует безопасное имя файла
+ * @method string getUploadError(int $errorCode)                                     Возвращает описание ошибки загрузки
+ * @method string formatBytes(int $bytes, int $precision = 2)                        Форматирует байты в читаемый вид
+ * @method static void removeOldAvatar(string $oldAvatarPath)                        Удаляет старый аватар
  */
 if (!defined('IN_SIMPLECMS')) {
     die('Прямой доступ запрещен');

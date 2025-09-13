@@ -9,7 +9,11 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Services
  * @category   Communication
- * @version    0.9.7
+ * @version    0.9.8
+ *
+ * @method static void   init(array $config)                              Инициализирует конфигурацию почтовой системы
+ * @method static bool   send(string $to, string $subject, string $body, bool $isHtml = true) Отправляет email
+ * @method static string wrapHtml(string $subject, string $content)       Форматирует контент в HTML-шаблон
  */
 class Mailer
 {

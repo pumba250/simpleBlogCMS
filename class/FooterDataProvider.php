@@ -1,5 +1,21 @@
 <?php
 if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
+/**
+ * Класс для подготовки данных футера
+ * 
+ * @package    SimpleBlog
+ * @subpackage Core
+ * @category   Views
+ * @version    0.9.8
+ * 
+ * @method void __construct(News $news, User $user, Template $template, array $config) Инициализирует зависимости
+ * @method array prepareFooterData()                                                 Подготавливает все данные для футера
+ * @method string prepareUserSection()                                               Подготавливает секцию пользователя
+ * @method string prepareSearchForm()                                                Подготавливает форму поиска
+ * @method string prepareRecentNewsList()                                            Подготавливает список последних новостей
+ * @method string prepareTagsList()                                                  Подготавливает список тегов
+ * @method string prepareFooterContent()                                             Подготавливает контент футера
+ */
 class FooterDataProvider {
     private $news;
     private $user;

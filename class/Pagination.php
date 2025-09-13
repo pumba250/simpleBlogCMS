@@ -6,10 +6,10 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Utilities
- * @version    0.9.7
+ * @version    0.9.8
  * 
- * @method static array  calculate(int $totalItems, string $type, int $currentPage, array $config) Рассчитывает параметры пагинации
- * @method static string render(array $paginationData, string $baseUrl, string $pageParam = 'page') Генерирует HTML-код пагинации
+ * @method static array  calculate(int $totalItems, string $type, int $currentPage = 1, array $config) Рассчитывает параметры пагинации
+ * @method static string render(array $paginationData, string $baseUrl, string $pageParam = 'page')    Генерирует HTML-код пагинации
  */
 class Pagination {
     const TYPE_NEWS = 'news';

@@ -9,7 +9,7 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Performance
- * @version    0.9.7
+ * @version    0.9.8
  * 
  * @method static bool   has(string $key)                  Проверяет наличие данных в кэше
  * @method static mixed  get(string $key)                  Получает данные из кэша

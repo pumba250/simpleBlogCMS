@@ -8,18 +8,18 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Core
  * @category   System
- * @version    0.9.7
+ * @version    0.9.8
  * 
- * @method void __construct(PDO $pdo, array $config, Template $template) Инициализирует зависимости системы
- * @method void handlePostRequest() Обрабатывает все POST-запросы с проверкой CSRF токена
- * @method void handleCommentPost() Обрабатывает отправку комментария к статье
- * @method void handleVotePost() Обрабатывает голосования за статьи и комментарии
- * @method void handleRegistration() Обрабатывает регистрацию нового пользователя
- * @method void handleLogin() Обрабатывает авторизацию пользователя с проверкой капчи
- * @method void handleContact() Обрабатывает форму обратной связи с проверкой капчи
- * @method void handlePasswordResetRequest() Обрабатывает запрос на сброс пароля по email
- * @method void handlePasswordReset() Обрабатывает установку нового пароля по токену
- * @method void handleProfileUpdate() Обрабатывает обновление профиля пользователя (включая аватар)
+ * @method void __construct(PDO $pdo, array $config, Template $template) Инициализирует зависимости
+ * @method void handlePostRequest() Обрабатывает все POST-запросы (основной публичный метод)
+ * @method void handleCommentPost() Обрабатывает отправку комментария (приватный)
+ * @method void handleVotePost() Обрабатывает голосования (приватный)
+ * @method void handleRegistration() Обрабатывает регистрацию пользователя (приватный)
+ * @method void handleLogin() Обрабатывает авторизацию (приватный)
+ * @method void handleContact() Обрабатывает форму обратной связи (приватный)
+ * @method void handlePasswordResetRequest() Обрабатывает запрос сброса пароля (приватный)
+ * @method void handlePasswordReset() Обрабатывает сброс пароля (приватный)
+ * @method void handleProfileUpdate() Обрабатывает обновление профиля (приватный)
  */
 class Core
 {

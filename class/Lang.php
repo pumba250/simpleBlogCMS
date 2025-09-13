@@ -8,12 +8,12 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Internationalization
- * @version    0.9.7
+ * @version    0.9.8
  * 
- * @method static void   init() Инициализирует языковую систему (определяет язык из сессии/браузера)
- * @method static void   setLanguage(string $lang) Устанавливает язык (если файлы локализации существуют)
- * @method static string get(string $key, string $section = 'main') Получает перевод по ключу из указанного раздела
- * @method static string detectLanguage() Определяет язык браузера (приватный)
+ * @method static void   init()                           Инициализирует языковую систему
+ * @method static void   setLanguage(string $lang)        Устанавливает язык
+ * @method static string get(string $key, string $section = 'main') Получает перевод по ключу
+ * @method static string detectLanguage()                 Определяет язык браузера
  */
 class Lang
 {

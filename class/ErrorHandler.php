@@ -1,14 +1,17 @@
 <?php
 if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
-
 /**
  * Централизованный обработчик ошибок и исключений
-  * 
+ * 
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Views
- * @version    0.9.7
+ * @version    0.9.8
  * 
+ * @method static void init(bool $debugMode = false)                     Инициализирует обработчики ошибок и исключений
+ * @method static void handleException(Throwable $e)                     Обрабатывает исключения
+ * @method static bool handleError(int $errno, string $errstr, string $errfile, int $errline) Обрабатывает ошибки
+ * @method static void handleShutdown()                                  Обрабатывает фатальные ошибки при завершении
  */
 class ErrorHandler {
     private static $logFile = 'logs/errors.log';

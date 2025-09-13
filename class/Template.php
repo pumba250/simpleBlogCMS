@@ -9,24 +9,24 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Views
- * @version    0.9.7
+ * @version    0.9.8
  * 
- * @method void   __construct() Инициализирует шаблонизатор
- * @method void   assign(string $key, mixed $value) Назначает переменную шаблона
- * @method void   assignMultiple(array $vars) Назначает несколько переменных
- * @method string render(string $templateFile, array $additionalVars = []) Рендерит шаблон
- * @method array  getCommonTemplateVars(array $config, News $news, ?User $user) Возвращает общие переменные
+ * @method void   __construct()                                                Инициализирует шаблонизатор
+ * @method void   assign(string $key, mixed $value)                            Назначает переменную шаблона
+ * @method void   assignMultiple(array $vars)                                  Назначает несколько переменных
+ * @method string render(string $templateFile, array $additionalVars = [])     Рендерит шаблон
+ * @method array  getCommonTemplateVars(array $config, News $news, User|null $user) Возвращает общие переменные
  * @method bool   changeTemplate(string $newTemplate, array $availableTemplates, array &$config, string $configPath) Изменяет активный шаблон
- * @method array  getAvailableTemplates(string $templatesDir) Возвращает список доступных шаблонов
- * @method string formatSize(int $bytes) Форматирует размер в байтах
- * @method string renderTemplateString(string $template, array $data) Рендерит строку шаблона
- * @method string renderTemplateId(string $template, array $data) Альтернативный рендеринг шаблона
- * @method string renderMainTemplate(string $template, array $data) Основной рендеринг шаблона
- * @method string renderNewsList(array $newsItems, string $templateFile) Рендерит список новостей
+ * @method array  getAvailableTemplates(string $templatesDir)                  Возвращает список доступных шаблонов
+ * @method string formatSize(int $bytes)                                       Форматирует размер в байтах
+ * @method string renderTemplateString(string $template, array $data)          Рендерит строку шаблона
+ * @method string renderTemplateId(string $template, array $data)              Альтернативный рендеринг шаблона
+ * @method string renderNewsList(array $newsItems, string $templateFile)       Рендерит список новостей
  * @method string renderNewsItem(array|object $newsItem, string $templateFile) Рендерит одну новость
- * @method string processComments(array $comments, string $templateFile) Обрабатывает комментарии
- * @method string formatDate(string $date) Форматирует дату
- * @method array  objectToArray(object $object) Конвертирует объект в массив
+ * @method string processComments(array $comments, string $templateFile)       Обрабатывает комментарии
+ * @method string formatDate(string $date)                                     Форматирует дату
+ * @method array  objectToArray(object $object)                                Конвертирует объект в массив
+ * @method string renderFooter(array $footerData)                              Рендерит футер
  */
 class Template
 {

@@ -8,7 +8,7 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Content
- * @version    0.9.7
+ * @version    0.9.8
  * 
  * @method array getNewsByAuthor(int $userId, int $limit = 5) Получает новости по автору с ограничением
  * @method array getAllNews(int $limit, int $offset) Получает новости с пагинацией (ограничение и смещение)

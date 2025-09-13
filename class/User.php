@@ -9,31 +9,25 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Authentication
- * @version    0.9.7
+ * @version    0.9.8
  * 
- * @method void   __construct(PDO $pdo) Инициализирует систему пользователей
- * @method array  getAllUsers() Получает список всех пользователей
- * @method bool   hasPermission(int $requiredRole, int $currentRole) Проверяет права доступа
+ * @method void   __construct(PDO $pdo)                                        Инициализирует систему пользователей
+ * @method array  getAllUsers()                                                Получает список всех пользователей
+ * @method bool   hasPermission(int $requiredRole, int $currentRole)           Проверяет права доступа
  * @method bool   updateUser(int $id, string $username, string $email, int $isadmin) Обновляет данные пользователя
- * @method bool   deleteUser(int $id) Удаляет пользователя
- * @method bool   register(string $username, string $password, string $email) Регистрирует нового пользователя
- * @method bool   getUserById(int $id) Получает данные пользователя по ID
- * @method bool   verifyEmail(string $token) Подтверждает email пользователя
- * @method bool   sendPasswordReset(string $email) Отправляет ссылку для сброса пароля
- * @method bool   resetPassword(string $token, string $newPassword) Сбрасывает пароль пользователя
- * @method array|bool login(string $username, string $password) Выполняет вход пользователя
- * @method void   logout() Выполняет выход пользователя
- * @method void   startSession() Инициализирует сессию (приватный)
- * @method bool   sendVerificationEmail(string $username, string $email, string $token) Отправляет email подтверждения (приватный)
- * @method bool   sendResetEmail(string $username, string $email, string $token) Отправляет email сброса пароля (приватный)
- * 
- * Вспомогательные функции для работы с пользователями
- * 
- * @method void   flash(?string $message = null) Устанавливает/выводит flash-сообщение
- * @method string formatDate(string $dateString) Форматирует дату
- * @method string getRandomColor() Генерирует случайный цвет
- * @method void   setFlash(string $type, string $message) Устанавливает типизированное flash-сообщение
- * @method string e(string $string) Экранирует HTML-спецсимволы (аналог htmlspecialchars)
+ * @method bool   deleteUser(int $id)                                          Удаляет пользователя
+ * @method bool   register(string $username, string $password, string $email)  Регистрирует нового пользователя
+ * @method array|bool getUserById(int $id)                                     Получает данные пользователя по ID
+ * @method bool   verifyEmail(string $token)                                   Подтверждает email пользователя
+ * @method bool   sendPasswordReset(string $email)                             Отправляет ссылку для сброса пароля
+ * @method bool   resetPassword(string $token, string $newPassword)            Сбрасывает пароль пользователя
+ * @method array|bool login(string $username, string $password)                Выполняет вход пользователя
+ * @method void   logout()                                                     Выполняет выход пользователя
+ * @method bool   updateProfile(int $userId, string $username, string $email, string|null $avatar = null, string|null $currentPassword = null) Обновляет профиль пользователя
+ * @method bool   changeEmail(int $userId, string $newEmail, string $password) Изменяет email пользователя
+ * @method bool   setSocialLink(int $userId, string $socialType, string $socialId, string|null $username = null) Добавляет/обновляет привязку социальной сети
+ * @method array  getSocialLinks(int $userId)                                  Получает привязанные социальные сети пользователя
+ * @method bool   removeSocialLink(int $userId, string $socialType)            Удаляет привязку социальной сети
  */
 class User
 {
