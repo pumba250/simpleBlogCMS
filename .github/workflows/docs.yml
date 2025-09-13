@@ -3,9 +3,6 @@ name: Generate Documentation
 on:
   push:
     branches: [ main, master ]
-    tags: [ 'v*' ]
-  pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
@@ -23,17 +20,27 @@ jobs:
         extensions: mbstring, dom, xml, simplexml
         tools: composer
 
+    - name: Create temporary composer.json
+      run: |
+        echo '{
+            "name": "simpleblogcms/cms",
+            "description": "Simple Blog Content Management System",
+            "type": "project",
+            "license": "MIT",
+            "require-dev": {
+                "phpdocumentor/phpdocumentor": "^3.3"
+            }
+        }' > composer.json
+
     - name: Install PHP dependencies
       run: |
         composer require --dev phpdocumentor/phpdocumentor
-        composer require --dev squizlabs/php_codesniffer
 
     - name: Generate documentation with phpDocumentor
       run: |
-        ./vendor/bin/phpdoc -d ./class -d ./admin -t ./docs --template="clean"
+        ./vendor/bin/phpdoc -d ./class -d ./admin -t ./docs --template="clean" --defaultpackagename="SimpleBlogCMS"
 
     - name: Deploy to GitHub Pages
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
