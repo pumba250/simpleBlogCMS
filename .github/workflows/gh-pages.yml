@@ -41,327 +41,289 @@ jobs:
             --title="SimpleBlogCMS API Documentation" \
             --defaultpackagename="SimpleBlogCMS"
 
-      - name: Create comprehensive overview page
+      - name: Create main homepage
         run: |
-          cat > _site/overview.html << 'EOF'
+          cat > _site/index.html << 'EOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SimpleBlogCMS - System Overview</title>
+    <title>SimpleBlogCMS - Content Management System</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+        }
+        * {
             margin: 0;
-            padding: 2rem;
-            background: #f8f9fa;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 2rem;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 3rem;
+        }
+        .header h1 {
+            font-size: 3.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .header p {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin: 0 0.5rem;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 15px;
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .card ul {
+            list-style: none;
+        }
+        .card li {
+            margin: 0.7rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        .card li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .btn-group {
+            text-align: center;
+            margin: 3rem 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 0 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid white;
+            color: white;
+        }
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 4rem;
+            opacity: 0.8;
+        }
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2.5rem; }
+            .card-grid { grid-template-columns: 1fr; }
+            .btn { display: block; margin: 1rem auto; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SimpleBlogCMS</h1>
+            <p>Modern Content Management System</p>
+            <div>
+                <span class="badge">Version 0.9.7</span>
+                <span class="badge">Production Ready</span>
+                <span class="badge">PHP 7.4+</span>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <a href="classes.html" class="btn">📚 View API Documentation</a>
+            <a href="https://github.com/pumba250/simpleBlogCMS" class="btn btn-outline" target="_blank">🐙 GitHub Repository</a>
+        </div>
+
+        <div class="card-grid">
+            <div class="card">
+                <h3>🚀 Core Features</h3>
+                <ul>
+                    <li>Multi-language support (Russian/English)</li>
+                    <li>Complete CRUD system for news, comments, users</li>
+                    <li>Advanced caching system (files/Redis/Memcached)</li>
+                    <li>Automatic updates via GitHub Releases</li>
+                    <li>Database backup and restore functionality</li>
+                    <li>SEO optimization with clean URLs</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>🛡️ Security</h3>
+                <ul>
+                    <li>Protection against CSRF, XSS, SQL injection</li>
+                    <li>CAPTCHA and email verification</li>
+                    <li>Secure file upload with MIME validation</li>
+                    <li>Rate limiting and brute-force protection</li>
+                    <li>Content Security Policy (CSP) headers</li>
+                    <li>Secure cookies (HttpOnly, Secure, SameSite)</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>⚙️ Architecture</h3>
+                <ul>
+                    <li>MVC design pattern implementation</li>
+                    <li>SOLID principles compliance</li>
+                    <li>Dependency injection container</li>
+                    <li>Modular and extensible structure</li>
+                    <li>RESTful architecture for API</li>
+                    <li>Unified error handling system</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>🎨 Administration</h3>
+                <ul>
+                    <li>Full admin panel with role-based access</li>
+                    <li>User management and permissions system</li>
+                    <li>Content moderation tools</li>
+                    <li>System logs and error monitoring</li>
+                    <li>Database management interface</li>
+                    <li>Template and theme management</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📋 Technical Requirements</h3>
+            <ul>
+                <li>PHP 7.4+ with PDO, GD, MBString, ZIP extensions</li>
+                <li>MySQL 5.7+ or MariaDB 10.2+</li>
+                <li>HTTPS support (recommended)</li>
+                <li>Web server with URL rewriting</li>
+                <li>Minimum 128MB RAM, 512MB recommended</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>© 2024 SimpleBlogCMS. Open-source MIT License.</p>
+            <p>Documentation generated on $(date +"%Y-%m-%d")</p>
+        </div>
+    </div>
+</body>
+</html>
+EOF
+
+      - name: Create navigation bridge
+        run: |
+          cat > _site/documentation.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>API Documentation - SimpleBlogCMS</title>
+    <meta http-equiv="refresh" content="0; url=classes.html">
+    <script>window.location.href = 'classes.html';</script>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 40px; 
+            text-align: center;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 100px auto;
             background: white;
             padding: 2rem;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        h1 {
-            color: #2c3e50;
-            border-bottom: 3px solid #3498db;
-            padding-bottom: 1rem;
-            margin-bottom: 2rem;
-        }
-        h2 {
-            color: #34495e;
-            margin-top: 2rem;
-            border-left: 4px solid #3498db;
-            padding-left: 1rem;
-        }
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin: 2rem 0;
-        }
-        .feature-card {
-            background: #f8f9fa;
-            padding: 1.5rem;
-            border-radius: 8px;
-            border-left: 4px solid #3498db;
-        }
-        .btn {
-            display: inline-block;
-            padding: 12px 24px;
-            background: #3498db;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            margin: 10px 5px;
-            font-weight: 500;
-        }
-        .btn-outline {
-            background: transparent;
-            border: 2px solid #3498db;
+        a {
             color: #3498db;
-        }
-        .nav-header {
-            background: #2c3e50;
-            color: white;
-            padding: 1rem 2rem;
-            margin: -2rem -2rem 2rem -2rem;
-            border-radius: 10px 10px 0 0;
-        }
-        .class-list {
-            columns: 2;
-            gap: 1rem;
-            margin: 1rem 0;
-        }
-        .class-list a {
-            display: block;
-            padding: 0.5rem;
-            color: #2c3e50;
             text-decoration: none;
-            border-radius: 4px;
-        }
-        .class-list a:hover {
-            background: #e3f2fd;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="nav-header">
-            <h1>SimpleBlogCMS - System Overview</h1>
-            <p>Version 0.9.7 - Production Ready</p>
-        </div>
-
-        <div style="text-align: center; margin: 2rem 0;">
-            <a href="navigation.html" class="btn">🧭 Navigation</a>
-            <a href="classes.html" class="btn">⚙️ All Classes</a>
-            <a href="https://github.com/pumba250/simpleBlogCMS" class="btn btn-outline" target="_blank">🐙 GitHub</a>
-        </div>
-
-        <h2>🚀 System Architecture</h2>
-        <p>SimpleBlogCMS is a full-featured content management system designed for blogs and news websites with emphasis on security, performance, and ease of use.</p>
-
-        <div class="feature-grid">
-            <div class="feature-card">
-                <h3>📝 Core Components</h3>
-                <ul>
-                    <li>News/Articles management with tags</li>
-                    <li>Comments system with moderation</li>
-                    <li>User authentication and roles</li>
-                    <li>Template engine with themes</li>
-                    <li>Caching system (files/Redis/Memcached)</li>
-                </ul>
-            </div>
-
-            <div class="feature-card">
-                <h3>🛡️ Security Features</h3>
-                <ul>
-                    <li>CSRF, XSS, SQL injection protection</li>
-                    <li>Email verification and CAPTCHA</li>
-                    <li>Secure file upload validation</li>
-                    <li>Rate limiting and brute-force protection</li>
-                    <li>Content Security Policy (CSP)</li>
-                </ul>
-            </div>
-
-            <div class="feature-card">
-                <h3>🌐 Internationalization</h3>
-                <ul>
-                    <li>Multi-language support (Russian/English)</li>
-                    <li>Automatic language detection</li>
-                    <li>Localized templates and content</li>
-                    <li>UTF-8 encoding support</li>
-                </ul>
-            </div>
-        </div>
-
-        <h2>📊 Key Statistics</h2>
-        <div class="feature-grid">
-            <div class="feature-card">
-                <h3>🏗️ Code Structure</h3>
-                <ul>
-                    <li>17 core PHP classes</li>
-                    <li>MVC architecture pattern</li>
-                    <li>SOLID principles implementation</li>
-                    <li>Dependency injection</li>
-                    <li>PSR-12 coding standards</li>
-                </ul>
-            </div>
-
-            <div class="feature-card">
-                <h3>🔧 Technical Stack</h3>
-                <ul>
-                    <li>PHP 7.4+ with PDO, GD, MBString</li>
-                    <li>MySQL 5.7+ / MariaDB 10.2+</li>
-                    <li>HTML5, CSS3, JavaScript</li>
-                    <li>GitHub Actions for CI/CD</li>
-                    <li>Automatic updates system</li>
-                </ul>
-            </div>
-        </div>
-
-        <h2>📁 Core Classes Overview</h2>
-        <div class="class-list">
-            <a href="classes/Core.html">Core - Main request handler</a>
-            <a href="classes/News.html">News - Articles management</a>
-            <a href="classes/User.html">User - Authentication system</a>
-            <a href="classes/Comments.html">Comments - Comment system</a>
-            <a href="classes/Template.html">Template - Templating engine</a>
-            <a href="classes/Cache.html">Cache - Caching system</a>
-            <a href="classes/ErrorHandler.html">ErrorHandler - Error management</a>
-            <a href="classes/Mailer.html">Mailer - Email system</a>
-            <a href="classes/Lang.html">Lang - Localization</a>
-            <a href="classes/Vote.html">Vote - Voting system</a>
-            <a href="classes/Contact.html">Contact - Contact forms</a>
-            <a href="classes/ImageUploader.html">ImageUploader - File uploads</a>
-            <a href="classes/Updater.html">Updater - Auto-updates</a>
-            <a href="classes/Parse.html">Parse - Content parsing</a>
-            <a href="classes/Pagination.html">Pagination - Pagination system</a>
-        </div>
-
-        <div style="text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #eee;">
-            <p>Documentation powered by phpDocumentor | Generated on $(date +"%Y-%m-%d at %H:%M")</p>
-            <p>Project licensed under MIT License</p>
-        </div>
+        <h1>API Documentation</h1>
+        <p>Redirecting to class documentation...</p>
+        <p>If you are not redirected, <a href="classes.html">click here to view all classes</a></p>
+        <p><a href="index.html">← Back to main page</a></p>
     </div>
 </body>
 </html>
 EOF
 
-      - name: Create navigation page
+      - name: Update generated documentation links
         run: |
-          cat > _site/navigation.html << 'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>SimpleBlogCMS Navigation</title>
-    <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            margin: 0;
-            padding: 2rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: white;
-        }
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 2rem;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-        }
-        h1 {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        .nav-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-        .nav-card {
-            background: rgba(255, 255, 255, 0.15);
-            padding: 1.5rem;
-            border-radius: 10px;
-            text-align: center;
-            transition: transform 0.3s ease;
-        }
-        .nav-card:hover {
-            transform: translateY(-5px);
-            background: rgba(255, 255, 255, 0.2);
-        }
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            background: white;
-            color: #667eea;
-            text-decoration: none;
-            border-radius: 6px;
-            margin-top: 1rem;
-            font-weight: 500;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>SimpleBlogCMS Documentation Navigation</h1>
-        
-        <div class="nav-grid">
-            <div class="nav-card">
-                <h3>📖 System Overview</h3>
-                <p>Complete system documentation and architecture</p>
-                <a href="overview.html" class="btn">View Overview</a>
-            </div>
-            
-            <div class="nav-card">
-                <h3>⚙️ All Classes</h3>
-                <p>Detailed documentation of all PHP classes</p>
-                <a href="classes.html" class="btn">Browse Classes</a>
-            </div>
-            
-            <div class="nav-card">
-                <h3>🧭 Class Navigation</h3>
-                <p>Quick access to specific class categories</p>
-                <a href="#core" class="btn">Core Classes</a>
-            </div>
-        </div>
-
-        <div style="margin-top: 3rem;">
-            <h2>🚀 Core Classes</h2>
-            <div style="columns: 2; gap: 1rem;">
-                <a href="classes/Core.html" style="display: block; color: white; padding: 0.5rem;">Core</a>
-                <a href="classes/News.html" style="display: block; color: white; padding: 0.5rem;">News</a>
-                <a href="classes/User.html" style="display: block; color: white; padding: 0.5rem;">User</a>
-                <a href="classes/Comments.html" style="display: block; color: white; padding: 0.5rem;">Comments</a>
-                <a href="classes/Template.html" style="display: block; color: white; padding: 0.5rem;">Template</a>
-                <a href="classes/Cache.html" style="display: block; color: white; padding: 0.5rem;">Cache</a>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
-EOF
-
-      - name: Create main index with redirect
-        run: |
-          cat > _site/index.html << 'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-    <title>SimpleBlogCMS Documentation</title>
-    <meta http-equiv="refresh" content="0; url=overview.html">
-    <script>
-        window.location.href = 'overview.html';
-    </script>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; text-align: center; }
-        a { color: #007bff; text-decoration: none; }
-    </style>
-</head>
-<body>
-    <h1>SimpleBlogCMS Documentation</h1>
-    <p>Redirecting to system overview...</p>
-    <p>If you are not redirected, <a href="overview.html">click here</a></p>
-</body>
-</html>
-EOF
+          # Добавляем ссылку назад на главную в сгенерированной документации
+          if [ -f "_site/index.html" ]; then
+            sed -i 's|</head>|<style>.home-link { position: fixed; top: 20px; left: 20px; z-index: 1000; }</style></head>|' _site/index.html
+            sed -i 's|<body>|<body><a href="index.html" class="home-link">🏠 Home</a>|' _site/index.html
+          fi
 
       - name: Disable Jekyll processing
         run: echo "" > _site/.nojekyll
 
-      - name: Verify generated files
+      - name: Verify generated structure
         run: |
-          echo "📁 Generated documentation files:"
+          echo "📁 Documentation structure:"
           ls -la _site/
-          echo "📄 HTML files:"
-          find _site -name "*.html" | head -10
+          echo ""
+          echo "🌐 Available pages:"
+          echo "• index.html - Main homepage"
+          echo "• classes.html - Auto-generated API documentation"
+          echo "• documentation.html - Redirect to API docs"
+          echo "• Various class-specific pages"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
