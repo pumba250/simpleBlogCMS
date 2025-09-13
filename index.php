@@ -383,72 +383,7 @@ if (empty($_SESSION['csrf_token'])) {
 					header('Location: /?action=login');
 					exit;
 				}
-
-				// Обработка POST-запроса на обновление профиля
-				/*if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-					$username = trim($_POST['username'] ?? '');
-					$email = trim($_POST['email'] ?? '');
-					$currentPassword = trim($_POST['current_password'] ?? '');
-					
-					// Обработка загрузки аватара
-					$avatar = null;
-					if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-					    try {
-							// Инициализируем загрузчик
-							$uploadDir = 'uploads/avatars/';
-							$maxSize = 2 * 1024 * 1024; // 2MB
-							$imageUploader = new ImageUploader($uploadDir, $maxSize);
-							
-							// Загружаем изображение. Базовое имя = 'user_' + ID пользователя
-							$baseFileName = 'user_' . $_SESSION['user']['id'];
-							$newAvatarPath = $imageUploader->upload($_FILES['avatar'], $baseFileName);
-							
-							// Если загрузка успешна, удаляем старый аватар и сохраняем путь к новому
-							ImageUploader::removeOldAvatar($_SESSION['user']['avatar'] ?? null);
-							$avatar = $newAvatarPath;
-							
-						} catch (RuntimeException $e) {
-							// Ловим и обрабатываем ошибки загрузки
-							$_SESSION['flash'] = Lang::get('avatar_upload_error', 'core') . ': ' . $e->getMessage();
-							header('Location: /?action=profile');
-							exit;
-						}
-					}
-					
-					// Проверяем, изменился ли email
-					$emailChanged = ($email !== $_SESSION['user']['email']);
-					
-					// Если email изменился, проверяем текущий пароль
-					if ($emailChanged && empty($currentPassword)) {
-						$_SESSION['flash'] = Lang::get('current_password_required', 'core');
-						header('Location: /?action=profile');
-						exit;
-					}
-					
-					// Обновляем профиль
-					if ($user->updateProfile($_SESSION['user']['id'], $username, $email, $avatar, $emailChanged ? $currentPassword : null)) {
-						$_SESSION['flash'] = Lang::get('profile_updated', 'core');
-						
-						// Обновляем данные в сессии
-						$_SESSION['user']['username'] = $username;
-						$_SESSION['user']['email'] = $email;
-						if ($avatar) {
-							$_SESSION['user']['avatar'] = $avatar;
-						}
-						
-						// Если email изменился, разлогиниваем пользователя или отмечаем email как неверифицированный
-						if ($emailChanged) {
-							$_SESSION['user']['email_verified'] = false;
-							$_SESSION['flash'] = Lang::get('email_change_success_verify', 'core');
-						}
-						
-						header('Location: /?action=profile');
-						exit;
-					} else {
-						$_SESSION['flash'] = Lang::get('profile_update_error', 'core');
-					}
-				}*/
-
+			
 				// Обработка привязки соцсетей
 				if (isset($_GET['link_social'])) {
 					$socialType = $_GET['link_social'];
@@ -692,4 +627,5 @@ if (empty($_SESSION['csrf_token'])) {
     }
 
 $finish = microtime(1);
+
 //echo 'generation time: ' . round($finish - $start, 5) . ' сек';
