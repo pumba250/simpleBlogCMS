@@ -1,0 +1,230 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'class/**'
+      - 'admin/**'
+      - 'config/**'
+      - '.github/workflows/gh-pages.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 0' # Еженедельно в воскресенье
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, dom, xml, simplexml, json
+          tools: composer
+
+      - name: Create valid composer.json
+        run: |
+          cat > composer.json << 'EOL'
+{
+    "name": "simpleblogcms/cms",
+    "description": "Simple Blog Content Management System",
+    "type": "project",
+    "license": "MIT",
+    "authors": [{"name": "SimpleBlogCMS Team", "email": "dev@simpleblogcms.com"}],
+    "require-dev": {
+        "phpdocumentor/phpdocumentor": "^3.3"
+    },
+    "autoload": {
+        "classmap": ["class/", "admin/"]
+    }
+}
+EOL
+
+      - name: Install dependencies
+        run: composer install --no-progress --no-interaction
+
+      - name: Generate API documentation
+        run: |
+          ./vendor/bin/phpdoc \
+            -d ./class \
+            -d ./admin \ 
+            -d ./config \
+            -t ./docs \
+            --template="clean" \
+            --title="SimpleBlogCMS API Documentation" \
+            --defaultpackagename="SimpleBlogCMS"
+
+      - name: Create custom index page
+        run: |
+          cat > docs/index.html << 'EOL'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimpleBlogCMS Documentation</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6; 
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: white;
+        }
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+        .card p {
+            margin-bottom: 1.5rem;
+            color: #666;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background 0.3s ease;
+            font-weight: 500;
+        }
+        .btn:hover {
+            background: #5a67d8;
+        }
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+        .version-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-left: 1rem;
+        }
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 3rem;
+            opacity: 0.8;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .header h1 { font-size: 2rem; }
+            .cards { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SimpleBlogCMS Documentation <span class="version-badge">v0.9.7</span></h1>
+            <p>Production Ready Content Management System</p>
+        </div>
+
+        <div class="cards">
+            <div class="card">
+                <h2>API Documentation</h2>
+                <p>Complete API reference for all classes and methods with detailed examples and usage guidelines.</p>
+                <a href="./index.html" class="btn">View API Docs</a>
+            </div>
+
+            <div class="card">
+                <h2>Class Structure</h2>
+                <p>Explore the complete class hierarchy and understand the system architecture and dependencies.</p>
+                <a href="./classes.html" class="btn">View Classes</a>
+            </div>
+
+            <div class="card">
+                <h2>GitHub Repository</h2>
+                <p>Access the source code, report issues, and contribute to the development of SimpleBlogCMS.</p>
+                <a href="https://github.com/pumba250/simpleBlogCMS" class="btn btn-secondary" target="_blank">View on GitHub</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Generated on: <?php echo date('Y-m-d H:i:s'); ?></p>
+            <p>© 2024 SimpleBlogCMS. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+EOL
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: './docs'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
