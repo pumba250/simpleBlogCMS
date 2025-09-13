@@ -1,4 +1,4 @@
-name: Advanced Documentation
+name: Documentation with Docker
 
 on:
   push:
@@ -14,81 +14,18 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
 
-    - name: Find and remove ALL problematic composer files
+    - name: Generate documentation with Docker
       run: |
-        echo "Searching for all composer.json files..."
-        find . -name "composer.json" -type f | while read file; do
-          echo "Found: $file"
-          if grep -q '"__root__"' "$file"; then
-            echo "🚫 Removing problematic file: $file"
-            rm "$file"
-          else
-            echo "✅ File is OK: $file"
-          fi
-        done
-        
-        # Удаляем все composer.lock файлы
-        find . -name "composer.lock" -type f -delete
-        echo "Removed all composer.lock files"
-
-    - name: Create clean valid composer.json
-      run: |
-        cat > composer.json << 'EOL'
-{
-    "name": "simpleblogcms/cms",
-    "description": "Simple Blog Content Management System",
-    "type": "project",
-    "license": "MIT",
-    "authors": [{"name": "SimpleBlogCMS Team", "email": "dev@simpleblogcms.com"}],
-    "require": {
-        "php": ">=7.4"
-    },
-    "require-dev": {
-        "phpdocumentor/phpdocumentor": "^3.3"
-    },
-    "autoload": {
-        "classmap": ["class/", "admin/"]
-    }
-}
-EOL
-        echo "Created clean composer.json"
-
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.2'
-        extensions: mbstring, dom, xml, simplexml, json
-        tools: composer
-
-    - name: Install ONLY phpdocumentor (минимальная установка)
-      run: |
-        # Устанавливаем только phpdocumentor без других зависимостей
-        composer require --dev phpdocumentor/phpdocumentor --no-interaction --no-progress
-
-    - name: Generate API documentation (обходной метод)
-      run: |
-        # Используем прямой вызов phpDocumentor с явными путями
-        php ./vendor/phpdocumentor/phpdocumentor/bin/phpdoc \
-          -d ./class \
-          -d ./admin \
-          -t ./docs-api \
+        docker run --rm -v $(pwd):/data \
+          phpdoc/phpdoc:3 \
+          run \
+          -d /data/class \
+          -d /data/admin \
+          -t /data/docs-api \
           --template="clean" \
           --title="SimpleBlogCMS API Documentation" \
           --defaultpackagename="SimpleBlogCMS"
-
-    - name: Verify documentation generation
-      run: |
-        if [ -d "docs-api" ]; then
-          echo "✅ Documentation generated successfully!"
-          echo "📁 Generated files:"
-          find docs-api -name "*.html" | head -5
-        else
-          echo "❌ Documentation generation failed"
-          exit 1
-        fi
 
     - name: Create index page
       run: |
@@ -110,10 +47,6 @@ EOL
         <div class="section">
             <h2>API Documentation</h2>
             <a href="./index.html" class="btn">View PHP Documentation</a>
-        </div>
-        <div class="section">
-            <h2>Version: 0.9.7</h2>
-            <p>Status: Production Ready</p>
         </div>
     </div>
 </body>
