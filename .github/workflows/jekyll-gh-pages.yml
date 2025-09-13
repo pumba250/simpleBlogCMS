@@ -1,0 +1,126 @@
+name: Deploy SimpleBlogCMS to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP for documentation
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, dom, xml
+
+      - name: Install phpDocumentor
+        run: |
+          composer require --dev phpdocumentor/phpdocumentor --no-interaction --no-progress
+
+      - name: Generate API documentation
+        run: |
+          ./vendor/bin/phpdoc \
+            -d ./class \
+            -d ./admin \
+            -t ./_site \
+            --template="clean" \
+            --title="SimpleBlogCMS API Documentation" \
+            --defaultpackagename="SimpleBlogCMS"
+
+      - name: Create main index page
+        run: |
+          cat > _site/index.html << 'EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimpleBlogCMS Documentation</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 10px;
+            font-weight: 500;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SimpleBlogCMS</h1>
+        <p>Version 0.9.7 - Production Ready</p>
+        <p>Full-featured content management system</p>
+        
+        <div style="margin: 2rem 0;">
+            <a href="index.html" class="btn">📚 View API Documentation</a>
+            <a href="https://github.com/pumba250/simpleBlogCMS" class="btn" target="_blank">🐙 GitHub Repository</a>
+        </div>
+    </div>
+</body>
+</html>
+EOF
+
+      - name: Disable Jekyll processing
+        run: echo "" > _site/.nojekyll
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
