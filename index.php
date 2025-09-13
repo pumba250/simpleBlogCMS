@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Core
- * @version    0.9.7
+ * @version    0.9.8
  * 
  * @router
  *  GET  /             - Главная страница блога
@@ -233,20 +233,30 @@ if (empty($_SESSION['csrf_token'])) {
 			$metaKeywords = $news->generateMetaKeywords('', 'tag', [
 				'tag' => $tag
 			]);
-			$newsByTags = $news->getNewsByTag($tag);
+			$countNewsByTags = $news->getNewsCountByTag($tag);
+			$page = (int)($_GET['page'] ?? 1);
+			$pagination = Pagination::calculate(
+				$countNewsByTags, 
+				Pagination::TYPE_NEWS, 
+				$page, 
+				$config
+			);
+			$newsByTags = $news->getNewsByTag($tag, $pagination['per_page'], $pagination['offset']);
+			
 			foreach ($newsByTags as &$item) {
 				if (isset($item['content'])) {
 					$item['content'] = $parse->userblocks(
 						$item['content'],
 						$config,
-						$_SESSION['user'] ?? null  // Передаем данные пользователя
+						$_SESSION['user'] ?? null  
 					);
 					$item['content'] = $parse->truncateHTML($item['content']);
 				}
 			}
 			unset($item);
+			$paginationHtml = Pagination::render($pagination, "?tags=" . urlencode($tag) . "&page=");
 			$lastThreeNews = $news->getLastThreeNews();
-			// Передача данных в шаблон
+			
 			$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 		$pageVars = [
 			'pageTitle' => $pageTitle,
@@ -259,10 +269,14 @@ if (empty($_SESSION['csrf_token'])) {
 			}
 			$footerProvider = new FooterDataProvider($news, $user, $template, $config);
 
-			// Получаем данные для футера
 			$footerData = $footerProvider->prepareFooterData();
 
 			$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
+			$template->assign('pagination', new class($paginationHtml) {
+				private $html;
+				public function __construct($html) { $this->html = $html; }
+				public function __toString() { return $this->html; }
+			});
 			$output = $template->render('header.tpl');
 			$output .= $template->renderNewsList($newsByTags, 'news_item.tpl');
 			$output .= $template->renderFooter($footerData);
@@ -298,17 +312,15 @@ if (empty($_SESSION['csrf_token'])) {
 					$item['content'] = $parse->userblocks(
 						$item['content'],
 						$config,
-						$_SESSION['user'] ?? null  // Передаем данные пользователя
+						$_SESSION['user'] ?? null  
 					);
 					$item['content'] = $parse->truncateHTML($item['content']);
 				}
 				
-				//$mainContent .= $template->renderBuffered('news_item.tpl', $item);
 			}
 			unset($item);
 			$lastThreeNews = $news->getLastThreeNews();
 			
-			// Передача данных в шаблон
 			$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 		$pageVars = [
 			'pageTitle' => $pageTitle,
@@ -319,7 +331,6 @@ if (empty($_SESSION['csrf_token'])) {
 			];
 			$footerProvider = new FooterDataProvider($news, $user, $template, $config);
 
-			// Получаем данные для футера
 			$footerData = $footerProvider->prepareFooterData();
 
 			$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
@@ -358,7 +369,6 @@ if (empty($_SESSION['csrf_token'])) {
                 ];
                 $footerProvider = new FooterDataProvider($news, $user, $template, $config);
 
-			// Получаем данные для футера
 			$footerData = $footerProvider->prepareFooterData();
 
 			$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
@@ -375,7 +385,7 @@ if (empty($_SESSION['csrf_token'])) {
 				}
 
 				// Обработка POST-запроса на обновление профиля
-				if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+				/*if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					$username = trim($_POST['username'] ?? '');
 					$email = trim($_POST['email'] ?? '');
 					$currentPassword = trim($_POST['current_password'] ?? '');
@@ -437,7 +447,7 @@ if (empty($_SESSION['csrf_token'])) {
 					} else {
 						$_SESSION['flash'] = Lang::get('profile_update_error', 'core');
 					}
-				}
+				}*/
 
 				// Обработка привязки соцсетей
 				if (isset($_GET['link_social'])) {

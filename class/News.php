@@ -10,29 +10,30 @@ if (!defined('IN_SIMPLECMS')) {
  * @category   Content
  * @version    0.9.7
  * 
- * @method bool  getNewsByAuthor(int $userId, int $limit) Получает новости по автору с ограничением
+ * @method array getNewsByAuthor(int $userId, int $limit = 5) Получает новости по автору с ограничением
  * @method array getAllNews(int $limit, int $offset) Получает новости с пагинацией (ограничение и смещение)
- * @method array searchNews(string $query, int $limit = 10, int $offset = 0) Ищет новости по запросу
+ * @method array searchNews(string $query, int $limit = 10, int $offset = 0) Ищет новости по текстовому запросу
  * @method int countSearchResults(string $query) Возвращает количество результатов поиска
- * @method array getAllAdm(int $limit, int $offset) Получает все новости для админки (ограничение и смещение, с тегами)
+ * @method array getAllAdm(int $limit = null, int $offset = null) Получает все новости для админки с тегами
  * @method int getTotalNewsCount() Возвращает общее количество новостей
- * @method array getLastThreeNews() Возвращает 3 последние новости в HTML-формате
- * @method array generateTags(string $title, string $content) Генерирует теги из заголовка и текста
- * @method bool addBlog(string $title, string $content, array $tags = []) Добавляет новую запись в блог
- * @method bool updateBlog(int $id, string $title, string $content, array $tags = []) Обновляет запись в блоге
- * @method bool deleteBlog(int $id) Удаляет запись из блога
- * @method array GetAllTags() Возвращает все теги в HTML-формате
+ * @method object getLastThreeNews() Возвращает 3 последние новости в виде HTML-объекта
+ * @method array generateTags(string $title, string $content) Генерирует теги из заголовка и текста статьи
+ * @method bool addBlog(string $title, string $content, array $tags = [], int $authorId = null) Добавляет новую запись в блог с тегами
+ * @method bool updateBlog(int $id, string $title, string $content, array $tags = []) Обновляет запись в блоге и связанные теги
+ * @method bool deleteBlog(int $id) Удаляет запись из блога и связанные теги
+ * @method object GetAllTags() Возвращает все теги в виде HTML-объекта
  * @method bool addTag(string $name) Добавляет новый тег
- * @method bool deleteTag(int $id) Удаляет тег по ID
- * @method void removeUnusedTags() Удаляет неиспользуемые теги
+ * @method bool deleteTag(int $id) Удаляет тег по ID и связанные связи
+ * @method void removeUnusedTags() Удаляет неиспользуемые теги из базы
  * @method void removeTags(int $newsId) Удаляет все теги у указанной новости
- * @method array getNewsById(int $id) Получает новость по ID
+ * @method array|false getNewsById(int $id) Получает новость по ID или false при ошибке
  * @method array getTagsByNewsId(int $newsId) Возвращает теги для указанной новости
- * @method array getNewsByTag(string $tag) Получает новости по тегу
- * @method string generateMetaDescription(string $content, string $type = 'default', array $additionalData = []) Генерирует meta-описание
- * @method string generateMetaKeywords(string $content, string $type = 'default', array $additionalData = []) Генерирует meta-ключевые слова
+ * @method array getNewsByTag(string $tag, int $limit, int $offset) Получает новости по тегу с пагинацией
+ * @method int getNewsCountByTag(string $tag) Возвращает количество новостей по тегу
+ * @method string generateMetaDescription(string $content, string $type = 'default', array $additionalData = []) Генерирует meta-описание для разных типов страниц
+ * @method string generateMetaKeywords(string $content, string $type = 'default', array $additionalData = []) Генерирует meta-ключевые слова для разных типов страниц
  * @method array getAllNewsCached(int $limit, int $offset) Получает новости из кэша или БД (с пагинацией)
- * @method array getNewsByIdCached(int $id) Получает новость по ID из кэша или БД
+ * @method array|false getNewsByIdCached(int $id) Получает новость по ID из кэша или БД
  */
 class News
 {
@@ -473,28 +474,57 @@ class News
         return $tags ?: [];
     }
 
-    public function getNewsByTag($tag)
+    public function getNewsByTag($tag, $limit, $offset)
     {
-        $stmt = $this->pdo->prepare("SELECT id FROM {$this->dbPrefix}tags WHERE name = ?");
-        $stmt->execute([$tag]);
-        $tagId = $stmt->fetchColumn();
+        $stmt = $this->pdo->prepare("SELECT id FROM {$this->dbPrefix}tags WHERE name = :tag");
+		$stmt->bindParam(':tag', $tag, PDO::PARAM_STR);
+		$stmt->execute();
+		$tagId = $stmt->fetchColumn();
         if (!$tagId) {
             return [];
         }
 
         $stmt = $this->pdo->prepare("
-            SELECT b.id, b.title, LEFT(b.content, 320) AS content, b.created_at
-            FROM {$this->dbPrefix}blogs b
-            JOIN {$this->dbPrefix}blogs_tags bt ON b.id = bt.blogs_id
-            WHERE bt.tag_id = ?
-            ORDER BY b.created_at DESC
-        ");
-        $stmt->execute([$tagId]);
+			SELECT b.id, b.title, LEFT(b.content, 320) AS content, b.created_at as date
+			FROM {$this->dbPrefix}blogs b
+			JOIN {$this->dbPrefix}blogs_tags bt ON b.id = bt.blogs_id
+			WHERE bt.tag_id = :tag_id
+			ORDER BY b.created_at DESC
+			LIMIT :limit OFFSET :offset
+		");
+        $stmt->bindParam(':tag_id', $tagId, PDO::PARAM_INT);
+		$stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+		$stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+		$stmt->execute();
 
         $news = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         return $news ?: [];
     }
+	
+	public function getNewsCountByTag($tag)
+	{
+		$stmt = $this->pdo->prepare("SELECT id FROM {$this->dbPrefix}tags WHERE name = :tag");
+		$stmt->bindParam(':tag', $tag, PDO::PARAM_STR);
+		$stmt->execute();
+		$tagId = $stmt->fetchColumn();
+		
+		if (!$tagId) {
+			return 0;
+		}
+
+		$stmt = $this->pdo->prepare("
+			SELECT COUNT(*) 
+			FROM {$this->dbPrefix}blogs b
+			JOIN {$this->dbPrefix}blogs_tags bt ON b.id = bt.blogs_id
+			WHERE bt.tag_id = :tag_id
+		");
+		
+		$stmt->bindParam(':tag_id', $tagId, PDO::PARAM_INT);
+		$stmt->execute();
+		
+		return $stmt->fetchColumn();
+	}
 
     // Функция для генерации metaDescription
     public function generateMetaDescription($content, $type = 'default', $additionalData = [])

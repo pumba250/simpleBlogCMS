@@ -14,6 +14,7 @@
     <div class="w3-container w3-padding-16">
         <form method="post" enctype="multipart/form-data" class="w3-container">
             <input type="hidden" name="csrf_token" value="{$csrf_token}">
+			<input type="hidden" name="update_profile" value="1">
             
             <div class="w3-row-padding">
                 <div class="w3-col m3">

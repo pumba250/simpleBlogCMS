@@ -205,6 +205,7 @@ return [
     'max_backups' => 5,
     'backup_schedule' => 'disabled',
     'backup_dir' => 'admin/backups/',
+	'upload_dir' => 'uploads/',
     'blocks_for_reg' => true,
     'metaKeywords' => 'Здесь ключевые слова, через запятую (,)',
     'metaDescription' => 'Здесь описание вашего сайта',

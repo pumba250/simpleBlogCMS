@@ -10,15 +10,16 @@ if (!defined('IN_SIMPLECMS')) {
  * @category   System
  * @version    0.9.7
  * 
- * @method void __construct(PDO $pdo, array $config, Template $template) Инициализирует зависимости
- * @method void handlePostRequest() Обрабатывает все POST-запросы (основной публичный метод)
- * @method void handleCommentPost() Обрабатывает отправку комментария (приватный)
- * @method void handleVotePost() Обрабатывает голосования (приватный)
- * @method void handleRegistration() Обрабатывает регистрацию пользователя (приватный)
- * @method void handleLogin() Обрабатывает авторизацию (приватный)
- * @method void handleContact() Обрабатывает форму обратной связи (приватный)
- * @method void handlePasswordResetRequest() Обрабатывает запрос сброса пароля (приватный)
- * @method void handlePasswordReset() Обрабатывает сброс пароля (приватный)
+ * @method void __construct(PDO $pdo, array $config, Template $template) Инициализирует зависимости системы
+ * @method void handlePostRequest() Обрабатывает все POST-запросы с проверкой CSRF токена
+ * @method void handleCommentPost() Обрабатывает отправку комментария к статье
+ * @method void handleVotePost() Обрабатывает голосования за статьи и комментарии
+ * @method void handleRegistration() Обрабатывает регистрацию нового пользователя
+ * @method void handleLogin() Обрабатывает авторизацию пользователя с проверкой капчи
+ * @method void handleContact() Обрабатывает форму обратной связи с проверкой капчи
+ * @method void handlePasswordResetRequest() Обрабатывает запрос на сброс пароля по email
+ * @method void handlePasswordReset() Обрабатывает установку нового пароля по токену
+ * @method void handleProfileUpdate() Обрабатывает обновление профиля пользователя (включая аватар)
  */
 class Core
 {
@@ -55,7 +56,6 @@ class Core
         if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
             die(Lang::get('invalid_csrf', 'core'));
         }
-		//$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
         // Обработка комментариев
         if (isset($_POST['user_text'])) {
@@ -66,6 +66,12 @@ class Core
         // Обработка голосований
         if (isset($_POST['vote_article']) || isset($_POST['vote_comment'])) {
             $this->handleVotePost();
+            return;
+        }
+
+        // Обработка обновления профиля
+        if (isset($_POST['update_profile'])) {
+            $this->handleProfileUpdate();
             return;
         }
 
@@ -230,6 +236,82 @@ class Core
                 $_SESSION['flash'] = Lang::get('password_reset_error', 'core');
             }
             header('Location: /');
+            exit;
+        }
+    }
+
+    /**
+     * Обработка обновления профиля
+     */
+    private function handleProfileUpdate()
+    {
+        if (!isset($_SESSION['user']['id'])) {
+            $_SESSION['flash'] = Lang::get('auth_required', 'core');
+            header('Location: /?action=login');
+            exit;
+        }
+
+        $username = trim($_POST['username'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $currentPassword = trim($_POST['current_password'] ?? '');
+        
+        // Обработка загрузки аватара
+        $avatar = null;
+        if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+            try {
+                // Используем upload_dir из конфига
+                $uploadDir = $this->config['upload_dir'] . 'avatars/';
+                $maxSize = 2 * 1024 * 1024; // 2MB
+                $imageUploader = new ImageUploader($uploadDir, $maxSize);
+                
+                // Загружаем изображение. Базовое имя = 'user_' + ID пользователя
+                $baseFileName = 'user_' . $_SESSION['user']['id'];
+                $newAvatarPath = $imageUploader->upload($_FILES['avatar'], $baseFileName);
+                
+                // Если загрузка успешна, удаляем старый аватар и сохраняем путь к новому
+                ImageUploader::removeOldAvatar($_SESSION['user']['avatar'] ?? null);
+                $avatar = $newAvatarPath;
+                
+            } catch (RuntimeException $e) {
+                // Ловим и обрабатываем ошибки загрузки
+                $_SESSION['flash'] = Lang::get('avatar_upload_error', 'core') . ': ' . $e->getMessage();
+                header('Location: /?action=profile');
+                exit;
+            }
+        }
+        
+        // Проверяем, изменился ли email
+        $emailChanged = ($email !== $_SESSION['user']['email']);
+        
+        // Если email изменился, проверяем текущий пароль
+        if ($emailChanged && empty($currentPassword)) {
+            $_SESSION['flash'] = Lang::get('current_password_required', 'core');
+            header('Location: /?action=profile');
+            exit;
+        }
+        
+        // Обновляем профиль
+        if ($this->user->updateProfile($_SESSION['user']['id'], $username, $email, $avatar, $emailChanged ? $currentPassword : null)) {
+            $_SESSION['flash'] = Lang::get('profile_updated', 'core');
+            
+            // Обновляем данные в сессии
+            $_SESSION['user']['username'] = $username;
+            $_SESSION['user']['email'] = $email;
+            if ($avatar) {
+                $_SESSION['user']['avatar'] = $avatar;
+            }
+            
+            // Если email изменился, разлогиниваем пользователя или отмечаем email как неверифицированный
+            if ($emailChanged) {
+                $_SESSION['user']['email_verified'] = false;
+                $_SESSION['flash'] = Lang::get('email_change_success_verify', 'core');
+            }
+            
+            header('Location: /?action=profile');
+            exit;
+        } else {
+            $_SESSION['flash'] = Lang::get('profile_update_error', 'core');
+            header('Location: /?action=profile');
             exit;
         }
     }
