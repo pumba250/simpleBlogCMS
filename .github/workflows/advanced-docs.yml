@@ -1,0 +1,113 @@
+name: Advanced Documentation
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  documentation:
+    name: Generate and Deploy Documentation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: mbstring, dom, xml, simplexml, json
+        tools: composer
+
+    - name: Install dependencies
+      run: |
+        composer require --dev phpdocumentor/phpdocumentor
+        composer require --dev squizlabs/php_codesniffer
+        composer require --dev friendsofphp/php-cs-fixer
+
+    - name: Generate API documentation
+      run: |
+        ./vendor/bin/phpdoc -d ./class -d ./admin -d ./config -t ./docs-api --template="clean"
+
+    - name: Generate code quality report
+      run: |
+        ./vendor/bin/phpcs --report=checkstyle --report-file=phpcs-report.xml ./class || true
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Generate architecture diagram
+      run: |
+        npm install -g mermaid-cli
+        echo '
+        graph TD
+          A[Front Controller<br/>index.php] --> B[Core Class]
+          B --> C[Template Engine]
+          B --> D[Error Handler]
+          B --> E[Cache System]
+          C --> F[Templates]
+          D --> G[Logging]
+          E --> H[Redis/Memcached/Files]
+          B --> I[News Module]
+          B --> J[Comments Module]
+          B --> K[User Module]
+          I --> L[Database]
+          J --> L
+          K --> L
+        ' > architecture.mmd
+        mmdc -i architecture.mmd -o docs-api/architecture.svg
+
+    - name: Create index page
+      run: |
+        cat > docs-api/index.html << 'EOF'
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>simpleBlogCMS Documentation</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; }
+                .container { max-width: 1200px; margin: 0 auto; }
+                .section { margin-bottom: 30px; }
+                .btn { display: inline-block; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 5px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>simpleBlogCMS Documentation</h1>
+                <div class="section">
+                    <h2>API Documentation</h2>
+                    <a href="./index.html" class="btn">View PHP Documentation</a>
+                </div>
+                <div class="section">
+                    <h2>System Architecture</h2>
+                    <img src="./architecture.svg" alt="System Architecture" style="max-width: 100%;">
+                </div>
+                <div class="section">
+                    <h2>Version: 0.9.7</h2>
+                    <p>Status: Production Ready</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        EOF
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs-api
+        keep_files: true
