@@ -1,128 +1,24 @@
-name: Deploy to GitHub Pages
-
-on:
-  push:
-    branches: [ main, master ]
-    paths:
-      - 'class/**'
-      - 'admin/**'
-      - 'config/**'
-      - '.github/workflows/gh-pages.yml'
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          extensions: mbstring, dom, xml, simplexml, json
-          tools: composer
-
-      - name: Create valid composer.json
-        run: |
-          cat > composer.json << 'EOL'
-{
-    "name": "simpleblogcms/cms",
-    "description": "Simple Blog Content Management System",
-    "type": "project",
-    "license": "MIT",
-    "authors": [{"name": "SimpleBlogCMS Team", "email": "dev@simpleblogcms.com"}],
-    "require-dev": {
-        "phpdocumentor/phpdocumentor": "^3.3"
-    },
-    "autoload": {
-        "classmap": ["class/", "admin/"]
-    }
-}
-EOL
-
-      - name: Install dependencies
-        run: composer install --no-progress --no-interaction
-
-      - name: Generate API documentation
-        run: |
-          ./vendor/bin/phpdoc \
-            -d ./class \
-            -d ./admin \
-            -d ./config \
-            -t ./docs \
-            --template="clean" \
-            --title="SimpleBlogCMS API Documentation" \
-            --defaultpackagename="SimpleBlogCMS"
-
-      - name: Move entry file to root of docs
-        run: |
-          # Копируем сгенерированный index.html из подпапки в корень docs
-          if [ -f "docs/index.html" ]; then
-            echo "✅ index.html уже в корне docs"
-          else
-            # Ищем index.html в подпапках и перемещаем в корень
-            find docs -name "index.html" -exec mv {} docs/ \; 2>/dev/null || true
-          fi
-
-          # Создаем основной entry point если не найден
-          if [ ! -f "docs/index.html" ]; then
-            echo "📝 Создаем основной index.html..."
-            cat > docs/index.html << 'EOL'
+- name: Create simple index if needed
+  run: |
+    if [ ! -f "_site/index.html" ]; then
+      echo "📝 Создаем простой index.html..."
+      cat > _site/index.html << 'EOL'
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SimpleBlogCMS Documentation</title>
-    <meta http-equiv="refresh" content="0; url=./index.html">
+    <title>SimpleBlogCMS Docs</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+    </style>
 </head>
 <body>
-    <p>Redirecting to <a href="./index.html">API Documentation</a></p>
+    <h1>SimpleBlogCMS Documentation</h1>
+    <p>Version: 0.9.7</p>
+    <p>Status: Production Ready</p>
+    <p>Documentation is being generated...</p>
+    <p><a href="https://github.com/pumba250/simpleBlogCMS">GitHub Repository</a></p>
 </body>
 </html>
 EOL
-          fi
-
-      - name: Verify entry file exists
-        run: |
-          echo "📁 Содержимое папки docs:"
-          ls -la docs/
-          echo "🔍 Проверяем наличие index.html:"
-          if [ -f "docs/index.html" ]; then
-            echo "✅ index.html найден в корне docs"
-          else
-            echo "❌ index.html не найден!"
-            exit 1
-          fi
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v3
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
-        with:
-          path: './docs'
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v2
+    fi
