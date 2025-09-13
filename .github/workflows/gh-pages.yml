@@ -1,24 +1,89 @@
-- name: Create simple index if needed
-  run: |
-    if [ ! -f "_site/index.html" ]; then
-      echo "📝 Создаем простой index.html..."
-      cat > _site/index.html << 'EOL'
+name: Deploy PHP Documentation to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, dom, xml, simplexml
+
+      - name: Install phpDocumentor
+        run: |
+          composer require --dev phpdocumentor/phpdocumentor --no-interaction --no-progress
+
+      - name: Generate API documentation
+        run: |
+          ./vendor/bin/phpdoc \
+            -d ./class \
+            -d ./admin \
+            -t ./_site \
+            --template="clean" \
+            --title="SimpleBlogCMS API Documentation" \
+            --defaultpackagename="SimpleBlogCMS"
+
+      - name: Disable Jekyll processing
+        run: |
+          touch _site/.nojekyll
+
+      - name: Add redirect index.html
+        run: |
+          cat > _site/index.html << 'EOL'
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SimpleBlogCMS Docs</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        h1 { color: #333; }
-    </style>
+    <title>SimpleBlogCMS Documentation</title>
+    <meta http-equiv="refresh" content="0; url=index.html">
+    <script>window.location.href = 'index.html';</script>
 </head>
 <body>
-    <h1>SimpleBlogCMS Documentation</h1>
-    <p>Version: 0.9.7</p>
-    <p>Status: Production Ready</p>
-    <p>Documentation is being generated...</p>
-    <p><a href="https://github.com/pumba250/simpleBlogCMS">GitHub Repository</a></p>
+    <p>Redirecting to <a href="index.html">API Documentation</a></p>
 </body>
 </html>
 EOL
-    fi
+
+      - name: List generated files
+        run: |
+          echo "📁 Generated files:"
+          ls -la _site/
+          echo ""
+          echo "🏠 HTML files in root:"
+          find _site -maxdepth 1 -name "*.html"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: '_site'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
