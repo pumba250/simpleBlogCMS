@@ -41,15 +41,205 @@ jobs:
             --title="SimpleBlogCMS API Documentation" \
             --defaultpackagename="SimpleBlogCMS"
 
-      - name: Create main index page
+      - name: Create comprehensive overview page
         run: |
-          cat > _site/index.html << 'EOF'
+          cat > _site/overview.html << 'EOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SimpleBlogCMS Documentation</title>
+    <title>SimpleBlogCMS - System Overview</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: #f8f9fa;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 2rem;
+            border-left: 4px solid #3498db;
+            padding-left: 1rem;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .feature-card {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 10px 5px;
+            font-weight: 500;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #3498db;
+            color: #3498db;
+        }
+        .nav-header {
+            background: #2c3e50;
+            color: white;
+            padding: 1rem 2rem;
+            margin: -2rem -2rem 2rem -2rem;
+            border-radius: 10px 10px 0 0;
+        }
+        .class-list {
+            columns: 2;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .class-list a {
+            display: block;
+            padding: 0.5rem;
+            color: #2c3e50;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .class-list a:hover {
+            background: #e3f2fd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav-header">
+            <h1>SimpleBlogCMS - System Overview</h1>
+            <p>Version 0.9.7 - Production Ready</p>
+        </div>
+
+        <div style="text-align: center; margin: 2rem 0;">
+            <a href="navigation.html" class="btn">🧭 Navigation</a>
+            <a href="classes.html" class="btn">⚙️ All Classes</a>
+            <a href="https://github.com/pumba250/simpleBlogCMS" class="btn btn-outline" target="_blank">🐙 GitHub</a>
+        </div>
+
+        <h2>🚀 System Architecture</h2>
+        <p>SimpleBlogCMS is a full-featured content management system designed for blogs and news websites with emphasis on security, performance, and ease of use.</p>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>📝 Core Components</h3>
+                <ul>
+                    <li>News/Articles management with tags</li>
+                    <li>Comments system with moderation</li>
+                    <li>User authentication and roles</li>
+                    <li>Template engine with themes</li>
+                    <li>Caching system (files/Redis/Memcached)</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>🛡️ Security Features</h3>
+                <ul>
+                    <li>CSRF, XSS, SQL injection protection</li>
+                    <li>Email verification and CAPTCHA</li>
+                    <li>Secure file upload validation</li>
+                    <li>Rate limiting and brute-force protection</li>
+                    <li>Content Security Policy (CSP)</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>🌐 Internationalization</h3>
+                <ul>
+                    <li>Multi-language support (Russian/English)</li>
+                    <li>Automatic language detection</li>
+                    <li>Localized templates and content</li>
+                    <li>UTF-8 encoding support</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>📊 Key Statistics</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>🏗️ Code Structure</h3>
+                <ul>
+                    <li>17 core PHP classes</li>
+                    <li>MVC architecture pattern</li>
+                    <li>SOLID principles implementation</li>
+                    <li>Dependency injection</li>
+                    <li>PSR-12 coding standards</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>🔧 Technical Stack</h3>
+                <ul>
+                    <li>PHP 7.4+ with PDO, GD, MBString</li>
+                    <li>MySQL 5.7+ / MariaDB 10.2+</li>
+                    <li>HTML5, CSS3, JavaScript</li>
+                    <li>GitHub Actions for CI/CD</li>
+                    <li>Automatic updates system</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>📁 Core Classes Overview</h2>
+        <div class="class-list">
+            <a href="classes/Core.html">Core - Main request handler</a>
+            <a href="classes/News.html">News - Articles management</a>
+            <a href="classes/User.html">User - Authentication system</a>
+            <a href="classes/Comments.html">Comments - Comment system</a>
+            <a href="classes/Template.html">Template - Templating engine</a>
+            <a href="classes/Cache.html">Cache - Caching system</a>
+            <a href="classes/ErrorHandler.html">ErrorHandler - Error management</a>
+            <a href="classes/Mailer.html">Mailer - Email system</a>
+            <a href="classes/Lang.html">Lang - Localization</a>
+            <a href="classes/Vote.html">Vote - Voting system</a>
+            <a href="classes/Contact.html">Contact - Contact forms</a>
+            <a href="classes/ImageUploader.html">ImageUploader - File uploads</a>
+            <a href="classes/Updater.html">Updater - Auto-updates</a>
+            <a href="classes/Parse.html">Parse - Content parsing</a>
+            <a href="classes/Pagination.html">Pagination - Pagination system</a>
+        </div>
+
+        <div style="text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #eee;">
+            <p>Documentation powered by phpDocumentor | Generated on $(date +"%Y-%m-%d at %H:%M")</p>
+            <p>Project licensed under MIT License</p>
+        </div>
+    </div>
+</body>
+</html>
+EOF
+
+      - name: Create navigation page
+        run: |
+          cat > _site/navigation.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>SimpleBlogCMS Navigation</title>
     <style>
         body { 
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
@@ -60,57 +250,87 @@ jobs:
             color: white;
         }
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             background: rgba(255, 255, 255, 0.1);
             padding: 2rem;
-            border-radius: 12px;
+            border-radius: 15px;
             backdrop-filter: blur(10px);
-            text-align: center;
         }
         h1 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .nav-card {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        .nav-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.2);
         }
         .btn {
             display: inline-block;
-            padding: 12px 24px;
+            padding: 10px 20px;
             background: white;
             color: #667eea;
             text-decoration: none;
             border-radius: 6px;
-            margin: 10px;
+            margin-top: 1rem;
             font-weight: 500;
-            transition: transform 0.2s;
-        }
-        .btn:hover {
-            transform: translateY(-2px);
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>SimpleBlogCMS</h1>
-        <p>Version 0.9.7 - Production Ready</p>
-        <p>Full-featured content management system</p>
+        <h1>SimpleBlogCMS Documentation Navigation</h1>
         
-        <div style="margin: 2rem 0;">
-            <a href="index.html" class="btn">📚 View API Documentation</a>
-            <a href="https://github.com/pumba250/simpleBlogCMS" class="btn" target="_blank">🐙 GitHub Repository</a>
+        <div class="nav-grid">
+            <div class="nav-card">
+                <h3>📖 System Overview</h3>
+                <p>Complete system documentation and architecture</p>
+                <a href="overview.html" class="btn">View Overview</a>
+            </div>
+            
+            <div class="nav-card">
+                <h3>⚙️ All Classes</h3>
+                <p>Detailed documentation of all PHP classes</p>
+                <a href="classes.html" class="btn">Browse Classes</a>
+            </div>
+            
+            <div class="nav-card">
+                <h3>🧭 Class Navigation</h3>
+                <p>Quick access to specific class categories</p>
+                <a href="#core" class="btn">Core Classes</a>
+            </div>
+        </div>
+
+        <div style="margin-top: 3rem;">
+            <h2>🚀 Core Classes</h2>
+            <div style="columns: 2; gap: 1rem;">
+                <a href="classes/Core.html" style="display: block; color: white; padding: 0.5rem;">Core</a>
+                <a href="classes/News.html" style="display: block; color: white; padding: 0.5rem;">News</a>
+                <a href="classes/User.html" style="display: block; color: white; padding: 0.5rem;">User</a>
+                <a href="classes/Comments.html" style="display: block; color: white; padding: 0.5rem;">Comments</a>
+                <a href="classes/Template.html" style="display: block; color: white; padding: 0.5rem;">Template</a>
+                <a href="classes/Cache.html" style="display: block; color: white; padding: 0.5rem;">Cache</a>
+            </div>
         </div>
     </div>
 </body>
 </html>
 EOF
 
-      - name: Create custom navigation pages
+      - name: Create main index with redirect
         run: |
-          # Сохраняем оригинальный index.html как overview.html
-          if [ -f "_site/index.html" ]; then
-            mv _site/index.html _site/overview.html
-          fi
-          
-          # Создаем redirect на главной странице
           cat > _site/index.html << 'EOF'
 <!DOCTYPE html>
 <html>
@@ -120,63 +340,15 @@ EOF
     <script>
         window.location.href = 'overview.html';
     </script>
-</head>
-<body>
-    <p>Redirecting to <a href="overview.html">documentation overview</a></p>
-</body>
-</html>
-EOF
-
-          # Создаем кастомную страницу навигации
-          cat > _site/navigation.html << 'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>SimpleBlogCMS Navigation</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .nav-container { max-width: 1000px; margin: 0 auto; }
-        .nav-section { margin: 20px 0; padding: 20px; background: #f5f5f5; border-radius: 8px; }
-        .class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
-        .class-link { padding: 10px; background: white; border-radius: 4px; text-decoration: none; color: #333; }
-        .class-link:hover { background: #e3f2fd; }
+        body { font-family: Arial, sans-serif; margin: 40px; text-align: center; }
+        a { color: #007bff; text-decoration: none; }
     </style>
 </head>
 <body>
-    <div class="nav-container">
-        <h1>SimpleBlogCMS Documentation Navigation</h1>
-        
-        <div class="nav-section">
-            <h2>📖 Main Documentation</h2>
-            <p><a href="overview.html">System Overview</a> - General documentation</p>
-            <p><a href="classes.html">All Classes</a> - Complete class list</p>
-        </div>
-
-        <div class="nav-section">
-            <h2>⚙️ Core Classes</h2>
-            <div class="class-grid">
-                <a href="classes/Core.html" class="class-link">Core</a>
-                <a href="classes/News.html" class="class-link">News</a>
-                <a href="classes/User.html" class="class-link">User</a>
-                <a href="classes/Comments.html" class="class-link">Comments</a>
-                <a href="classes/Template.html" class="class-link">Template</a>
-                <a href="classes/Cache.html" class="class-link">Cache</a>
-            </div>
-        </div>
-
-        <div class="nav-section">
-            <h2>🔧 Utility Classes</h2>
-            <div class="class-grid">
-                <a href="classes/ErrorHandler.html" class="class-link">ErrorHandler</a>
-                <a href="classes/Mailer.html" class="class-link">Mailer</a>
-                <a href="classes/Lang.html" class="class-link">Lang</a>
-                <a href="classes/Vote.html" class="class-link">Vote</a>
-                <a href="classes/Contact.html" class="class-link">Contact</a>
-                <a href="classes/ImageUploader.html" class="class-link">ImageUploader</a>
-            </div>
-        </div>
-    </div>
+    <h1>SimpleBlogCMS Documentation</h1>
+    <p>Redirecting to system overview...</p>
+    <p>If you are not redirected, <a href="overview.html">click here</a></p>
 </body>
 </html>
 EOF
@@ -186,7 +358,7 @@ EOF
 
       - name: Verify generated files
         run: |
-          echo "📁 Generated files in _site:"
+          echo "📁 Generated documentation files:"
           ls -la _site/
           echo "📄 HTML files:"
           find _site -name "*.html" | head -10
