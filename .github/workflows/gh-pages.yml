@@ -102,7 +102,83 @@ jobs:
 </body>
 </html>
 EOF
+- name: Create custom navigation page
+  run: |
+    # Сохраняем оригинальный index.php
+    if [ -f "docs/index.html" ]; then
+      mv docs/index.html docs/overview.html
+    fi
+    
+    # Создаем красивую главную страницу
+    cat > docs/index.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SimpleBlogCMS Documentation</title>
+    <meta http-equiv="refresh" content="0; url=overview.html">
+    <script>
+        window.location.href = 'overview.html';
+    </script>
+</head>
+<body>
+    <p>Redirecting to <a href="overview.html">documentation overview</a></p>
+</body>
+</html>
+EOF
 
+    # Создаем кастомную страницу навигации
+    cat > docs/navigation.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>SimpleBlogCMS Navigation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .nav-container { max-width: 1000px; margin: 0 auto; }
+        .nav-section { margin: 20px 0; padding: 20px; background: #f5f5f5; border-radius: 8px; }
+        .class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+        .class-link { padding: 10px; background: white; border-radius: 4px; text-decoration: none; color: #333; }
+        .class-link:hover { background: #e3f2fd; }
+    </style>
+</head>
+<body>
+    <div class="nav-container">
+        <h1>SimpleBlogCMS Documentation Navigation</h1>
+        
+        <div class="nav-section">
+            <h2>📖 Main Documentation</h2>
+            <p><a href="overview.html">System Overview</a> - General documentation</p>
+            <p><a href="classes.html">All Classes</a> - Complete class list</p>
+        </div>
+
+        <div class="nav-section">
+            <h2>⚙️ Core Classes</h2>
+            <div class="class-grid">
+                <a href="classes/Core.html" class="class-link">Core</a>
+                <a href="classes/News.html" class="class-link">News</a>
+                <a href="classes/User.html" class="class-link">User</a>
+                <a href="classes/Comments.html" class="class-link">Comments</a>
+                <a href="classes/Template.html" class="class-link">Template</a>
+                <a href="classes/Cache.html" class="class-link">Cache</a>
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <h2>🔧 Utility Classes</h2>
+            <div class="class-grid">
+                <a href="classes/ErrorHandler.html" class="class-link">ErrorHandler</a>
+                <a href="classes/Mailer.html" class="class-link">Mailer</a>
+                <a href="classes/Lang.html" class="class-link">Lang</a>
+                <a href="classes/Vote.html" class="class-link">Vote</a>
+                <a href="classes/Contact.html" class="class-link">Contact</a>
+                <a href="classes/ImageUploader.html" class="class-link">ImageUploader</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+EOF
       - name: Disable Jekyll processing
         run: echo "" > _site/.nojekyll
 
