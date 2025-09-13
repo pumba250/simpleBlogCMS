@@ -18,49 +18,49 @@ jobs:
 
       - name: Create basic documentation
         run: |
-          mkdir -p docs
-          echo "<!DOCTYPE html>" > docs/index.html
-          echo "<html>" >> docs/index.html
-          echo "<head>" >> docs/index.html
-          echo "    <title>SimpleBlogCMS Documentation</title>" >> docs/index.html
-          echo "    <meta charset='UTF-8'>" >> docs/index.html
-          echo "    <meta name='viewport' content='width=device-width, initial-scale=1.0'>" >> docs/index.html
-          echo "    <style>" >> docs/index.html
-          echo "        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }" >> docs/index.html
-          echo "        .container { max-width: 800px; margin: 0 auto; }" >> docs/index.html
-          echo "        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }" >> docs/index.html
-          echo "        .btn { display: inline-block; padding: 10px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 5px; margin: 5px; }" >> docs/index.html
-          echo "    </style>" >> docs/index.html
-          echo "</head>" >> docs/index.html
-          echo "<body>" >> docs/index.html
-          echo "    <div class='container'>" >> docs/index.html
-          echo "        <h1>SimpleBlogCMS Documentation</h1>" >> docs/index.html
-          echo "        <p><strong>Version:</strong> 0.9.7</p>" >> docs/index.html
-          echo "        <p><strong>Status:</strong> Production Ready</p>" >> docs/index.html
-          echo "        <p>Full-featured content management system for blogs and news sites.</p>" >> docs/index.html
-          echo "        <h2>Features</h2>" >> docs/index.html
-          echo "        <ul>" >> docs/index.html
-          echo "            <li>Multi-language support (Russian/English)</li>" >> docs/index.html
-          echo "            <li>CRUD system for news, comments, users</li>" >> docs/index.html
-          echo "            <li>Caching system (files/Redis/Memcached)</li>" >> docs/index.html
-          echo "            <li>Automatic updates via GitHub Releases</li>" >> docs/index.html
-          echo "            <li>Database backup and restore</li>" >> docs/index.html
-          echo "        </ul>" >> docs/index.html
-          echo "        <h2>Links</h2>" >> docs/index.html
-          echo "        <p>" >> docs/index.html
-          echo "            <a href='https://github.com/pumba250/simpleBlogCMS' class='btn'>GitHub Repository</a>" >> docs/index.html
-          echo "            <a href='https://github.com/pumba250/simpleBlogCMS/issues' class='btn'>Report Issues</a>" >> docs/index.html
-          echo "        </p>" >> docs/index.html
-          echo "    </div>" >> docs/index.html
-          echo "</body>" >> docs/index.html
-          echo "</html>" >> docs/index.html
+          mkdir -p _site
+          echo "<!DOCTYPE html>" > _site/index.html
+          echo "<html>" >> _site/index.html
+          echo "<head>" >> _site/index.html
+          echo "    <title>SimpleBlogCMS Documentation</title>" >> _site/index.html
+          echo "    <meta charset='UTF-8'>" >> _site/index.html
+          echo "    <meta name='viewport' content='width=device-width, initial-scale=1.0'>" >> _site/index.html
+          echo "    <style>" >> _site/index.html
+          echo "        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }" >> _site/index.html
+          echo "        .container { max-width: 800px; margin: 0 auto; }" >> _site/index.html
+          echo "        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }" >> _site/index.html
+          echo "        .btn { display: inline-block; padding: 10px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 5px; margin: 5px; }" >> _site/index.html
+          echo "    </style>" >> _site/index.html
+          echo "</head>" >> _site/index.html
+          echo "<body>" >> _site/index.html
+          echo "    <div class='container'>" >> _site/index.html
+          echo "        <h1>SimpleBlogCMS Documentation</h1>" >> _site/index.html
+          echo "        <p><strong>Version:</strong> 0.9.7</p>" >> _site/index.html
+          echo "        <p><strong>Status:</strong> Production Ready</p>" >> _site/index.html
+          echo "        <p>Full-featured content management system for blogs and news sites.</p>" >> _site/index.html
+          echo "        <h2>Features</h2>" >> _site/index.html
+          echo "        <ul>" >> _site/index.html
+          echo "            <li>Multi-language support (Russian/English)</li>" >> _site/index.html
+          echo "            <li>CRUD system for news, comments, users</li>" >> _site/index.html
+          echo "            <li>Caching system (files/Redis/Memcached)</li>" >> _site/index.html
+          echo "            <li>Automatic updates via GitHub Releases</li>" >> _site/index.html
+          echo "            <li>Database backup and restore</li>" >> _site/index.html
+          echo "        </ul>" >> _site/index.html
+          echo "        <h2>Links</h2>" >> _site/index.html
+          echo "        <p>" >> _site/index.html
+          echo "            <a href='https://github.com/pumba250/simpleBlogCMS' class='btn'>GitHub Repository</a>" >> _site/index.html
+          echo "            <a href='https://github.com/pumba250/simpleBlogCMS/issues' class='btn'>Report Issues</a>" >> _site/index.html
+          echo "        </p>" >> _site/index.html
+          echo "    </div>" >> _site/index.html
+          echo "</body>" >> _site/index.html
+          echo "</html>" >> _site/index.html
 
       - name: Verify files
         run: |
-          echo "📁 Contents of docs folder:"
-          ls -la docs/
+          echo "📁 Contents of _site folder:"
+          ls -la _site/
           echo "📄 Content of index.html:"
-          head -10 docs/index.html
+          head -10 _site/index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -68,7 +68,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./docs
+          path: ./_site
 
   deploy:
     environment:
