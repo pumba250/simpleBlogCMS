@@ -38,9 +38,9 @@ jobs:
         ./vendor/bin/php-cs-fixer fix ./class --rules=@PSR12 --allow-risky=yes --diff || true
 
     - name: Check for syntax errors
-      run: |
-        echo "🔍 Проверка синтаксических ошибок..."
-        find ./class -name "*.php" -exec php -l {} \; | grep -v "No syntax errors"
+  run: |
+    echo "🔍 Проверка синтаксических ошибок..."
+    find ./class -name "*.php" -exec php -l {} \; | grep -v "No syntax errors" || true
 
     - name: Commit auto-fixed code (если есть изменения)
       run: |
