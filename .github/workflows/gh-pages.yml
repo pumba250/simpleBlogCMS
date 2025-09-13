@@ -44,268 +44,268 @@ jobs:
       - name: Create main homepage
         run: |
           cat > _site/index.html << 'EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SimpleBlogCMS - Content Management System</title>
-    <style>
-        :root {
-            --primary: #3498db;
-            --secondary: #2c3e50;
-            --accent: #e74c3c;
-            --light: #ecf0f1;
-            --dark: #2c3e50;
-        }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 3rem;
-        }
-        .header h1 {
-            font-size: 3.5rem;
-            margin-bottom: 0.5rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        .header p {
-            font-size: 1.3rem;
-            opacity: 0.9;
-            margin-bottom: 1rem;
-        }
-        .badge {
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            margin: 0 0.5rem;
-        }
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
-        }
-        .card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 2rem;
-            border-radius: 15px;
-            color: white;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        .card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .card ul {
-            list-style: none;
-        }
-        .card li {
-            margin: 0.7rem 0;
-            padding-left: 1.5rem;
-            position: relative;
-        }
-        .card li:before {
-            content: "✓";
-            position: absolute;
-            left: 0;
-            color: #27ae60;
-            font-weight: bold;
-        }
-        .btn-group {
-            text-align: center;
-            margin: 3rem 0;
-        }
-        .btn {
-            display: inline-block;
-            padding: 1rem 2rem;
-            background: white;
-            color: #667eea;
-            text-decoration: none;
-            border-radius: 8px;
-            margin: 0 1rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-        }
-        .btn-outline {
-            background: transparent;
-            border: 2px solid white;
-            color: white;
-        }
-        .footer {
-            text-align: center;
-            color: white;
-            margin-top: 4rem;
-            opacity: 0.8;
-        }
-        @media (max-width: 768px) {
-            .header h1 { font-size: 2.5rem; }
-            .card-grid { grid-template-columns: 1fr; }
-            .btn { display: block; margin: 1rem auto; }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>SimpleBlogCMS</h1>
-            <p>Modern Content Management System</p>
-            <div>
-                <span class="badge">Version 0.9.7</span>
-                <span class="badge">Production Ready</span>
-                <span class="badge">PHP 7.4+</span>
-            </div>
-        </div>
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>SimpleBlogCMS - Content Management System</title>
+              <style>
+                  :root {
+                      --primary: #3498db;
+                      --secondary: #2c3e50;
+                      --accent: #e74c3c;
+                      --light: #ecf0f1;
+                      --dark: #2c3e50;
+                  }
+                  * {
+                      margin: 0;
+                      padding: 0;
+                      box-sizing: border-box;
+                  }
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      line-height: 1.6;
+                      color: #333;
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      min-height: 100vh;
+                  }
+                  .container {
+                      max-width: 1200px;
+                      margin: 0 auto;
+                      padding: 2rem;
+                  }
+                  .header {
+                      text-align: center;
+                      color: white;
+                      margin-bottom: 3rem;
+                  }
+                  .header h1 {
+                      font-size: 3.5rem;
+                      margin-bottom: 0.5rem;
+                      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+                  }
+                  .header p {
+                      font-size: 1.3rem;
+                      opacity: 0.9;
+                      margin-bottom: 1rem;
+                  }
+                  .badge {
+                      display: inline-block;
+                      padding: 0.5rem 1rem;
+                      background: rgba(255,255,255,0.2);
+                      color: white;
+                      border-radius: 20px;
+                      font-size: 0.9rem;
+                      margin: 0 0.5rem;
+                  }
+                  .card-grid {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+                      gap: 2rem;
+                      margin-bottom: 3rem;
+                  }
+                  .card {
+                      background: rgba(255, 255, 255, 0.1);
+                      backdrop-filter: blur(10px);
+                      padding: 2rem;
+                      border-radius: 15px;
+                      color: white;
+                      border: 1px solid rgba(255,255,255,0.2);
+                  }
+                  .card h3 {
+                      font-size: 1.5rem;
+                      margin-bottom: 1rem;
+                      color: white;
+                      display: flex;
+                      align-items: center;
+                      gap: 0.5rem;
+                  }
+                  .card ul {
+                      list-style: none;
+                  }
+                  .card li {
+                      margin: 0.7rem 0;
+                      padding-left: 1.5rem;
+                      position: relative;
+                  }
+                  .card li:before {
+                      content: "✓";
+                      position: absolute;
+                      left: 0;
+                      color: #27ae60;
+                      font-weight: bold;
+                  }
+                  .btn-group {
+                      text-align: center;
+                      margin: 3rem 0;
+                  }
+                  .btn {
+                      display: inline-block;
+                      padding: 1rem 2rem;
+                      background: white;
+                      color: #667eea;
+                      text-decoration: none;
+                      border-radius: 8px;
+                      margin: 0 1rem;
+                      font-weight: 600;
+                      transition: all 0.3s ease;
+                      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                  }
+                  .btn:hover {
+                      transform: translateY(-3px);
+                      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+                  }
+                  .btn-outline {
+                      background: transparent;
+                      border: 2px solid white;
+                      color: white;
+                  }
+                  .footer {
+                      text-align: center;
+                      color: white;
+                      margin-top: 4rem;
+                      opacity: 0.8;
+                  }
+                  @media (max-width: 768px) {
+                      .header h1 { font-size: 2.5rem; }
+                      .card-grid { grid-template-columns: 1fr; }
+                      .btn { display: block; margin: 1rem auto; }
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <div class="header">
+                      <h1>SimpleBlogCMS</h1>
+                      <p>Modern Content Management System</p>
+                      <div>
+                          <span class="badge">Version 0.9.7</span>
+                          <span class="badge">Production Ready</span>
+                          <span class="badge">PHP 7.4+</span>
+                      </div>
+                  </div>
 
-        <div class="btn-group">
-            <a href="classes.html" class="btn">📚 View API Documentation</a>
-            <a href="https://github.com/pumba250/simpleBlogCMS" class="btn btn-outline" target="_blank">🐙 GitHub Repository</a>
-        </div>
+                  <div class="btn-group">
+                      <a href="classes.html" class="btn">📚 View API Documentation</a>
+                      <a href="https://github.com/pumba250/simpleBlogCMS" class="btn btn-outline" target="_blank">🐙 GitHub Repository</a>
+                  </div>
 
-        <div class="card-grid">
-            <div class="card">
-                <h3>🚀 Core Features</h3>
-                <ul>
-                    <li>Multi-language support (Russian/English)</li>
-                    <li>Complete CRUD system for news, comments, users</li>
-                    <li>Advanced caching system (files/Redis/Memcached)</li>
-                    <li>Automatic updates via GitHub Releases</li>
-                    <li>Database backup and restore functionality</li>
-                    <li>SEO optimization with clean URLs</li>
-                </ul>
-            </div>
+                  <div class="card-grid">
+                      <div class="card">
+                          <h3>🚀 Core Features</h3>
+                          <ul>
+                              <li>Multi-language support (Russian/English)</li>
+                              <li>Complete CRUD system for news, comments, users</li>
+                              <li>Advanced caching system (files/Redis/Memcached)</li>
+                              <li>Automatic updates via GitHub Releases</li>
+                              <li>Database backup and restore functionality</li>
+                              <li>SEO optimization with clean URLs</li>
+                          </ul>
+                      </div>
 
-            <div class="card">
-                <h3>🛡️ Security</h3>
-                <ul>
-                    <li>Protection against CSRF, XSS, SQL injection</li>
-                    <li>CAPTCHA and email verification</li>
-                    <li>Secure file upload with MIME validation</li>
-                    <li>Rate limiting and brute-force protection</li>
-                    <li>Content Security Policy (CSP) headers</li>
-                    <li>Secure cookies (HttpOnly, Secure, SameSite)</li>
-                </ul>
-            </div>
+                      <div class="card">
+                          <h3>🛡️ Security</h3>
+                          <ul>
+                              <li>Protection against CSRF, XSS, SQL injection</li>
+                              <li>CAPTCHA and email verification</li>
+                              <li>Secure file upload with MIME validation</li>
+                              <li>Rate limiting and brute-force protection</li>
+                              <li>Content Security Policy (CSP) headers</li>
+                              <li>Secure cookies (HttpOnly, Secure, SameSite)</li>
+                          </ul>
+                      </div>
 
-            <div class="card">
-                <h3>⚙️ Architecture</h3>
-                <ul>
-                    <li>MVC design pattern implementation</li>
-                    <li>SOLID principles compliance</li>
-                    <li>Dependency injection container</li>
-                    <li>Modular and extensible structure</li>
-                    <li>RESTful architecture for API</li>
-                    <li>Unified error handling system</li>
-                </ul>
-            </div>
+                      <div class="card">
+                          <h3>⚙️ Architecture</h3>
+                          <ul>
+                              <li>MVC design pattern implementation</li>
+                              <li>SOLID principles compliance</li>
+                              <li>Dependency injection container</li>
+                              <li>Modular and extensible structure</li>
+                              <li>RESTful architecture for API</li>
+                              <li>Unified error handling system</li>
+                          </ul>
+                      </div>
 
-            <div class="card">
-                <h3>🎨 Administration</h3>
-                <ul>
-                    <li>Full admin panel with role-based access</li>
-                    <li>User management and permissions system</li>
-                    <li>Content moderation tools</li>
-                    <li>System logs and error monitoring</li>
-                    <li>Database management interface</li>
-                    <li>Template and theme management</li>
-                </ul>
-            </div>
-        </div>
+                      <div class="card">
+                          <h3>🎨 Administration</h3>
+                          <ul>
+                              <li>Full admin panel with role-based access</li>
+                              <li>User management and permissions system</li>
+                              <li>Content moderation tools</li>
+                              <li>System logs and error monitoring</li>
+                              <li>Database management interface</li>
+                              <li>Template and theme management</li>
+                          </ul>
+                      </div>
+                  </div>
 
-        <div class="card">
-            <h3>📋 Technical Requirements</h3>
-            <ul>
-                <li>PHP 7.4+ with PDO, GD, MBString, ZIP extensions</li>
-                <li>MySQL 5.7+ or MariaDB 10.2+</li>
-                <li>HTTPS support (recommended)</li>
-                <li>Web server with URL rewriting</li>
-                <li>Minimum 128MB RAM, 512MB recommended</li>
-            </ul>
-        </div>
+                  <div class="card">
+                      <h3>📋 Technical Requirements</h3>
+                      <ul>
+                          <li>PHP 7.4+ with PDO, GD, MBString, ZIP extensions</li>
+                          <li>MySQL 5.7+ or MariaDB 10.2+</li>
+                          <li>HTTPS support (recommended)</li>
+                          <li>Web server with URL rewriting</li>
+                          <li>Minimum 128MB RAM, 512MB recommended</li>
+                      </ul>
+                  </div>
 
-        <div class="footer">
-            <p>© 2024 SimpleBlogCMS. Open-source MIT License.</p>
-            <p>Documentation generated on $(date +"%Y-%m-%d")</p>
-        </div>
-    </div>
-</body>
-</html>
-EOF
+                  <div class="footer">
+                      <p>© 2024 SimpleBlogCMS. Open-source MIT License.</p>
+                      <p>Documentation generated on $(date +"%Y-%m-%d")</p>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
 
       - name: Create navigation bridge
         run: |
           cat > _site/documentation.html << 'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>API Documentation - SimpleBlogCMS</title>
-    <meta http-equiv="refresh" content="0; url=classes.html">
-    <script>window.location.href = 'classes.html';</script>
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 40px; 
-            text-align: center;
-            background: #f5f5f5;
-        }
-        .container {
-            max-width: 600px;
-            margin: 100px auto;
-            background: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        a {
-            color: #3498db;
-            text-decoration: none;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>API Documentation</h1>
-        <p>Redirecting to class documentation...</p>
-        <p>If you are not redirected, <a href="classes.html">click here to view all classes</a></p>
-        <p><a href="index.html">← Back to main page</a></p>
-    </div>
-</body>
-</html>
-EOF
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <meta charset="UTF-8">
+              <title>API Documentation - SimpleBlogCMS</title>
+              <meta http-equiv="refresh" content="0; url=classes.html">
+              <script>window.location.href = 'classes.html';</script>
+              <style>
+                  body { 
+                      font-family: Arial, sans-serif; 
+                      margin: 40px; 
+                      text-align: center;
+                      background: #f5f5f5;
+                  }
+                  .container {
+                      max-width: 600px;
+                      margin: 100px auto;
+                      background: white;
+                      padding: 2rem;
+                      border-radius: 10px;
+                      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                  }
+                  a {
+                      color: #3498db;
+                      text-decoration: none;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1>API Documentation</h1>
+                  <p>Redirecting to class documentation...</p>
+                  <p>If you are not redirected, <a href="classes.html">click here to view all classes</a></p>
+                  <p><a href="index.html">← Back to main page</a></p>
+              </div>
+          </body>
+          </html>
+          EOF
 
       - name: Update generated documentation links
         run: |
-          # Добавляем ссылку назад на главную в сгенерированной документации
+          # Add back link to main page in generated documentation
           if [ -f "_site/index.html" ]; then
             sed -i 's|</head>|<style>.home-link { position: fixed; top: 20px; left: 20px; z-index: 1000; }</style></head>|' _site/index.html
             sed -i 's|<body>|<body><a href="index.html" class="home-link">🏠 Home</a>|' _site/index.html
