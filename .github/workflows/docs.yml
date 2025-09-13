@@ -17,18 +17,24 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Clean up any problematic composer files
+    - name: Find and remove ALL problematic composer files
       run: |
-        # Remove any existing composer files that might cause issues
-        if [ -f composer.json ] && grep -q '"__root__"' composer.json; then
-            echo "Removing problematic composer.json"
-            rm composer.json
-        fi
-        if [ -f composer.lock ]; then
-            rm composer.lock
-        fi
+        echo "Searching for all composer.json files..."
+        find . -name "composer.json" -type f | while read file; do
+          echo "Found: $file"
+          if grep -q '"__root__"' "$file"; then
+            echo "🚫 Removing problematic file: $file"
+            rm "$file"
+          else
+            echo "✅ File is OK: $file"
+          fi
+        done
+        
+        # Удаляем все composer.lock файлы
+        find . -name "composer.lock" -type f -delete
+        echo "Removed all composer.lock files"
 
-    - name: Create valid composer.json
+    - name: Create clean valid composer.json
       run: |
         cat > composer.json << 'EOL'
 {
@@ -38,22 +44,17 @@ jobs:
     "license": "MIT",
     "authors": [{"name": "SimpleBlogCMS Team", "email": "dev@simpleblogcms.com"}],
     "require": {
-        "php": ">=7.4",
-        "ext-pdo": "*",
-        "ext-gd": "*",
-        "ext-mbstring": "*",
-        "ext-zip": "*"
+        "php": ">=7.4"
     },
     "require-dev": {
-        "phpdocumentor/phpdocumentor": "^3.3",
-        "squizlabs/php_codesniffer": "^3.7",
-        "friendsofphp/php-cs-fixer": "^3.13"
+        "phpdocumentor/phpdocumentor": "^3.3"
     },
     "autoload": {
         "classmap": ["class/", "admin/"]
     }
 }
 EOL
+        echo "Created clean composer.json"
 
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
@@ -62,13 +63,32 @@ EOL
         extensions: mbstring, dom, xml, simplexml, json
         tools: composer
 
-    - name: Install dependencies
+    - name: Install ONLY phpdocumentor (минимальная установка)
       run: |
-        composer install --no-progress --no-interaction
+        # Устанавливаем только phpdocumentor без других зависимостей
+        composer require --dev phpdocumentor/phpdocumentor --no-interaction --no-progress
 
-    - name: Generate API documentation
+    - name: Generate API documentation (обходной метод)
       run: |
-        ./vendor/bin/phpdoc -d ./class -d ./admin -d ./config -t ./docs-api --template="clean" --defaultpackagename="SimpleBlogCMS"
+        # Используем прямой вызов phpDocumentor с явными путями
+        php ./vendor/phpdocumentor/phpdocumentor/bin/phpdoc \
+          -d ./class \
+          -d ./admin \
+          -t ./docs-api \
+          --template="clean" \
+          --title="SimpleBlogCMS API Documentation" \
+          --defaultpackagename="SimpleBlogCMS"
+
+    - name: Verify documentation generation
+      run: |
+        if [ -d "docs-api" ]; then
+          echo "✅ Documentation generated successfully!"
+          echo "📁 Generated files:"
+          find docs-api -name "*.html" | head -5
+        else
+          echo "❌ Documentation generation failed"
+          exit 1
+        fi
 
     - name: Create index page
       run: |
