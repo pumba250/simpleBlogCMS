@@ -38,7 +38,7 @@ jobs:
 
     - name: Generate API documentation
       run: |
-        ./vendor/bin/phpdoc -d ./class -d ./admin -d ./config -t ./docs-api --template="clean"
+        ./vendor/bin/phpdoc -d ./class -d ./admin -d ./config -t ./docs-api --template="clean" --defaultpackagename="SimpleBlogCMS"
 
     - name: Generate code quality report
       run: |
