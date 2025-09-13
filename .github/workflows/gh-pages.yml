@@ -1,73 +1,66 @@
-name: Deploy PHP Documentation to GitHub Pages
+name: Deploy Simple Docs
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches: [main]
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          extensions: mbstring, dom, xml, simplexml
-
-      - name: Install phpDocumentor
+      - name: Create basic documentation
         run: |
-          composer require --dev phpdocumentor/phpdocumentor --no-interaction --no-progress
+          mkdir -p docs
+          echo "<!DOCTYPE html>" > docs/index.html
+          echo "<html>" >> docs/index.html
+          echo "<head>" >> docs/index.html
+          echo "    <title>SimpleBlogCMS Documentation</title>" >> docs/index.html
+          echo "    <meta charset='UTF-8'>" >> docs/index.html
+          echo "    <meta name='viewport' content='width=device-width, initial-scale=1.0'>" >> docs/index.html
+          echo "    <style>" >> docs/index.html
+          echo "        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }" >> docs/index.html
+          echo "        .container { max-width: 800px; margin: 0 auto; }" >> docs/index.html
+          echo "        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }" >> docs/index.html
+          echo "        .btn { display: inline-block; padding: 10px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 5px; margin: 5px; }" >> docs/index.html
+          echo "    </style>" >> docs/index.html
+          echo "</head>" >> docs/index.html
+          echo "<body>" >> docs/index.html
+          echo "    <div class='container'>" >> docs/index.html
+          echo "        <h1>SimpleBlogCMS Documentation</h1>" >> docs/index.html
+          echo "        <p><strong>Version:</strong> 0.9.7</p>" >> docs/index.html
+          echo "        <p><strong>Status:</strong> Production Ready</p>" >> docs/index.html
+          echo "        <p>Full-featured content management system for blogs and news sites.</p>" >> docs/index.html
+          echo "        <h2>Features</h2>" >> docs/index.html
+          echo "        <ul>" >> docs/index.html
+          echo "            <li>Multi-language support (Russian/English)</li>" >> docs/index.html
+          echo "            <li>CRUD system for news, comments, users</li>" >> docs/index.html
+          echo "            <li>Caching system (files/Redis/Memcached)</li>" >> docs/index.html
+          echo "            <li>Automatic updates via GitHub Releases</li>" >> docs/index.html
+          echo "            <li>Database backup and restore</li>" >> docs/index.html
+          echo "        </ul>" >> docs/index.html
+          echo "        <h2>Links</h2>" >> docs/index.html
+          echo "        <p>" >> docs/index.html
+          echo "            <a href='https://github.com/pumba250/simpleBlogCMS' class='btn'>GitHub Repository</a>" >> docs/index.html
+          echo "            <a href='https://github.com/pumba250/simpleBlogCMS/issues' class='btn'>Report Issues</a>" >> docs/index.html
+          echo "        </p>" >> docs/index.html
+          echo "    </div>" >> docs/index.html
+          echo "</body>" >> docs/index.html
+          echo "</html>" >> docs/index.html
 
-      - name: Generate API documentation
+      - name: Verify files
         run: |
-          ./vendor/bin/phpdoc \
-            -d ./class \
-            -d ./admin \
-            -t ./_site \
-            --template="clean" \
-            --title="SimpleBlogCMS API Documentation" \
-            --defaultpackagename="SimpleBlogCMS"
-
-      - name: Disable Jekyll processing
-        run: |
-          touch _site/.nojekyll
-
-      - name: Add redirect index.html
-        run: |
-          cat > _site/index.html << 'EOL'
-<!DOCTYPE html>
-<html>
-<head>
-    <title>SimpleBlogCMS Documentation</title>
-    <meta http-equiv="refresh" content="0; url=index.html">
-    <script>window.location.href = 'index.html';</script>
-</head>
-<body>
-    <p>Redirecting to <a href="index.html">API Documentation</a></p>
-</body>
-</html>
-EOL
-
-      - name: List generated files
-        run: |
-          echo "📁 Generated files:"
-          ls -la _site/
-          echo ""
-          echo "🏠 HTML files in root:"
-          find _site -maxdepth 1 -name "*.html"
+          echo "📁 Contents of docs folder:"
+          ls -la docs/
+          echo "📄 Content of index.html:"
+          head -10 docs/index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v3
@@ -75,7 +68,7 @@ EOL
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
-          path: '_site'
+          path: ./docs
 
   deploy:
     environment:
