@@ -1,0 +1,28 @@
+name: PHP CI
+
+    on:
+      push:
+        branches:
+          - main # Or your main development branch
+
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v4
+
+          - name: Setup PHP
+            uses: shivammathur/setup-php@v2
+            with:
+              php-version: '7.3' # Specify your desired PHP version
+              extensions: mbstring, pdo_mysql # Add necessary PHP extensions
+              ini-values: post_max_size=256M, upload_max_filesize=256M
+              coverage: xdebug # Or pcov for coverage reporting
+
+          - name: Install Composer dependencies
+            run: composer install --no-ansi --no-interaction --no-progress --prefer-dist
+
+          - name: Run PHPUnit tests
+            run: vendor/bin/phpunit # Adjust if your test runner is located elsewhere
