@@ -1,8 +1,3 @@
-{if $auth_error}
-	<div class="w3-red">
-		<i class="fas fa-exclamation-circle"></i> {$auth_error}
-	</div>
-{/if}
 <p><button class="w3-button w3-gray w3-large login-btn">{l_loginuser}</button></p>
 <div id="id01" class="w3-modal">
     <div class="w3-modal-content w3-card-4 w3-animate-zoom" style="max-width:600px">

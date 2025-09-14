@@ -6,6 +6,9 @@
                 <i class="fas fa-exclamation-circle"></i> {$auth_error}
             </div>
         {/if}
+		{if $flash}
+			<div class="flash flash-{$flash.type}">{$flash.message}</div>
+		{/if}
             <form method="POST" class="auth-form">
                 <input type="hidden" name="action" value="login">
 				<input type="hidden" name="csrf_token" value="{$csrf_token}">

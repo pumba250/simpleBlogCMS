@@ -52,3 +52,7 @@
     width: 80%;
     max-width: 600px;
 }
+.flash-success { color: green; border-color: green; }
+.flash-error { color: red; border-color: red; }
+.flash-warning { color: orange; border-color: orange; }
+.flash-info { color: blue; border-color: blue; }

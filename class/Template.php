@@ -66,15 +66,14 @@ class Template
 
     public function getCommonTemplateVars($config, $news, $user = null)
     {
+		global $flash;
         $currentCommentPage = $_GET['comment_page'] ?? 1;
         $commentsPerPage = $config['comments_per_page'];
         $authError = $_SESSION['auth_error'] ?? null;
-        
+        //$flash = $_SESSION['flash'] ?? null;
         if (isset($_SESSION['auth_error'])) {
             unset($_SESSION['auth_error']);
         }
-        
-        $flash = $_SESSION['flash'] ?? null;
         if (isset($_SESSION['flash'])) {
             unset($_SESSION['flash']);
         }

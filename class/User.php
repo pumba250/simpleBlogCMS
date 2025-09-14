@@ -9,7 +9,7 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Authentication
- * @version    0.9.8
+ * @version    0.9.9
  * 
  * @method void   __construct(PDO $pdo)                                        Инициализирует систему пользователей
  * @method array  getAllUsers()                                                Получает список всех пользователей
@@ -128,7 +128,7 @@ class User
         $exists = $stmtCheck->fetchColumn();
 
         if ($exists) {
-            flash(Lang::get('user_exists', 'core'));
+            flash(Lang::get('user_exists', 'core'), 'error');
             return false;
         }
         
@@ -148,7 +148,7 @@ class User
         
         if ($stmt->execute([$username, $hash, $email, $isAdmin, $verificationToken])) {
             $this->sendVerificationEmail($username, $email, $verificationToken);
-            flash(Lang::get('reg_success_verify', 'core'));
+            flash(Lang::get('reg_success_verify', 'core'), 'success');
             return true;
         }
         
@@ -219,9 +219,10 @@ class User
                 SET email_verified = 1, verification_token = NULL 
                 WHERE id = ?"
             );
+			flash(Lang::get('email_verified', 'core'), 'success');
             return $stmt->execute([$userId]);
         }
-        
+        flash(Lang::get('invalid_token', 'core'), 'error');
         return false;
     }
 
@@ -340,7 +341,7 @@ class User
                 $exists = $stmtCheck->fetchColumn();
 
                 if ($exists) {
-                    flash(Lang::get('email_exists', 'core'));
+                    flash(Lang::get('email_exists', 'core'), 'error');
                     return false;
                 }
                 
@@ -392,9 +393,9 @@ class User
             // Если email изменился, отправляем письмо для подтверждения
             if ($result && $emailChanged) {
                 $this->sendVerificationEmail($username, $email, $verificationToken);
-                flash(Lang::get('email_change_success_verify', 'core'));
+                flash(Lang::get('email_change_success_verify', 'core'), 'success');
             } elseif ($result) {
-                flash(Lang::get('profile_update_success', 'core'));
+                flash(Lang::get('profile_update_success', 'core'), 'success');
             }
             
             return $result;
@@ -416,7 +417,7 @@ class User
         $user = $stmt->fetch();
         
         if (!$user || !password_verify($password, $user['password'])) {
-            flash(Lang::get('invalid_password', 'core'));
+            flash(Lang::get('invalid_password', 'core'), 'error');
             return false;
         }
         
@@ -430,7 +431,7 @@ class User
         $exists = $stmtCheck->fetchColumn();
 
         if ($exists) {
-            flash(Lang::get('email_exists', 'core'));
+            flash(Lang::get('email_exists', 'core'), 'error');
             return false;
         }
         
@@ -451,7 +452,7 @@ class User
             $username = $stmtUsername->fetchColumn();
             
             $this->sendVerificationEmail($username, $newEmail, $verificationToken);
-            flash(Lang::get('email_change_success_verify', 'core'));
+            flash(Lang::get('email_change_success_verify', 'core'), 'success');
             return true;
         }
         
@@ -561,9 +562,10 @@ class User
             && time() - $_SESSION['last_attempt'] < $security['block_time']
         ) {
             flash(
-                Lang::get('too_many_attempts', 'core') . ' Попробуйте через ' . 
-                ceil(($security['block_time'] - (time() - $_SESSION['last_attempt'])) / 60) . ' минут.'
-            );
+        Lang::get('too_many_attempts', 'core') . ' Попробуйте через ' . 
+        ceil(($security['block_time'] - (time() - $_SESSION['last_attempt'])) / 60) . ' минут.',
+        'error'
+    );
             return false;
         }
 
@@ -611,14 +613,29 @@ class User
     }
 }
 
-function flash(?string $message = null)
+function flash(?string $message = null, ?string $type = null)
 {
     if ($message) {
-        $_SESSION['flash'] = $message;
+        $_SESSION['flash'] = [
+            'message' => $message,
+            'type' => $type ?? 'info' // default, success, error, warning
+        ];
     } else {
-        if (!empty($_SESSION['flash'])) { ?>
-            <div style="color: red;">
-                <?= htmlspecialchars($_SESSION['flash'] ?? '') ?>
+        if (!empty($_SESSION['flash'])) { 
+            $flash = $_SESSION['flash'];
+            
+            // Совместимая замена оператора match
+            $color = 'blue'; // значение по умолчанию
+            if ($flash['type'] === 'success') {
+                $color = 'green';
+            } elseif ($flash['type'] === 'error') {
+                $color = 'red';
+            } elseif ($flash['type'] === 'warning') {
+                $color = 'orange';
+            }
+            ?>
+            <div style="color: <?= $color ?>; padding: 10px; margin: 10px 0; border: 1px solid <?= $color ?>; border-radius: 4px;">
+                <?= htmlspecialchars($flash['message'] ?? '') ?>
             </div>
         <?php }
         unset($_SESSION['flash']);

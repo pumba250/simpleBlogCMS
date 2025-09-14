@@ -2,11 +2,9 @@
     <div class="w3-container w3-padding-32">
         <h2>{l_forgot_password:core}</h2>
         
-        {if $flash}
-            <div class="w3-panel w3-{$flash.type}">
-                {$flash.message}
-            </div>
-        {/if}
+{if $flash}
+<div class="flash flash-{$flash.type}">{$flash.message}</div>
+{/if}
         
         <form method="POST" action="?action=request_reset">
 			<input type="hidden" name="csrf_token" value="{$csrf_token}">

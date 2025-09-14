@@ -8,7 +8,7 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Contact
- * @version    0.9.8
+ * @version    0.9.9
  * 
  * @method bool   saveMessage(string $name, string $email, string $message) Сохраняет контактное сообщение в БД
  * @method array  getAllMessages() Получает все сообщения (сортировка по дате создания)
@@ -29,7 +29,7 @@ class Contact
         $stmt = $this->pdo->prepare(
             "INSERT INTO `{$dbPrefix}blogs_contacts` (name, email, message) VALUES (?, ?, ?)"
         );
-        
+		flash(Lang::get('msg_send', 'core'), 'success');
         return $stmt->execute([$name, $email, $message]);
     }
 

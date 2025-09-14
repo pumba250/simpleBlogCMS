@@ -1,4 +1,7 @@
 <div class="w3-container">
+{if $flash}
+<div class="flash flash-{$flash.type}">{$flash.message}</div>
+{/if}
             <form method="post">
 				<input type="hidden" name="csrf_token" value="{$csrf_token}">
                 {if null !== $user->username}

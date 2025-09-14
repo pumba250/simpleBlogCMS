@@ -2,6 +2,14 @@
 <div class="w3-col l4">
     <div class="w3-card w3-margin w3-margin-top">
         <div class="w3-container w3-white">
+		{if $auth_error}
+			<div class="w3-red">
+				<i class="fas fa-exclamation-circle"></i> {$auth_error}
+			</div>
+		{/if}
+		{if $flash}
+			<div class="flash flash-{$flash.type}">{$flash.message}</div>
+		{/if}
             {!$userSection}
 			<p><a href="/">{l_main}</a></p>
 			<p><a href="?action=contact">{l_contact}</a></p>

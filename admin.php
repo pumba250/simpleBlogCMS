@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Admin
- * @version    0.9.7
+ * @version    0.9.9
  * 
  * @sections
  * - Управление пользователями

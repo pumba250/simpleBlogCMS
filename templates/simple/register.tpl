@@ -1,7 +1,11 @@
 <div class="w3-card-4 w3-margin w3-white">
 <div id="contact" class="w3-container w3-center w3-padding-32">
 <?php if (!$user): ?><h2 class="w3-wide"><i class="fas fa-user-plus"></i> {l_register}</h2>
-<p class="w3-opacity w3-center"><? flash(); ?></p>
+<p class="w3-opacity w3-center">
+{if $flash}
+<div class="flash flash-{$flash.type}">{$flash.message}</div>
+{/if}
+</p>
 <form method="POST">
     <input type="hidden" name="action" value="register">
 	<input type="hidden" name="csrf_token" value="{$csrf_token}">

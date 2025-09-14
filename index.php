@@ -368,9 +368,9 @@ if (empty($_SESSION['csrf_token'])) {
 			case 'verify_email':
 				if (isset($_GET['token'])) {
 					if ($user->verifyEmail($_GET['token'])) {
-						$_SESSION['flash'] = Lang::get('email_verified', 'core');
+						flash(Lang::get('email_verified', 'core'), 'success');
 					} else {
-						$_SESSION['flash'] = Lang::get('invalid_token', 'core');
+						flash(Lang::get('invalid_token', 'core'), 'error');
 					}
 					header('Location: /');
 					exit;
@@ -407,7 +407,8 @@ if (empty($_SESSION['csrf_token'])) {
 					'pageTitle' => $pageTitle,
 					'metaDescription' => $metaDescription,
 					'metaKeywords' => $metaKeywords,
-					'csrf_token' => $_SESSION['csrf_token']
+					'csrf_token' => $_SESSION['csrf_token'],
+					'flash' => $_SESSION['flash'] ?? null, 
 				];
 				
 				$footerProvider = new FooterDataProvider($news, $user, $template, $config);
@@ -497,15 +498,15 @@ if (empty($_SESSION['csrf_token'])) {
 						if (isset($_GET['link_social'])) {
 							$socialType = $_GET['link_social'];
 							$core->handleSocialAuth($socialType);
-							$_SESSION['flash'] = Lang::get('social_link_started', 'core') . ': ' . $socialType;
+							flash(Lang::get('social_link_started', 'core') . ': ' . $socialType, 'info');
 							exit;
 						}
 
 						if (isset($_GET['unlink_social'])) {
 							if ($user->removeSocialLink($_SESSION['user']['id'], $_GET['unlink_social'])) {
-								$_SESSION['flash'] = Lang::get('social_unlinked', 'core');
+								flash(Lang::get('social_unlinked', 'core'), 'success');
 							} else {
-								$_SESSION['flash'] = Lang::get('social_unlink_error', 'core');
+								flash(Lang::get('social_unlink_error', 'core'), 'error');
 							}
 							header('Location: /?action=profile');
 							exit;
