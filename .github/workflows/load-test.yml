@@ -21,6 +21,6 @@ jobs:
          BASE_URL: ${{ secrets.TEST_ENV }}
 
       name: Если упало — светимся красным
-        if: failure()
+        if: ${{ failure() }}
         run: |
           echo "ВСЁ ПРОПАЛО. ПАЙПЛАЙН УПАЛ. МЕРЖИТЬ НЕЛЬЗЯ."
