@@ -4,7 +4,7 @@
  * 
  * @package    SimpleBlog
  * @subpackage Core
- * @version    0.9.7
+ * @version    0.9.9
  * 
  * @router
  *  GET  /             - Главная страница блога
@@ -39,11 +39,36 @@ if (!isset($_SESSION['created'])) {
     session_regenerate_id(true);
     $_SESSION['created'] = time();
 }
+
+if (!file_exists('config/config.php')) {
+	header('Location: install.php');
+	die;
+}
+if (file_exists('install.php')) {
+	echo '<p style="color: red; text-align: center;">'.Lang::get('delete_install', 'core').'</p>';
+	die;
+}
+$config = require 'config/config.php';
 require 'class/ErrorHandler.php';;
 ErrorHandler::init($config['debug'] ?? false);
 require 'class/Lang.php';
 Lang::init();
-
+if ($config['pretty_urls'] ?? false) {
+    // Парсим URL для определения запрашиваемой страницы
+    $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $requestUri = trim($requestUri, '/');
+    
+    // Обработка различных маршрутов
+    if (preg_match('#^news/([a-z0-9-]+)-([0-9]+)$#', $requestUri, $matches)) {
+        $_GET['id'] = $matches[2]; // Берем только ID из slug
+    } elseif (preg_match('#^tag/([^/]+)$#', $requestUri, $matches)) {
+        $_GET['tag'] = urldecode($matches[1]);
+    } elseif (preg_match('#^search/([^/]+)$#', $requestUri, $matches)) {
+        $_GET['search'] = urldecode($matches[1]);
+    } elseif (preg_match('#^user/(\d+)$#', $requestUri, $matches)) {
+        $_GET['user'] = $matches[1];
+    }
+}
 if (isset($_GET['lang'])) {
 	$lang = in_array($_GET['lang'], ['ru', 'en']) ? $_GET['lang'] : 'ru';
     Lang::setLanguage($lang);
@@ -58,21 +83,12 @@ if (!empty($_SESSION['lang'])) {
 if (!ob_start("ob_gzhandler")) {
     ob_start();
 }
-if (!file_exists('config/config.php')) {
-	header('Location: install.php');
-	die;
-}
-if (file_exists('install.php')) {
-	echo '<p style="color: red; text-align: center;">'.Lang::get('delete_install', 'core').'</p>';
-	die;
-}
-$config = require 'config/config.php';
-    $host = $config['host'];
-    $database = $config['database'];
-    $db_user = $config['db_user'];
-    $db_pass = $config['db_pass'];
-    $pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8", $db_user, $db_pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$host = $config['host'];
+$database = $config['database'];
+$db_user = $config['db_user'];
+$db_pass = $config['db_pass'];
+$pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8", $db_user, $db_pass);
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 $templ = $config['templ'];
 $dbPrefix = $config['db_prefix'];
@@ -177,7 +193,7 @@ if (empty($_SESSION['csrf_token'])) {
 				$pagination['per_page'],
 				$pagination['offset']
 			);
-//var_dump($commentsList);
+
 			$paginationHtml = Pagination::render(
 				$pagination, 
 				"?id=$newsId", 
@@ -204,18 +220,15 @@ if (empty($_SESSION['csrf_token'])) {
 				public function __construct($html) { $this->html = $html; }
 				public function __toString() { return $this->html; }
 			});
-			//var_dump($commonVars);
-		/*$output = $template->render('news.tpl');
-        Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
-        echo $output;*/
-		$output = $template->render('header.tpl');
-		$output .= $template->renderNewsItem($newsItem, 'news.tpl');
-		$output .= $template->processComments($commentsList, 'comment.tpl');
-		$output .= $template->render('add_comment.tpl');
-		//$output .= $template->render('footer.tpl');
-		$output .= $template->renderFooter($footerData);
-		Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
-        echo $output;
+			
+			$output = $template->render('header.tpl');
+			$output .= $template->renderNewsItem($newsItem, 'news.tpl');
+			$output .= $template->processComments($commentsList, 'comment.tpl');
+			$output .= $template->render('add_comment.tpl');
+			//$output .= $template->render('footer.tpl');
+			$output .= $template->renderFooter($footerData);
+			Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
+			echo $output;
 		} elseif (isset($_GET['tags'])) {
 			// Обработка тегов
 			$tag = htmlspecialchars($_GET['tags']);
@@ -251,19 +264,20 @@ if (empty($_SESSION['csrf_token'])) {
 						$_SESSION['user'] ?? null  
 					);
 					$item['content'] = $parse->truncateHTML($item['content']);
+					$item['news_url'] = $template->generateUrl(['id' => $item['id']]);
 				}
 			}
 			unset($item);
-			$paginationHtml = Pagination::render($pagination, "?tags=" . urlencode($tag) . "&page=");
+			$paginationHtml = Pagination::render($pagination, $config['pretty_urls'] ? '/tags/' . urlencode($tag) : '?tags=' . urlencode($tag) . "&page=");
 			$lastThreeNews = $news->getLastThreeNews();
 			
 			$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
-		$pageVars = [
-			'pageTitle' => $pageTitle,
-			'metaDescription' => $metaDescription,
-			'metaKeywords' => $metaKeywords,
-			'votes' => $votes,
-			];
+			$pageVars = [
+				'pageTitle' => $pageTitle,
+				'metaDescription' => $metaDescription,
+				'metaKeywords' => $metaKeywords,
+				'votes' => $votes,
+				];
 			if (empty($newsByTags)) {
 				$template->assign('no_news_message', 'Нет новостей');
 			}
@@ -306,7 +320,8 @@ if (empty($_SESSION['csrf_token'])) {
 				$pagination['offset']
 			);
 
-			$paginationHtml = Pagination::render($pagination, "/");
+			$baseUrl = $config['pretty_urls'] ? '/' : '/index.php';
+			$paginationHtml = Pagination::render($pagination, $baseUrl);
 			foreach ($allNews as &$item) {
 				if (isset($item['content'])) {
 					$item['content'] = $parse->userblocks(
@@ -315,6 +330,7 @@ if (empty($_SESSION['csrf_token'])) {
 						$_SESSION['user'] ?? null  
 					);
 					$item['content'] = $parse->truncateHTML($item['content']);
+					$item['news_url'] = $template->generateUrl(['id' => $item['id']]);
 				}
 				
 			}
@@ -322,12 +338,12 @@ if (empty($_SESSION['csrf_token'])) {
 			$lastThreeNews = $news->getLastThreeNews();
 			
 			$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
-		$pageVars = [
-			'pageTitle' => $pageTitle,
-			'metaDescription' => $config['metaDescription'],
-			'metaKeywords' => $config['metaKeywords'],
-			'news' => $allNews,
-			'votes' => $votes,
+			$pageVars = [
+				'pageTitle' => $pageTitle,
+				'metaDescription' => $config['metaDescription'],
+				'metaKeywords' => $config['metaKeywords'],
+				'news' => $allNews,
+				'votes' => $votes,
 			];
 			$footerProvider = new FooterDataProvider($news, $user, $template, $config);
 
@@ -340,292 +356,212 @@ if (empty($_SESSION['csrf_token'])) {
 				public function __toString() { return $this->html; }
 			});
 			
-		$output = $template->render('header.tpl');
-		$output .= $template->renderNewsList($allNews, 'news_item.tpl');
-		$output .= $template->renderFooter($footerData);
-		Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
-        echo $output;
+			$output = $template->render('header.tpl');
+			$output .= $template->renderNewsList($allNews, 'news_item.tpl');
+			$output .= $template->renderFooter($footerData);
+			Cache::set($cacheKey, $output, $config['cache_ttl'] ?? 3600);
+			echo $output;
 		}
 		
     } else {
-        switch ($_GET['action']) {
+		switch ($_GET['action']) {
 			case 'verify_email':
-                if (isset($_GET['token'])) {
-                    if ($user->verifyEmail($_GET['token'])) {
-                        $_SESSION['flash'] = Lang::get('email_verified', 'core');
-                    } else {
-                        $_SESSION['flash'] = Lang::get('invalid_token', 'core');
-                    }
-                    header('Location: /');
-                    exit;
-                }
-                break;
-                
-            case 'forgot_password':
-                $pageTitle = Lang::get('forgot_password', 'core') . ' | ' . $baseTitle;
-                $commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
-                $pageVars = [
-                    'pageTitle' => $pageTitle,
-                ];
-                $footerProvider = new FooterDataProvider($news, $user, $template, $config);
-
-			$footerData = $footerProvider->prepareFooterData();
-
-			$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
-                $output = $template->render('header.tpl');
-				$output .= $template->render('forgot_password.tpl');
-				$output .= $template->renderFooter($footerData);
-				echo $output;
-                break;
-            case 'profile':
-				if (!isset($_SESSION['user']['id'])) {
-					$_SESSION['flash'] = Lang::get('auth_required', 'core');
-					header('Location: /?action=login');
-					exit;
-				}
-			
-				// Обработка привязки соцсетей
-				if (isset($_GET['link_social'])) {
-					$socialType = $_GET['link_social'];
-					$core->handleSocialAuth($socialType);
-					$_SESSION['flash'] = Lang::get('social_link_started', 'core') . ': ' . $socialType;
-					exit;
-				}
-
-				if (isset($_GET['unlink_social'])) {
-					if ($user->removeSocialLink($_SESSION['user']['id'], $_GET['unlink_social'])) {
-						$_SESSION['flash'] = Lang::get('social_unlinked', 'core');
+				if (isset($_GET['token'])) {
+					if ($user->verifyEmail($_GET['token'])) {
+						$_SESSION['flash'] = Lang::get('email_verified', 'core');
 					} else {
-						$_SESSION['flash'] = Lang::get('social_unlink_error', 'core');
+						$_SESSION['flash'] = Lang::get('invalid_token', 'core');
 					}
-					header('Location: /?action=profile');
+					header('Location: /');
 					exit;
 				}
-
-				// Получаем данные для профиля
-				$userData = $user->getUserById($_SESSION['user']['id']);
-				$userNews = $news->getNewsByAuthor($_SESSION['user']['id'], 5);
-				$userComments = $comments->getCommentsByUser($_SESSION['user']['id'], 5);
-				$socialLinks = $user->getSocialLinks($_SESSION['user']['id']);
-				// Если avatar не установлен, задаем значение по умолчанию
-				if (!isset($userData['avatar']) || empty($userData['avatar'])) {
-					$userData['avatar'] = 'images/avatar_g.png';
-				}
-
-				// Формируем данные для шаблона
-				$pageTitle = Lang::get('profile', 'core') . ' | ' . $baseTitle;
-				$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
-				$pageVars = [
-					'pageTitle' => $pageTitle,
-					'userData' => $userData,
-					'userNews' => $userNews,
-					'userComments' => $userComments,
-					'socialLinks' => $socialLinks,
-					'supportedSocials' => ['telegram', 'github', 'google'] // Поддерживаемые соцсети
-				];
-
-				$footerProvider = new FooterDataProvider($news, $user, $template, $config);
-				// Получаем данные для футера
-				$footerData = $footerProvider->prepareFooterData();
-				$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
-				$output = $template->render('header.tpl');
-				$output .= $template->render('profile.tpl');
-				$output .= $template->renderFooter($footerData);
-				echo $output;
 				break;
-			case 'oauth_callback':
-				$this->handleOAuthCallback();
-				exit;
-            case 'request_reset':
-                if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
-                    if ($user->sendPasswordReset($_POST['email'])) {
-                        $_SESSION['flash'] = Lang::get('reset_email_sent', 'core');
-                    } else {
-                        $_SESSION['flash'] = Lang::get('reset_email_error', 'core');
-                    }
-                    header('Location: /');
-                    exit;
-                }
-                break;
-                
-            case 'reset_password':
-                if (isset($_GET['token'])) {
-                    $pageTitle = Lang::get('reset_password', 'core') . ' | ' . $baseTitle;
-                    $commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
-                    $pageVars = [
-                        'pageTitle' => $pageTitle,
-                        'token' => $_GET['token']
-                    ];
-                    $footerProvider = new FooterDataProvider($news, $user, $template, $config);
-
-			// Получаем данные для футера
-			$footerData = $footerProvider->prepareFooterData();
-
-			$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
-                    $output = $template->render('header.tpl');
-					$output .= $template->render('reset_password.tpl');
-					$output .= $template->renderFooter($footerData);
-					echo $output;
-                    break;
-                }
-                
-                if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['token'], $_POST['password'])) {
-                    if ($user->resetPassword($_POST['token'], $_POST['password'])) {
-                        $_SESSION['flash'] = Lang::get('password_reset_success', 'core');
-                    } else {
-                        $_SESSION['flash'] = Lang::get('password_reset_error', 'core');
-                    }
-                    header('Location: /');
-                    exit;
-                }
-                break;
-			case 'search':
-				if (!empty($searchQuery)) {
 				
-					// Обработка поиска
-					$pageTitle = Lang::get('search_results', 'core')  . htmlspecialchars($searchQuery) . ' | ' . $baseTitle;
-					$metaDescription = $news->generateMetaDescription('', 'search', [
-						'query' => $searchQuery
-					]);
-					
-					$metaKeywords = $news->generateMetaKeywords('', 'search', [
-						'query' => $searchQuery
-					]);
-					$totalResults = $news->countSearchResults($searchQuery);
-					$page = (int)($_GET['page'] ?? 1);
-					$pagination = Pagination::calculate(
-						$totalResults, 
-						Pagination::TYPE_NEWS, 
-						$page, 
-						$config
-					);
-					$searchResults = $news->searchNews($searchQuery, $pagination['per_page'], $pagination['offset']);
-					foreach ($searchResults as &$item) {
-						if (isset($item['content'])) {
-							$item['content'] = $parse->userblocks(
-								$item['content'],
-								$config,
-								$_SESSION['user'] ?? null  // Передаем данные пользователя
-							);
-							$item['content'] = $parse->truncateHTML($item['content']);
-						}
-					}
-					unset($item);
-					$paginationHtml = Pagination::render(
-    $pagination, 
-    "?action=search&search=" . urlencode($searchQuery)
-);
-					$lastThreeNews = $news->getLastThreeNews();
-					
-					$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
+			case 'forgot_password':
+			case 'request_reset':
+			case 'reset_password':
+			case 'search':
+			case 'login':
+			case 'register':
+			case 'contact':
+			case 'profile':
+				// Общие переменные для всех страниц
+				$action = $_GET['action'];
+				$pageTitle = Lang::get($action, 'core') . ' | ' . $baseTitle;
+				
+				// Генерация мета-тегов в зависимости от действия
+				$metaDescription = $news->generateMetaDescription('', $action, [
+					'query' => $searchQuery ?? '',
+					'tag' => $tag ?? '',
+					'title' => $newsItem['title'] ?? ''
+				]);
+				
+				$metaKeywords = $news->generateMetaKeywords('', $action, [
+					'query' => $searchQuery ?? '',
+					'tag' => $tag ?? '',
+					'title' => $newsItem['title'] ?? ''
+				]);
+				
+				$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
 					'pageTitle' => $pageTitle,
 					'metaDescription' => $metaDescription,
 					'metaKeywords' => $metaKeywords,
-					];
-					$footerProvider = new FooterDataProvider($news, $user, $template, $config);
+					'csrf_token' => $_SESSION['csrf_token']
+				];
+				
+				$footerProvider = new FooterDataProvider($news, $user, $template, $config);
+				$footerData = $footerProvider->prepareFooterData();
+				
+				// Специфические данные для каждого действия
+				switch ($action) {
+					case 'forgot_password':
+						// Никаких дополнительных данных не нужно
+						break;
+						
+					case 'request_reset':
+						if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
+							if ($user->sendPasswordReset($_POST['email'])) {
+								$_SESSION['flash'] = Lang::get('reset_email_sent', 'core');
+							} else {
+								$_SESSION['flash'] = Lang::get('reset_email_error', 'core');
+							}
+							header('Location: /');
+							exit;
+						}
+						break;
+						
+					case 'reset_password':
+						if (isset($_GET['token'])) {
+							$pageVars['token'] = $_GET['token'];
+						}
+						
+						if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['token'], $_POST['password'])) {
+							if ($user->resetPassword($_POST['token'], $_POST['password'])) {
+								$_SESSION['flash'] = Lang::get('password_reset_success', 'core');
+							} else {
+								$_SESSION['flash'] = Lang::get('password_reset_error', 'core');
+							}
+							header('Location: /');
+							exit;
+						}
+						break;
+						
+					case 'search':
+						if (!empty($searchQuery)) {
+							$totalResults = $news->countSearchResults($searchQuery);
+							$page = (int)($_GET['page'] ?? 1);
+							$pagination = Pagination::calculate(
+								$totalResults, 
+								Pagination::TYPE_NEWS, 
+								$page, 
+								$config
+							);
+							$searchResults = $news->searchNews($searchQuery, $pagination['per_page'], $pagination['offset']);
+							
+							foreach ($searchResults as &$item) {
+								if (isset($item['content'])) {
+									$item['content'] = $parse->userblocks(
+										$item['content'],
+										$config,
+										$_SESSION['user'] ?? null
+									);
+									$item['content'] = $parse->truncateHTML($item['content']);
+								}
+							}
+							unset($item);
+							
+							$paginationHtml = Pagination::render(
+								$pagination, 
+								"?action=search&search=" . urlencode($searchQuery)
+							);
+							
+							$pageVars['searchResults'] = $searchResults;
+							$pageVars['searchQuery'] = $searchQuery;
+							$pageVars['pagination'] = new class($paginationHtml) {
+								private $html;
+								public function __construct($html) { $this->html = $html; }
+								public function __toString() { return $this->html; }
+							};
+						}
+						break;
+						
+					case 'profile':
+						if (!isset($_SESSION['user']['id'])) {
+							$_SESSION['flash'] = Lang::get('auth_required', 'core');
+							header('Location: /?action=login');
+							exit;
+						}
 
-			// Получаем данные для футера
-			$footerData = $footerProvider->prepareFooterData();
+						// Обработка привязки соцсетей
+						if (isset($_GET['link_social'])) {
+							$socialType = $_GET['link_social'];
+							$core->handleSocialAuth($socialType);
+							$_SESSION['flash'] = Lang::get('social_link_started', 'core') . ': ' . $socialType;
+							exit;
+						}
 
-			$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
-					$template->assign('pagination', new class($paginationHtml) {
-						private $html;
-						public function __construct($html) { $this->html = $html; }
-						public function __toString() { return $this->html; }
-					});
-					$output = $template->render('header.tpl');
-					$output .= $template->renderNewsList($searchResults, 'search.tpl');
-					$output .= $template->renderFooter($footerData);
-					echo $output;
+						if (isset($_GET['unlink_social'])) {
+							if ($user->removeSocialLink($_SESSION['user']['id'], $_GET['unlink_social'])) {
+								$_SESSION['flash'] = Lang::get('social_unlinked', 'core');
+							} else {
+								$_SESSION['flash'] = Lang::get('social_unlink_error', 'core');
+							}
+							header('Location: /?action=profile');
+							exit;
+						}
+
+						// Получаем данные для профиля
+						$userData = $user->getUserById($_SESSION['user']['id']);
+						$userNews = $news->getNewsByAuthor($_SESSION['user']['id'], 5);
+						$userComments = $comments->getCommentsByUser($_SESSION['user']['id'], 5);
+						$socialLinks = $user->getSocialLinks($_SESSION['user']['id']);
+						
+						if (!isset($userData['avatar']) || empty($userData['avatar'])) {
+							$userData['avatar'] = 'images/avatar_g.png';
+						}
+
+						$pageVars['userData'] = $userData;
+						$pageVars['userNews'] = $userNews;
+						$pageVars['userComments'] = $userComments;
+						$pageVars['socialLinks'] = $socialLinks;
+						$pageVars['supportedSocials'] = ['telegram', 'github', 'google'];
+						break;
 				}
+				
+				// Общий рендеринг для всех страниц
+				$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
+				
+				$output = $template->render('header.tpl');
+				$output .= $template->render($action . '.tpl');
+				$output .= $template->renderFooter($footerData);
+				echo $output;
 				break;
-			case 'login':
-				$pageTitle = Lang::get('auth', 'core') . ' | ' . $baseTitle;
-				$metaDescription = $news->generateMetaDescription('', 'login');
-				$metaKeywords = $news->generateMetaKeywords('', 'login');
-				$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
-				$pageVars = [
-				'pageTitle' => $pageTitle,
-				'metaDescription' => $metaDescription,
-				'metaKeywords' => $metaKeywords,
-				];
-				$footerProvider = new FooterDataProvider($news, $user, $template, $config);
-
-			// Получаем данные для футера
-			$footerData = $footerProvider->prepareFooterData();
-
-			$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
-				$output = $template->render('header.tpl');
-				$output .= $template->render('login.tpl');
-				$output .= $template->renderFooter($footerData);
-				echo $output;
-                break;
-            case 'register':
-				$pageTitle = Lang::get('register', 'core') . ' | ' . $baseTitle;
-				$metaDescription = $news->generateMetaDescription('', 'register');
-				$metaKeywords = $news->generateMetaKeywords('', 'register');
-                $commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
-				$pageVars = [
-				'pageTitle' => $pageTitle,
-				'metaDescription' => $metaDescription,
-				'metaKeywords' => $metaKeywords,
-				];
-				$footerProvider = new FooterDataProvider($news, $user, $template, $config);
-
-			// Получаем данные для футера
-			$footerData = $footerProvider->prepareFooterData();
-
-			$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
-				$output = $template->render('header.tpl');
-				$output .= $template->render('register.tpl');
-				$output .= $template->renderFooter($footerData);
-				echo $output;
-                break;
-            case 'contact':
-				$pageTitle = Lang::get('contact', 'core') . ' | ' . $baseTitle;
-				$metaDescription = $news->generateMetaDescription('', 'contact');
-				$metaKeywords = $news->generateMetaKeywords('', 'contact');
-                $commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
-				$pageVars = [
-				'pageTitle' => $pageTitle,
-				'metaDescription' => $metaDescription,
-				'metaKeywords' => $metaKeywords,
-				];
-				$footerProvider = new FooterDataProvider($news, $user, $template, $config);
-
-			// Получаем данные для футера
-			$footerData = $footerProvider->prepareFooterData();
-
-			$template->assignMultiple(array_merge($commonVars, $pageVars, $footerData));
-				$output = $template->render('header.tpl');
-				$output .= $template->render('contact.tpl');
-				$output .= $template->renderFooter($footerData);
-				echo $output;
-                break;
-            default:
-                // Обработка 404 ошибки
-                header($_SERVER["SERVER_PROTOCOL"] . Lang::get('error404', 'core'));
+				
+			case 'oauth_callback':
+				$this->handleOAuthCallback();
+				exit;
+				
+			default:
+				// Обработка 404 ошибки
+				header($_SERVER["SERVER_PROTOCOL"] . Lang::get('error404', 'core'));
 				$pageTitle = Lang::get('error404', 'core') . ' | ' . $baseTitle;
 				$metaDescription = $news->generateMetaDescription('', 'error404');
 				$metaKeywords = $news->generateMetaKeywords('', 'error404');
 				$commonVars = $template->getCommonTemplateVars($config, $news, $_SESSION['user'] ?? null);
 				$pageVars = [
-				'pageTitle' => $pageTitle,
-				'metaDescription' => $metaDescription,
-				'metaKeywords' => $metaKeywords,
+					'pageTitle' => $pageTitle,
+					'metaDescription' => $metaDescription,
+					'metaKeywords' => $metaKeywords,
 				];
 				$footerProvider = new FooterDataProvider($news, $user, $template, $config);
-
-				// Получаем данные для футера
 				$footerData = $footerProvider->prepareFooterData();
 				$template->assignMultiple(array_merge($commonVars, $pageVars));
-                $output = $template->render('404.tpl');
+				$output = $template->render('404.tpl');
 				echo $output;
-                exit;
-        }
+				exit;
+		}
     }
 
 $finish = microtime(1);
-
 //echo 'generation time: ' . round($finish - $start, 5) . ' сек';

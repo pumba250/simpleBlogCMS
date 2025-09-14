@@ -9,7 +9,7 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Views
- * @version    0.9.8
+ * @version    0.9.9
  * 
  * @method void   __construct()                                                Инициализирует шаблонизатор
  * @method void   assign(string $key, mixed $value)                            Назначает переменную шаблона
@@ -538,6 +538,26 @@ class Template
             return 'ошибка даты';
         }
     }
+	
+	public function generateUrl($params = [], $absolute = false)
+	{
+		global $config;
+		
+		if ($config['pretty_urls'] ?? false) {
+			if (isset($params['id'])) {
+				return ($absolute ? $config['base_url'] : '') . '/news/' . $params['id'];
+			} elseif (isset($params['tags'])) {
+				return ($absolute ? $config['base_url'] : '') . '/tags/' . urlencode($params['tag']);
+			} elseif (isset($params['search'])) {
+				return ($absolute ? $config['base_url'] : '') . '/search/' . urlencode($params['search']);
+			} elseif (isset($params['user'])) {
+				return ($absolute ? $config['base_url'] : '') . '/user/' . $params['user'];
+			}
+		}
+		
+		// Стандартные URL
+		return ($absolute ? $config['base_url'] : '') . '?' . http_build_query($params);
+	}
 
     public function renderFooter(array $footerData)
     {

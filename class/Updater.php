@@ -5,7 +5,7 @@
  * @package    SimpleBlog
  * @subpackage Services
  * @category   Maintenance
- * @version    0.9.8
+ * @version    0.9.9
  * 
  * @method void   __construct(PDO $pdo, array $config)                         Инициализирует систему обновлений
  * @method bool|array checkForUpdates()                                        Проверяет наличие обновлений
@@ -224,107 +224,197 @@ class Updater
     /**
      * Выполняет обновление
      */
-    public function performUpdate()
-    {
-        try {
-            echo "<div style='font-family: monospace; white-space: pre;'>"; // Для лучшего форматирования
-            
-            echo "=== Начало процесса обновления ===\n";
-            echo date('Y-m-d H:i:s') . " - Инициализация...\n";
-            
-            if (empty($_SESSION['available_update'])) {
-                echo date('Y-m-d H:i:s') . " - Проверка доступных обновлений...\n";
-                $this->checkForUpdates();
+public function performUpdate()
+{
+    // Отключаем буферизацию вывода
+    if (ob_get_level()) {
+        ob_end_clean();
+    }
+    ob_implicit_flush(true);
+    
+    // Устанавливаем заголовки для потокового вывода
+    header('Content-Type: text/html; charset=utf-8');
+    header('Cache-Control: no-cache');
+    
+    try {
+        echo "<!DOCTYPE html><html><head><meta charset='UTF-8'>";
+        echo "<style>
+            #progressContainer {
+                width: 100%; 
+                background: #eee; 
+                border: 1px solid #ccc; 
+                margin: 10px 0;
+                border-radius: 5px;
             }
+            #updateProgressBar {
+                height: 30px; 
+                background: #4CAF50; 
+                width: 0%; 
+                text-align: center; 
+                color: white; 
+                line-height: 30px; 
+                font-weight: bold;
+                border-radius: 5px;
+                transition: width 0.3s ease;
+            }
+            .error { background: #f44336 !important; }
+            .warning { background: #ff9800 !important; }
+            .log-container {
+                font-family: monospace; 
+                white-space: pre;
+                background: #f5f5f5;
+                padding: 15px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                max-height: 400px;
+                overflow-y: auto;
+            }
+        </style>";
+        echo "</head><body>";
+        
+        echo "<h2>Процесс обновления системы</h2>";
+        
+        // Прогресс-бар
+        echo '<div id="progressContainer">
+                <div id="updateProgressBar">0% - Начало</div>
+              </div>';
+        
+        // Контейнер для логов
+        echo '<div class="log-container" id="logContainer">';
+        echo "=== Начало процесса обновления ===\n";
+        echo date('Y-m-d H:i:s') . " - Инициализация...\n";
+        echo '</div>';
+        
+        // Функция для обновления прогресса и логов
+        function updateProgress($percent, $message) {
+            echo '<script>
+                document.getElementById("updateProgressBar").style.width = "' . $percent . '%";
+                document.getElementById("updateProgressBar").innerHTML = "' . $percent . '% - ' . addslashes($message) . '";
+            </script>';
             
-            // Получаем информацию об обновлении
-            echo date('Y-m-d H:i:s') . " - Получение информации об обновлении...\n";
-            $updateInfo = $this->getUpdateInfo();
+            echo '<script>
+                document.getElementById("logContainer").innerHTML += "\n' . date('Y-m-d H:i:s') . ' - ' . addslashes($message) . '";
+                document.getElementById("logContainer").scrollTop = document.getElementById("logContainer").scrollHeight;
+            </script>';
             
-            if (!$updateInfo || !isset($updateInfo['download_url'])) {
+            ob_flush();
+            flush();
+            usleep(200000); // Небольшая задержка
+        }
+        
+        updateProgress(5, "Инициализация");
+        
+        if (empty($_SESSION['available_update'])) {
+            updateProgress(10, "Проверка доступных обновлений");
+            $this->checkForUpdates();
+        }
+        
+        // Получаем информацию об обновлении
+        updateProgress(15, "Получение информации об обновлении");
+        $updateInfo = $this->getUpdateInfo();
+        
+        if (!$updateInfo || !isset($updateInfo['download_url'])) {
+            throw new Exception(
+                "Нет корректной информации об обновлении. Проверьте файл: " . $this->lastCheckFile
+            );
+        }
+        
+        updateProgress(20, "Доступно обновление с версии {$updateInfo['current_version']} на версию {$updateInfo['new_version']}");
+        
+        // Создаем резервную копию
+        updateProgress(25, "Создание резервной копии системы");
+        $backupFile = $this->createBackup();
+        updateProgress(30, "Резервная копия создана: " . basename($backupFile));
+        
+        // Загружаем обновление
+        updateProgress(40, "Загрузка обновления");
+        $tempFile = $this->downloadUpdate($updateInfo['download_url']);
+        $fileSize = round(filesize($tempFile)/1024);
+        updateProgress(50, "Обновление загружено ({$fileSize} KB)");
+        
+        // Проверка хеша
+        if (!empty($updateInfo['sha256'])) {
+            updateProgress(55, "Проверка целостности файла");
+            $fileHash = hash_file('sha256', $tempFile);
+            if ($fileHash !== $updateInfo['sha256']) {
                 throw new Exception(
-                    "Нет корректной информации об обновлении. Проверьте файл: " . $this->lastCheckFile
+                    "Хеш не совпадает! Ожидалось: {$updateInfo['sha256']}, получено: $fileHash"
                 );
             }
-            
-            echo date('Y-m-d H:i:s') 
-                . " - Доступно обновление с версии {$updateInfo['current_version']} "
-                . "на версию {$updateInfo['new_version']}\n";
-            
-            // Создаем резервную копию
-            echo date('Y-m-d H:i:s') . " - Создание резервной копии системы...\n";
-            $backupFile = $this->createBackup();
-            echo date('Y-m-d H:i:s') . " - Резервная копия успешно создана: " . basename($backupFile) . "\n";
-            
-            // Загружаем обновление
-            echo date('Y-m-d H:i:s') . " - Загрузка обновления...\n";
-            $tempFile = $this->downloadUpdate($updateInfo['download_url']);
-            echo date('Y-m-d H:i:s') . " - Обновление успешно загружено (" 
-                . round(filesize($tempFile)/1024) . " KB)\n";
-            
-            // Проверка хеша
-            if (!empty($updateInfo['sha256'])) {
-                echo date('Y-m-d H:i:s') . " - Проверка целостности файла...\n";
-                $fileHash = hash_file('sha256', $tempFile);
-                if ($fileHash !== $updateInfo['sha256']) {
-                    throw new Exception(
-                        "Хеш не совпадает! Ожидалось: {$updateInfo['sha256']}, получено: $fileHash"
-                    );
-                }
-                echo date('Y-m-d H:i:s') . " - Проверка целостности пройдена успешно\n";
-            }
-            
-            // Применяем обновление
-            echo date('Y-m-d H:i:s') . " - Применение обновления...\n";
-            $this->applyUpdate($tempFile);
-            echo date('Y-m-d H:i:s') . " - Файлы обновления успешно применены\n";
-            
-            // Обновляем версию в конфиге
-            echo date('Y-m-d H:i:s') . " - Обновление версии в конфигурации...\n";
-            $this->updateConfigVersion($updateInfo['new_version']);
-            echo date('Y-m-d H:i:s') . " - Версия в конфигурации обновлена на {$updateInfo['new_version']}\n";
-            
-            // Очистка
-            if (file_exists($tempFile)) {
-                unlink($tempFile);
-                echo date('Y-m-d H:i:s') . " - Временный файл обновления удален\n";
-            }
-            if (file_exists($this->lastCheckFile)) {
-                unlink($this->lastCheckFile);
-                echo date('Y-m-d H:i:s') . " - Кэш проверки обновлений очищен\n";
-            }
-            
-            echo date('Y-m-d H:i:s') . " - Обновление успешно завершено!\n";
-            echo "=== Конец процесса обновления ===\n";
-            echo "</div>";
-            
-            // Очищаем буфер вывода, чтобы сообщения отображались сразу
-            while (ob_get_level()) {
-                ob_end_flush();
-            }
-            flush();
-            sendStatistics('update', $updateInfo['new_version']);
-            return true;
-        } catch (Exception $e) {
-            echo date('Y-m-d H:i:s') . " - <strong>ОШИБКА:</strong> " . $e->getMessage() . "\n";
-            
-            // Восстановление из резервной копии
-            if (!empty($backupFile) && file_exists($backupFile)) {
-                echo date('Y-m-d H:i:s') . " - Попытка восстановления из резервной копии...\n";
-                try {
-                    $this->restoreBackup($backupFile);
-                    echo date('Y-m-d H:i:s') . " - Восстановление из резервной копии успешно завершено\n";
-                } catch (Exception $restoreEx) {
-                    echo date('Y-m-d H:i:s') . " - <strong>ОШИБКА ВОССТАНОВЛЕНИЯ:</strong> " 
-                        . $restoreEx->getMessage() . "\n";
-                }
-            }
-            
-            echo "</div>";
-            return false;
+            updateProgress(60, "Проверка целостности пройдена");
         }
+        
+        // Применяем обновление
+        updateProgress(65, "Применение обновления");
+        $this->applyUpdate($tempFile);
+        updateProgress(80, "Файлы обновления применены");
+        
+        // Обновляем версию в конфиге
+        updateProgress(85, "Обновление версии в конфигурации");
+        $this->updateConfigVersion($updateInfo['new_version']);
+        updateProgress(90, "Версия обновлена на {$updateInfo['new_version']}");
+        
+        // Очистка
+        if (file_exists($tempFile)) {
+            unlink($tempFile);
+            updateProgress(92, "Временный файл удален");
+        }
+        if (file_exists($this->lastCheckFile)) {
+            unlink($this->lastCheckFile);
+            updateProgress(95, "Кэш проверки очищен");
+        }
+        
+        // Завершаем прогресс
+        updateProgress(100, "Обновление завершено!");
+        
+        echo '<script>document.getElementById("updateProgressBar").style.background = "#2196F3";</script>';
+        
+        // Небольшая задержка перед отправкой статистики
+        sleep(2);
+        sendStatistics('update', $updateInfo['new_version']);
+        
+        echo "<script>document.getElementById('logContainer').innerHTML += '\n" . date('Y-m-d H:i:s') . " - Обновление успешно завершено!';</script>";
+        echo "<script>document.getElementById('logContainer').scrollTop = document.getElementById('logContainer').scrollHeight;</script>";
+        
+        echo "</body></html>";
+        
+        return true;
+        
+    } catch (Exception $e) {
+        // Устанавливаем прогресс в ошибку
+        echo '<script>
+            document.getElementById("updateProgressBar").className = "error";
+            document.getElementById("updateProgressBar").innerHTML = "ОШИБКА";
+        </script>';
+        
+        echo '<script>document.getElementById("logContainer").innerHTML += "\n<strong>ОШИБКА:</strong> ' . addslashes($e->getMessage()) . '";</script>';
+        ob_flush();
+        flush();
+        
+        // Восстановление из резервной копии
+        if (!empty($backupFile) && file_exists($backupFile)) {
+            echo '<script>document.getElementById("logContainer").innerHTML += "\n' . date('Y-m-d H:i:s') . ' - Попытка восстановления из резервной копии...";</script>';
+            ob_flush();
+            flush();
+            
+            try {
+                $this->restoreBackup($backupFile);
+                echo '<script>
+                    document.getElementById("updateProgressBar").className = "warning";
+                    document.getElementById("updateProgressBar").innerHTML = "Восстановлено из резервной копии";
+                    document.getElementById("logContainer").innerHTML += "\n' . date('Y-m-d H:i:s') . ' - Восстановление успешно завершено";
+                </script>';
+                
+            } catch (Exception $restoreEx) {
+                echo '<script>document.getElementById("logContainer").innerHTML += "\n<strong>ОШИБКА ВОССТАНОВЛЕНИЯ:</strong> ' . addslashes($restoreEx->getMessage()) . '";</script>';
+            }
+        }
+        
+        ob_flush();
+        flush();
+        return false;
     }
-    
+}    
     /**
      * Загружает обновление во временный файл и возвращает путь к нему
      */
