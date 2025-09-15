@@ -111,13 +111,11 @@ jobs:
   auto-fix:
     name: Auto Fix Code Style
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
 
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
@@ -129,26 +127,36 @@ jobs:
       run: |
         composer require --dev squizlabs/php_codesniffer
 
-    - name: Check and fix code style
+    - name: Install jq for JSON parsing
+      run: sudo apt-get install -y jq
+
+    - name: Auto-fix code style
       run: |
-        # Проверяем есть ли нарушения
-        VIOLATIONS=$(./vendor/bin/phpcs class/ --standard=PSR12 --report=json | jq '.totals.errors + .totals.warnings')
+        echo "Running PHPCBF to fix automatic violations..."
+        ./vendor/bin/phpcbf class/ --standard=PSR12 --report=summary || true
         
-        if [ "$VIOLATIONS" -gt 0 ]; then
-          echo "Found $VIOLATIONS violations, attempting to fix..."
-          ./vendor/bin/phpcbf class/ --standard=PSR12
-          
-          # Проверяем были ли изменения
-          if git diff --exit-code; then
-            echo "No changes were made by PHPCBF"
-          else
-            echo "Changes were made, committing and pushing..."
-            git config user.name 'GitHub Actions'
-            git config user.email 'actions@github.com'
-            git add class/
-            git commit -m "style: автоматическое исправление стиля кода [skip ci]"
-            git push
-          fi
+        # Проверяем остаточные нарушения с нашим кастомным config
+        echo "Checking remaining violations with custom rules..."
+        REMAINING_VIOLATIONS=$(./vendor/bin/phpcs class/ --standard=phpcs.xml --report=json | jq '.totals.errors + .totals.warnings')
+        echo "Remaining violations after auto-fix: $REMAINING_VIOLATIONS"
+        
+        if [ "$REMAINING_VIOLATIONS" -gt 0 ]; then
+          echo "There are $REMAINING_VIOLATIONS violations that cannot be fixed automatically"
+          echo "These violations require manual intervention:"
+          ./vendor/bin/phpcs class/ --standard=phpcs.xml --report=source
+        fi
+
+    - name: Final code style check
+      run: |
+        echo "Final code style check with custom rules:"
+        ./vendor/bin/phpcs class/ --standard=phpcs.xml --report=summary --warning-severity=0
+        
+        # Проверяем только ошибки (игнорируем предупреждения)
+        ERROR_COUNT=$(./vendor/bin/phpcs class/ --standard=phpcs.xml --report=json --warning-severity=0 | jq '.totals.errors')
+        
+        if [ "$ERROR_COUNT" -gt 0 ]; then
+          echo "There are $ERROR_COUNT errors that need to be fixed manually"
+          exit 1
         else
-          echo "No code style violations found"
+          echo "No critical errors found! 🎉"
         fi
