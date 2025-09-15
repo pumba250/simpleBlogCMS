@@ -1,16 +1,17 @@
 <?php
+
 if (!defined('IN_SIMPLECMS')) {
     die('Прямой доступ запрещен');
 }
 
 /**
  * Шаблонизатор системы с поддержкой расширенного синтаксиса
- * 
+ *
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Views
  * @version    0.9.9
- * 
+ *
  * @method void   __construct()                                                Инициализирует шаблонизатор
  * @method void   assign(string $key, mixed $value)                            Назначает переменную шаблона
  * @method void   assignMultiple(array $vars)                                  Назначает несколько переменных
@@ -66,7 +67,7 @@ class Template
 
     public function getCommonTemplateVars($config, $news, $user = null)
     {
-		global $flash;
+        global $flash;
         $currentCommentPage = $_GET['comment_page'] ?? 1;
         $commentsPerPage = $config['comments_per_page'];
         $authError = $_SESSION['auth_error'] ?? null;
@@ -107,23 +108,23 @@ class Template
     public function render(string $templateFile, array $additionalVars = []): string
     {
         $templatePath = $this->templateDir . '/' . ltrim($templateFile, '/');
-        
+
         if (!file_exists($templatePath)) {
             throw new \RuntimeException("Template file not found: {$templatePath}");
         }
-        
+
         $vars = array_merge($this->variables, $additionalVars);
         $templateContent = file_get_contents($templatePath);
         $compiledContent = $this->compileTemplate($templateContent);
-        
+
         $tempFile = tempnam(sys_get_temp_dir(), 'tpl_');
         file_put_contents($tempFile, $compiledContent);
-        
+
         $originalTemplateDir = $this->templateDir;
-        
+
         extract($vars, EXTR_SKIP);
         ob_start();
-        
+
         try {
             include $tempFile;
             unlink($tempFile);
@@ -140,10 +141,10 @@ class Template
         } finally {
             $this->templateDir = $originalTemplateDir;
         }
-        
+
         return ob_get_clean();
     }
-    
+
     /**
      * Компилирует шаблон с синтаксисом {} в PHP-код
      */
@@ -155,67 +156,67 @@ class Template
             '/\{elseif\s+(.+?)\}/' => '<?php elseif ($1): ?>',
             '/\{else\}/' => '<?php else: ?>',
             '/\{\/if\}/' => '<?php endif; ?>',
-            
+
             // Статические методы (Lang::get)
             '/\{([A-Za-z_][A-Za-z0-9_]*)::([a-zA-Z0-9_]+)\(([^)]*)\)\}/' => '<?php echo $1::$2($3); ?>',
-            
+
             // Языковые переменные (из $lang)
             '/\{l_([a-zA-Z0-9_]+)(?:\:([a-zA-Z0-9_]+))?\}/' => '<?php $key = \'$1\'; $section = !empty(\'$2\') ? \'$2\' : \'main\'; echo htmlspecialchars(Lang::get($key, $section), ENT_QUOTES, \'UTF-8\'); ?>',
-            
+
             // Конфигурационные переменные (из $config)
             '/\{c_([a-zA-Z0-9_]+)\}/' => '<?php echo $config[\'$1\'] ?? \'\'; ?>',
-            
+
             // Циклы
             '/\{foreach\s+\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\s+as\s+\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\}/' => '<?php foreach ($$1 as $$2): ?>',
             '/\{for \$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\s*=\s*([^\s]+)\s+to\s+([^\}]+)\s*\}/' => '<?php for ($1 = $2; $1 <= $3; $1++): ?>',
             '/\{\/for\}/' => '<?php endfor; ?>',
             '/\{foreach\s+\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\s+as\s+\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\s*=>\s*\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\}/' => '<?php foreach ($$1 as $$2 => $$3): ?>',
             '/\{\/foreach\}/' => '<?php endforeach; ?>',
-            
+
             // Обработка $_SESSION, $_GET, $_POST и других суперглобальных массивов
             '/\{\$_([A-Za-z_]+)\[\'([^\']+)\'\]\}/' => '<?php echo htmlspecialchars($_$1[\'$2\'] ?? \'\', ENT_QUOTES, \'UTF-8\'); ?>',
-            
+
             // Включения (исправлено)
             '/\{include\s+[\'"](.+?)[\'"]\}/' => '<?php echo $this->render(\'$1\'); ?>',
             '/\{\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\[\'([^\']+)\'\]\s*\?:\s*([^\}]+)\}/' => '<?php echo htmlspecialchars(($$1[\'$2\'] ?? $3), ENT_QUOTES, \'UTF-8\'); ?>',
             '/\{\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\.([a-zA-Z0-9_\x7f-\xff]+)\s*\?:\s*([^\}]+)\}/' => '<?php echo htmlspecialchars((is_array($$1) ? ($$1[\'$2\'] ?? $3) : ($$1->$2 ?? $3)), ENT_QUOTES, \'UTF-8\'); ?>',
-            
+
             // Общее правило для элементов массивов
             '/\{\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\[\'([^\']+)\'\]\}/' => '<?php echo htmlspecialchars($$1[\'$2\'] ?? \'\', ENT_QUOTES, \'UTF-8\'); ?>',
-            
+
             // Переменные
             '/\{\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\}/' => '<?php echo htmlspecialchars($$1, ENT_QUOTES, \'UTF-8\'); ?>',
             '/\{\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\.([a-zA-Z0-9_\x7f-\xff]+)\}/' => '<?php echo htmlspecialchars((is_array($$1) ? $$1[\'$2\'] : $$1->$2), ENT_QUOTES, \'UTF-8\'); ?>',
             '/\{\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)->([a-zA-Z0-9_\x7f-\xff]+)\}/' => '<?php echo htmlspecialchars($$1->$2, ENT_QUOTES, \'UTF-8\'); ?>',
-            
+
             // Для арифметических операций с элементами массива
             '/\{\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\[\'([a-zA-Z0-9_\x7f-\xff]+)\'\]\s*([+\-*\/])\s*([0-9]+)\}/' => '<?php echo htmlspecialchars($$1[\'$2\'] $3 $4, ENT_QUOTES, \'UTF-8\'); ?>',
             '/\{\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\s*([+\-*\/])\s*([0-9]+)\}/' => '<?php echo htmlspecialchars($$1 $2 $3, ENT_QUOTES, \'UTF-8\'); ?>',
-            
+
             // Форматирование дат
             '/\{([^\|]+)\|date_format\}/' => '<?php echo date("d.m.Y", strtotime($1)); ?>',
-            
+
             // Проверка на пустоту (empty)
             '/\{empty\s+(.+?)\}/' => '<?php if(empty($1)): ?>',
-            
+
             // Модификаторы для переменных
             '/\{([^\|]+)\|upper\}/' => '<?php echo strtoupper($1); ?>',
             '/\{([^\|]+)\|lower\}/' => '<?php echo strtolower($1); ?>',
-            
+
             // Более сложные условия в {if}
             '/\{if\s+([^}]+)\}/' => '<?php if ($1): ?>',
-            
+
             // Обработка тернарных операторов
             '/\\{\\$(?<var>[a-zA-Z0-9_]+(?:\\.[a-zA-Z0-9_]+)*)\\s*\\?\\s*(?<true>[^:]+)\\s*:\\s*(?<false>[^}]+)\\}/' => '<?php $parts = explode(".", "$1"); $val = $this->variables[array_shift($parts)] ?? null; foreach ($parts as $part) {$val = is_array($val) ? ($val[$part] ?? null) : (is_object($val) ? ($val->$part ?? null) : null);}echo $val ? "$2" : "$3";?>',
-            
+
             // Вывод без экранирования
             '/\{!\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\}/' => '<?php echo $$1; ?>',
             '/\{!\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\.([a-zA-Z0-9_\x7f-\xff]+)\}/' => '<?php echo $$1[\'$2\']; ?>',
-            
+
             // Комментарии
             '/\{\*.+?\*\}/s' => '',
         ];
-        
+
         return preg_replace(array_keys($replacements), array_values($replacements), $content);
     }
 
@@ -270,7 +271,7 @@ class Template
         }
         return false;
     }
-    
+
     public function renderTemplateString(string $template, array $data): string
     {
         $template = preg_replace_callback(
@@ -282,7 +283,7 @@ class Template
             },
             $template
         );
-        
+
         $template = preg_replace_callback(
             '/\{([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*)\}/',
             function ($matches) use ($data) {
@@ -335,7 +336,7 @@ class Template
             },
             $template
         );
-        
+
         $template = preg_replace_callback(
             '/\{([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*)\}/',
             function ($matches) use ($data) {
@@ -376,31 +377,31 @@ class Template
 
         return $template;
     }
-	
-	/*public function renderMainTemplate(string $mainTemplateFile, array $data = []): string
-	{
-		$templatePath = $this->templateDir . '/' . ltrim($mainTemplateFile, '/');
-		
-		if (!file_exists($templatePath)) {
-			throw new \RuntimeException("Main template file not found: {$templatePath}");
-		}
-		
-		$templateContent = file_get_contents($templatePath);
-		
-		// Заменяем плейсхолдеры на реальный контент
-		$replacements = [
-			'[[NAVIGATION]]' => $this->render('navigation.tpl', $data),
-			'[[CONTENTS]]' => $data['content'] ?? '',
-			'[[footer]]' => $this->renderFooter($data['footerData'] ?? []),
-			'[[pageTitle]]' => $data['pageTitle'] ?? ''
-		];
-		
-		return str_replace(
-			array_keys($replacements), 
-			array_values($replacements), 
-			$templateContent
-		);
-	}*/
+    
+    /*public function renderMainTemplate(string $mainTemplateFile, array $data = []): string
+    {
+        $templatePath = $this->templateDir . '/' . ltrim($mainTemplateFile, '/');
+        
+        if (!file_exists($templatePath)) {
+            throw new \RuntimeException("Main template file not found: {$templatePath}");
+        }
+        
+        $templateContent = file_get_contents($templatePath);
+        
+        // Заменяем плейсхолдеры на реальный контент
+        $replacements = [
+            '[[NAVIGATION]]' => $this->render('navigation.tpl', $data),
+            '[[CONTENTS]]' => $data['content'] ?? '',
+            '[[footer]]' => $this->renderFooter($data['footerData'] ?? []),
+            '[[pageTitle]]' => $data['pageTitle'] ?? ''
+        ];
+        
+        return str_replace(
+            array_keys($replacements), 
+            array_values($replacements), 
+            $templateContent
+        );
+    }*/
 
     public function renderNewsList(array $newsItems, string $templateFile): string
     {
@@ -450,7 +451,7 @@ class Template
         }
         
         $newsItem['article_rating'] = $votes->getArticleRating($newsItem['id']);
-		$newsItem['csrf_token'] = $_SESSION['csrf_token'];
+        $newsItem['csrf_token'] = $_SESSION['csrf_token'];
         $newsItem['hasVotedArticle'] = isset($_SESSION['user']) 
             ? $votes->hasUserVotedForArticle($newsItem['id'], $_SESSION['user']['id']) 
             : false;
@@ -537,26 +538,26 @@ class Template
             return 'ошибка даты';
         }
     }
-	
-	public function generateUrl($params = [], $absolute = false)
-	{
-		global $config;
-		
-		if ($config['pretty_urls'] ?? false) {
-			if (isset($params['id'])) {
-				return ($absolute ? $config['base_url'] : '') . '/news/' . $params['id'];
-			} elseif (isset($params['tags'])) {
-				return ($absolute ? $config['base_url'] : '') . '/tags/' . urlencode($params['tag']);
-			} elseif (isset($params['search'])) {
-				return ($absolute ? $config['base_url'] : '') . '/search/' . urlencode($params['search']);
-			} elseif (isset($params['user'])) {
-				return ($absolute ? $config['base_url'] : '') . '/user/' . $params['user'];
-			}
-		}
-		
-		// Стандартные URL
-		return ($absolute ? $config['base_url'] : '') . '?' . http_build_query($params);
-	}
+
+    public function generateUrl($params = [], $absolute = false)
+    {
+        global $config;
+        
+        if ($config['pretty_urls'] ?? false) {
+            if (isset($params['id'])) {
+                return ($absolute ? $config['base_url'] : '') . '/news/' . $params['id'];
+            } elseif (isset($params['tags'])) {
+                return ($absolute ? $config['base_url'] : '') . '/tags/' . urlencode($params['tag']);
+            } elseif (isset($params['search'])) {
+                return ($absolute ? $config['base_url'] : '') . '/search/' . urlencode($params['search']);
+            } elseif (isset($params['user'])) {
+                return ($absolute ? $config['base_url'] : '') . '/user/' . $params['user'];
+            }
+        }
+        
+        // Стандартные URL
+        return ($absolute ? $config['base_url'] : '') . '?' . http_build_query($params);
+    }
 
     public function renderFooter(array $footerData)
     {
