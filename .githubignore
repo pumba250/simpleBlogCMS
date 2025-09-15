@@ -14,6 +14,7 @@ phpmd.xml
 logs/
 temp/
 cache/
+config/
 install/
 backups/
 *.bak
