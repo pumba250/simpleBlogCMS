@@ -1,0 +1,128 @@
+name: PHP Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: PHP ${{ matrix.php }} Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['7.4', '8.0', '8.1', '8.2', '8.3']
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test_db
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php }}
+        extensions: mbstring, xml, curl, zip, gd, pdo_mysql
+        tools: composer:v2
+        coverage: xdebug
+
+    - name: Validate composer.json
+      run: composer validate --strict
+
+    - name: Install dependencies
+      run: |
+        composer install --prefer-dist --no-progress --no-interaction
+        composer require phpunit/phpunit --dev
+
+    - name: Create test database
+      run: |
+        mysql -h 127.0.0.1 -u root -proot -e "CREATE DATABASE IF NOT EXISTS test_db;"
+        mysql -h 127.0.0.1 -u root -proot test_db < sql/schema.sql
+
+    - name: Copy configuration for tests
+      run: |
+        cp config/config.php.dist config/config.php
+        sed -i 's/localhost/127.0.0.1/g' config/config.php
+        sed -i 's/your_database/test_db/g' config/config.php
+        sed -i 's/your_username/root/g' config/config.php
+        sed -i 's/your_password/root/g' config/config.php
+
+    - name: Run PHPUnit tests
+      run: ./vendor/bin/phpunit tests/ --configuration tests/phpunit.xml --coverage-clover coverage.xml
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+    - name: Archive code coverage results
+      uses: actions/upload-artifact@v3
+      with:
+        name: phpunit-coverage-${{ matrix.php }}
+        path: coverage.xml
+
+  security:
+    name: Security Check
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.2
+        tools: composer:v2
+
+    - name: Run security checker
+      run: |
+        composer require --dev enlightn/security-checker
+        ./vendor/bin/security-checker security:check
+
+  lint:
+    name: PHP Syntax Check
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.2
+
+    - name: Check PHP syntax
+      run: |
+        find . -name "*.php" -not -path "./vendor/*" -not -path "./tests/*" -exec php -l {} \;
+
+  code-style:
+    name: Code Style Check
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.2
+        tools: composer:v2
+
+    - name: Install PHP Code Sniffer
+      run: |
+        composer require --dev squizlabs/php_codesniffer
+
+    - name: Run code style check
+      run: ./vendor/bin/phpcs class/ --standard=PSR12
