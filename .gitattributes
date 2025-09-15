@@ -1,0 +1,22 @@
+# Исключить из архивов релизов
+
+# Тестовые файлы
+/tests/ export-ignore
+/.github/ export-ignore
+/phpunit.xml export-ignore
+
+# Файлы разработки
+/.idea/ export-ignore
+/.vscode/ export-ignore
+/vendor/ export-ignore
+/composer.lock export-ignore
+
+# Конфиги разработки
+/.editorconfig export-ignore
+/.gitattributes export-ignore
+/.gitignore export-ignore
+
+# Временные файлы
+/logs/ export-ignore
+/temp/ export-ignore
+/cache/ export-ignore
