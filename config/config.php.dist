@@ -1,0 +1,27 @@
+<?php
+return [
+    'db' => [
+        'host' => 'localhost',
+        'name' => 'your_database',
+        'user' => 'your_username',
+        'pass' => 'your_password',
+        'charset' => 'utf8mb4'
+    ],
+    'site' => [
+        'url' => 'http://localhost',
+        'name' => 'Test Blog',
+        'language' => 'en'
+    ],
+    'cache' => [
+        'driver' => 'file',
+        'path' => __DIR__ . '/../cache/',
+        'ttl' => 3600
+    ],
+    'mail' => [
+        'host' => 'smtp.gmail.com',
+        'port' => 587,
+        'username' => 'your_email@gmail.com',
+        'password' => 'your_password',
+        'from' => 'noreply@example.com'
+    ]
+];
