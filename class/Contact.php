@@ -1,6 +1,6 @@
 <?php
 
-if (!defined('IN_SIMPLECMS')) { 
+if (!defined('IN_SIMPLECMS')) {
     die('Прямой доступ запрещен');
 }
 /**
