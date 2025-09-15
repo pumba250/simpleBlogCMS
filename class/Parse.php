@@ -1,21 +1,27 @@
 <?php
-if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
+
+if (!defined('IN_SIMPLECMS'))
+{
+    die('Прямой доступ запрещен');
+}
 /**
  * Класс для обработки и форматирования контента
- * 
+ *
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Utilities
  * @version    0.9.8
- * 
+ *
  * @method string truncateHTML(string $text, int $size = 300, string $finisher = '...') Безопасно обрезает HTML с сохранением тегов
  * @method string userblocks(string $content, array $config, array|null $user = null)    Обрабатывает скрытые блоки для зарегистрированных пользователей
  * @method string time_elapsed_string(string $datetime, bool $full = false)              Форматирует дату в относительный формат
  * @method string getNounPluralForm(int $number, string $one, string $two, string $five) Склоняет существительные по числу
  * @method string getLogBadgeColor(string $action)                                       Определяет цвет метки для логов по типу действия
  */
-class parse {
-    function truncateHTML($text, $size = 300, $finisher = '...') {
+class parse
+{
+    function truncateHTML($text, $size = 300, $finisher = '...')
+	{
         $len = strlen($text);
 
         if ($len <= $size) {
@@ -72,7 +78,7 @@ class parse {
 
                     if ($char == '>') {
                         $tagName = substr($text, $tagNameStartPos, $position - $tagNameStartPos);
-                        
+
                         // Closing tag
                         if ($tagName[0] == '/') {
                             if ((count($openTagList)) && ($openTagList[count($openTagList) - 1] == substr($tagName, 1))) {
@@ -102,7 +108,7 @@ class parse {
 
                     if ($char == '>') {
                         $tagName = substr($text, $tagNameStartPos, $position - $tagNameStartPos);
-                        
+
                         if ((count($openTagList)) && ($openTagList[count($openTagList) - 1] == substr($tagName, 1))) {
                             array_pop($openTagList);
                         } else {
@@ -135,7 +141,7 @@ class parse {
 
                     if ($char == '>') {
                         $tagName = substr($text, $tagNameStartPos, $position - $tagNameStartPos);
-                        
+
                         if ($tagName[0] != '/') {
                             if ((count($openTagList)) && ($openTagList[count($openTagList) - 1] == substr($tagName, 1))) {
                                 array_pop($openTagList);
@@ -163,20 +169,21 @@ class parse {
 
         return $output;
     }
-    public static function userblocks($content, $config, $user = null) {
+    public static function userblocks($content, $config, $user = null)
+	{
         if (empty($config['blocks_for_reg'])) {
             return $content;
         }
 
         return preg_replace_callback(
             "#\[hide\](.*?)\[/hide\]#is",
-            function($matches) use ($user) {
+            function ($matches) use ($user) {
                 if (is_array($user)) {
                     return htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8');
                 }
                 return '<div class="w3-hide-container w3-round">
-  <span class="w3-hide-message">' . 
-                       htmlspecialchars(Lang::get('not_logged'), ENT_QUOTES, 'UTF-8') .  
+  <span class="w3-hide-message">' .
+                       htmlspecialchars(Lang::get('not_logged'), ENT_QUOTES, 'UTF-8') .
                        '</span>
 </div>';
             },
@@ -186,8 +193,9 @@ class parse {
 /**
  * Возвращает строку с временем, прошедшим с указанной даты
  */
-        public function time_elapsed_string($datetime, $full = false) {
-        $now = new DateTime;
+    public function time_elapsed_string($datetime, $full = false)
+	{
+        $now = new DateTime();
         $ago = new DateTime($datetime);
         $diff = $now->diff($ago);
 
@@ -230,7 +238,8 @@ class parse {
     }
 
     // Функция для правильного склонения существительных
-    public function getNounPluralForm($number, $one, $two, $five) {
+    public function getNounPluralForm($number, $one, $two, $five)
+	{
         $number = abs($number) % 100;
         if ($number > 10 && $number < 20) {
             return $five;
@@ -247,13 +256,19 @@ class parse {
 /**
  * Возвращает цвет badge в зависимости от типа действия
  */
-    public function getLogBadgeColor($action) {
+    public function getLogBadgeColor($action)
+	{
         $action = strtolower($action);
-        if (strpos($action, 'удал') !== false) return 'danger';
-        if (strpos($action, 'добав') !== false || strpos($action, 'созда') !== false) return 'success';
-        if (strpos($action, 'опытк') !== false || strpos($action, 'измен') !== false) return 'warning';
-        if (strpos($action, 'ошибка') !== false) return 'danger';
-        if (strpos($action, 'вход') !== false || strpos($action, 'выход') !== false) return 'info';
+        if (strpos($action, 'удал') !== false)
+			return 'danger';
+        if (strpos($action, 'добав') !== false || strpos($action, 'созда') !== false)
+			return 'success';
+        if (strpos($action, 'опытк') !== false || strpos($action, 'измен') !== false)
+			return 'warning';
+        if (strpos($action, 'ошибка') !== false)
+			return 'danger';
+        if (strpos($action, 'вход') !== false || strpos($action, 'выход') !== false)
+			return 'info';
         return 'secondary';
     }
 }

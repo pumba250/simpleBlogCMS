@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 define('IN_SIMPLECMS', true);
 // Получаем настройки цветов из конфига или используем значения по умолчанию
@@ -6,7 +7,8 @@ define('IN_SIMPLECMS', true);
 $config = require $_SERVER['DOCUMENT_ROOT'] . '/config/config.php';
 
 // Парсим цвета из настроек
-function parseColor($colorStr, $default) {
+function parseColor($colorStr, $default)
+{
     $parts = explode(',', $colorStr);
     if (count($parts) === 3) {
         return array_map('intval', $parts);
@@ -57,10 +59,7 @@ for ($i = 0; $i < 100; $i++) {
 
 // Добавление линий
 for ($i = 0; $i < 5; $i++) {
-    imageline($image, 
-        rand(0, $width), rand(0, $height),
-        rand(0, $width), rand(0, $height),
-        $noiseColor);
+    imageline($image, rand(0, $width), rand(0, $height),rand(0, $width), rand(0, $height),$noiseColor);
 }
 
 // Генерация текста капчи
@@ -71,13 +70,13 @@ $x = 10;
 $y = 30;
 
 // Тень текста
-imagettftext($image, $fontSize, $angle, $x+1, $y+1, $accentColor, 'arial.ttf', $text);
+imagettftext($image, $fontSize, $angle, $x + 1, $y + 1, $accentColor, 'arial.ttf', $text);
 // Основной текст
 imagettftext($image, $fontSize, $angle, $x, $y, $textColor, 'arial.ttf', $text);
 
 // Эффект сканирующей линии
-$lineY = rand(10, $height-10);
-imagefilledrectangle($image, 0, $lineY, $width, $lineY+1, $accentColor);
+$lineY = rand(10, $height - 10);
+imagefilledrectangle($image, 0, $lineY, $width, $lineY + 1, $accentColor);
 
 // Добавление сетки
 for ($i = 0; $i < $width; $i += 15) {
@@ -91,4 +90,3 @@ for ($i = 0; $i < $height; $i += 15) {
 header('Content-Type: image/png');
 imagepng($image);
 imagedestroy($image);
-?>

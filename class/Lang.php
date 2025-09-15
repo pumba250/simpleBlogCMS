@@ -1,15 +1,16 @@
 <?php
+
 if (!defined('IN_SIMPLECMS')) {
     die('Прямой доступ запрещен');
 }
 /**
  * Класс для работы с языковыми файлами и локализацией
- * 
+ *
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Internationalization
  * @version    0.9.8
- * 
+ *
  * @method static void   init()                           Инициализирует языковую систему
  * @method static void   setLanguage(string $lang)        Устанавливает язык
  * @method static string get(string $key, string $section = 'main') Получает перевод по ключу
@@ -43,20 +44,20 @@ class Lang
         // Проверяем, загружен ли уже этот раздел
         if (!isset(self::$translations[$section])) {
             $file = __DIR__ . '/../lang/' . self::$language . '/' . $section . '.php';
-            
+
             if (!file_exists($file)) {
                 error_log("Language file not found: {$file}");
                 return $key; // Возвращаем ключ, если файл не найден
             }
-            
+
             self::$translations[$section] = require $file;
-            
+
             if (!is_array(self::$translations[$section])) {
                 error_log("Invalid language file format: {$file}");
                 self::$translations[$section] = [];
             }
         }
-        
+
         return self::$translations[$section][$key] ?? $key;
     }
 
@@ -64,7 +65,7 @@ class Lang
     {
         $supported = ['en', 'ru'];
         $browserLang = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? 'en', 0, 2);
-        
+
         return in_array($browserLang, $supported) ? $browserLang : 'en';
     }
 }

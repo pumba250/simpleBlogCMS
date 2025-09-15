@@ -1,16 +1,18 @@
 <?php
-if (!defined('IN_SIMPLECMS')) {
+
+if (!defined('IN_SIMPLECMS'))
+{
     die('Прямой доступ запрещен');
 }
 
 /**
  * Класс для работы с системой голосования
- * 
+ *
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Interaction
  * @version    0.9.8
- * 
+ *
  * @method void   __construct(PDO $pdo)                                        Инициализирует систему голосования
  * @method bool   voteComment(int $id, string $voteType, int $userId)          Голосует за комментарий
  * @method bool   hasUserVoted(int $commentId, int $userId)                    Проверяет голос пользователя за комментарий
@@ -44,16 +46,16 @@ class Votes
         if ($this->hasUserVoted($id, $userId)) {
             return false;
         }
-        
+
         if (!in_array($voteType, ['plus', 'minus'])) {
             throw new InvalidArgumentException("Invalid vote type");
         }
-        
+
         $column = $voteType == 'plus' ? 'plus' : 'minus';
-        
+
         try {
             $this->pdo->beginTransaction();
-            
+
             // Обновляем счетчик голосов
             $stmt = $this->pdo->prepare(
                 "UPDATE `{$this->dbPrefix}comments` 
@@ -61,7 +63,7 @@ class Votes
                 WHERE id = ?"
             );
             $stmt->execute([$id]);
-            
+
             // Записываем факт голосования
             $stmt = $this->pdo->prepare(
                 "INSERT INTO `{$this->dbPrefix}comment_votes` 
@@ -69,7 +71,7 @@ class Votes
                 VALUES (?, ?, ?)"
             );
             $stmt->execute([$id, $userId, $voteType]);
-            
+
             $this->pdo->commit();
             return true;
         } catch (PDOException $e) {
@@ -111,10 +113,10 @@ class Votes
         }
 
         $column = $voteType == 'like' ? 'likes' : 'dislikes';
-        
+
         try {
             $this->pdo->beginTransaction();
-            
+
             // Обновляем счетчик голосов статьи
             $stmt = $this->pdo->prepare(
                 "UPDATE `{$this->dbPrefix}blogs` 
@@ -122,7 +124,7 @@ class Votes
                 WHERE id = ?"
             );
             $stmt->execute([$articleId]);
-            
+
             // Записываем факт голосования
             $stmt = $this->pdo->prepare(
                 "INSERT INTO `{$this->dbPrefix}article_votes` 
@@ -130,7 +132,7 @@ class Votes
                 VALUES (?, ?, ?)"
             );
             $stmt->execute([$articleId, $userId, $voteType]);
-            
+
             $this->pdo->commit();
             return true;
         } catch (PDOException $e) {

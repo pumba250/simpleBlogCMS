@@ -1,15 +1,16 @@
 <?php
+
 if (!defined('IN_SIMPLECMS')) {
     die('Прямой доступ запрещен');
 }
 /**
  * Класс для работы с новостями и статьями
- * 
+ *
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Content
  * @version    0.9.8
- * 
+ *
  * @method array getNewsByAuthor(int $userId, int $limit = 5) Получает новости по автору с ограничением
  * @method array getAllNews(int $limit, int $offset) Получает новости с пагинацией (ограничение и смещение)
  * @method array searchNews(string $query, int $limit = 10, int $offset = 0) Ищет новости по текстовому запросу
@@ -65,10 +66,10 @@ class News
         // Явное приведение типов для безопасности
         $userId = (int)$userId;
         $limit = (int)$limit;
-        
+
         $stmt->bindValue(1, $userId, PDO::PARAM_INT);
         $stmt->bindValue(2, $limit, PDO::PARAM_INT);
-        
+
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -86,7 +87,7 @@ class News
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-    
+
     public function searchNews($query, $limit = 10, $offset = 0)
     {
         try {
@@ -98,12 +99,12 @@ class News
                 ORDER BY created_at DESC
                 LIMIT :limit OFFSET :offset
             ");
-            
+
             $stmt->bindParam(':query', $searchQuery, PDO::PARAM_STR);
             $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
             $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
             $stmt->execute();
-            
+
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log("Search error: " . $e->getMessage());
@@ -120,10 +121,10 @@ class News
                 FROM {$this->dbPrefix}blogs 
                 WHERE title LIKE :query OR content LIKE :query
             ");
-            
+
             $stmt->bindParam(':query', $searchQuery, PDO::PARAM_STR);
             $stmt->execute();
-            
+
             return $stmt->fetchColumn();
         } catch (PDOException $e) {
             error_log("Search count error: " . $e->getMessage());
@@ -141,7 +142,7 @@ class News
             GROUP BY b.id
             ORDER BY b.created_at DESC
         ";
-        
+
         // Добавляем LIMIT и OFFSET если они указаны
         if ($limit !== null) {
             $sql .= " LIMIT :limit";
@@ -149,9 +150,9 @@ class News
                 $sql .= " OFFSET :offset";
             }
         }
-        
+
         $stmt = $this->pdo->prepare($sql);
-        
+
         // Привязываем параметры если они указаны
         if ($limit !== null) {
             $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
@@ -159,17 +160,17 @@ class News
                 $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
             }
         }
-        
+
         $stmt->execute();
-        
+
         $blogs = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         // Преобразуем теги в массивы
         foreach ($blogs as &$blog) {
             $blog['tags'] = $blog['tag_names'] ? array_map('htmlspecialchars', explode(',', $blog['tag_names'])) : [];
             $blog['tag_ids'] = $blog['tag_ids'] ? array_map('intval', explode(',', $blog['tag_ids'])) : [];
         }
-        
+
         return $blogs;
     }
 
@@ -190,7 +191,7 @@ class News
         );
         $stmt->execute();
         $last = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         $lastThreeNewsHtml = '';
         foreach ($last as $item) {
             $lastThreeNewsHtml .= '<li class="w3-padding">';
@@ -199,15 +200,16 @@ class News
             $lastThreeNewsHtml .= '<span>' . htmlspecialchars($item['created_at']) . '</span>';
             $lastThreeNewsHtml .= '</li>';
         }
-        
+
         return new class($lastThreeNewsHtml) {
+			
             private $html;
-            
+
             public function __construct($html)
             {
                 $this->html = $html;
             }
-            
+
             public function __toString()
             {
                 return $this->html;
@@ -218,20 +220,20 @@ class News
     public function generateTags($title, $content)
     {
         $tags = [];
-        
+
         $stopWords = ['и', 'в', 'на', 'с', 'по', 'к', 'из', 'для', 'это', 'что', 'как'];
 
         $title = strip_tags($title);
         $content = strip_tags($content);
-        
+
         $title = preg_replace('/[^\w\s]/u', '', $title);  // Added 'u' modifier for UTF-8 support
         $content = preg_replace('/[^\w\s]/u', '', $content);
-        
+
         $words = preg_split('/\s+/', $title . ' ' . $content);
-        
+
         foreach ($words as $word) {
             $word = mb_strtolower(trim($word), 'UTF-8');  // Using mb_strtolower for proper UTF-8 support
-            
+
             if (mb_strlen($word, 'UTF-8') > 5 && !in_array($word, $tags) && !in_array($word, $stopWords)) {
                 $tags[] = $word;
             }
@@ -247,17 +249,17 @@ class News
     {
         try {
             $this->pdo->beginTransaction();
-            
+
             // Добавляем запись
             $stmt = $this->pdo->prepare(
                 "INSERT INTO {$this->dbPrefix}blogs (title, content, author_id) VALUES (?, ?, ?)"
             );
             $stmt->execute([$title, $content, $authorId]);
             $blogId = $this->pdo->lastInsertId();
-            
+
             // Get auto-generated tags
             $autoTags = $this->generateTags($title, $content);
-            
+
             // Process both manual tags and auto-generated tags
             $allTags = $tags;
             foreach ($autoTags as $tagName) {
@@ -265,16 +267,16 @@ class News
                 $stmt = $this->pdo->prepare("SELECT id FROM {$this->dbPrefix}tags WHERE name = ?");
                 $stmt->execute([$tagName]);
                 $tagId = $stmt->fetchColumn();
-                
+
                 if (!$tagId) {
                     $stmt = $this->pdo->prepare("INSERT INTO {$this->dbPrefix}tags (name) VALUES (?)");
                     $stmt->execute([$tagName]);
                     $tagId = $this->pdo->lastInsertId();
                 }
-                
+
                 $allTags[] = $tagId;
             }
-            
+
             // Добавляем связи с тегами
             if (!empty($allTags)) {
                 $allTags = array_unique($allTags); // Remove duplicates
@@ -285,7 +287,7 @@ class News
                     $stmt->execute([$blogId, $tagId]);
                 }
             }
-            
+
             $this->pdo->commit();
             Cache::clear();
             return true;
@@ -295,7 +297,7 @@ class News
             return false;
         }
     }
-    
+
     /**
      * Обновить запись блога
      */
@@ -303,17 +305,17 @@ class News
     {
         try {
             $this->pdo->beginTransaction();
-            
+
             // Обновление основной информации
             $stmt = $this->pdo->prepare(
                 "UPDATE {$this->dbPrefix}blogs SET title = ?, content = ? WHERE id = ?"
             );
             $stmt->execute([$title, $content, $id]);
-            
+
             // Удаляем старые связи с тегами
             $stmt = $this->pdo->prepare("DELETE FROM {$this->dbPrefix}blogs_tags WHERE blogs_id = ?");
             $stmt->execute([$id]);
-            
+
             // Добавляем новые связи с тегами
             if (!empty($tags)) {
                 $stmt = $this->pdo->prepare(
@@ -329,7 +331,7 @@ class News
                     }
                 }
             }
-            
+
             $this->pdo->commit();
             Cache::clear();
             return true;
@@ -347,15 +349,15 @@ class News
     {
         try {
             $this->pdo->beginTransaction();
-            
+
             // Удаляем связи с тегами
             $stmt = $this->pdo->prepare("DELETE FROM {$this->dbPrefix}blogs_tags WHERE blogs_id = ?");
             $stmt->execute([$id]);
-            
+
             // Удаляем саму запись
             $stmt = $this->pdo->prepare("DELETE FROM {$this->dbPrefix}blogs WHERE id = ?");
             $stmt->execute([$id]);
-            
+
             $this->pdo->commit();
             Cache::clear();
             return true;
@@ -365,14 +367,13 @@ class News
             return false;
         }
     }
-    
 
     public function getAllTags()
     {
         $stmt = $this->pdo->prepare("SELECT DISTINCT(`name`) FROM {$this->dbPrefix}tags");
         $stmt->execute();
         $tags = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+
         $allTagsHtml = '';
         foreach ($tags as $tag) {
             $allTagsHtml .= '
@@ -381,15 +382,16 @@ class News
                 . htmlspecialchars($tag['name']) . '</a>
             </span>';
         }
-        
+
         return new class($allTagsHtml) {
+			
             private $html;
-            
+
             public function __construct($html)
             {
                 $this->html = $html;
             }
-            
+
             public function __toString()
             {
                 return $this->html;
@@ -407,7 +409,7 @@ class News
             return false;
         }
     }
-    
+
     /**
      * Удалить тег
      */
@@ -415,15 +417,15 @@ class News
     {
         try {
             $this->pdo->beginTransaction();
-            
+
             // Удаляем связи с записями
             $stmt = $this->pdo->prepare("DELETE FROM {$this->dbPrefix}blogs_tags WHERE tag_id = ?");
             $stmt->execute([$id]);
-            
+
             // Удаляем сам тег
             $stmt = $this->pdo->prepare("DELETE FROM {$this->dbPrefix}tags WHERE id = ?");
             $stmt->execute([$id]);
-            
+
             $this->pdo->commit();
             return true;
         } catch (Exception $e) {
@@ -496,19 +498,18 @@ class News
         $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
-
         $news = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         return $news ?: [];
     }
-    
+
     public function getNewsCountByTag($tag)
     {
         $stmt = $this->pdo->prepare("SELECT id FROM {$this->dbPrefix}tags WHERE name = :tag");
         $stmt->bindParam(':tag', $tag, PDO::PARAM_STR);
         $stmt->execute();
         $tagId = $stmt->fetchColumn();
-        
+
         if (!$tagId) {
             return 0;
         }
@@ -519,10 +520,10 @@ class News
             JOIN {$this->dbPrefix}blogs_tags bt ON b.id = bt.blogs_id
             WHERE bt.tag_id = :tag_id
         ");
-        
+
         $stmt->bindParam(':tag_id', $tagId, PDO::PARAM_INT);
         $stmt->execute();
-        
+
         return $stmt->fetchColumn();
     }
 
@@ -531,34 +532,34 @@ class News
     {
         global $config;
         $defaultDescription = $config['metaDescription'] ?? '';
-        
+
         switch ($type) {
             case 'article':
                 // Для статьи берем первые 160 символов контента
                 $cleanContent = strip_tags($content);
                 return mb_substr($cleanContent, 0, 160) . '...';
-                
+
             case 'tag':
                 return 'Все публикации по теме: ' . htmlspecialchars($additionalData['tag']);
-                
+
             case 'search':
                 return 'Результаты поиска по запросу: ' . htmlspecialchars($additionalData['query']);
-                
+
             case 'login':
                 return 'Форма авторизации ' . $config['metaDescription'];
-                
+
             case 'register':
                 return 'Форма регистрации нового пользователя ' . $config['metaDescription'];
-                
+
             case 'contact':
                 return 'Контактная форма для связи с администрацией ' . $config['metaDescription'];
-                
+
             case 'error404':
                 return 'Страница не найдена';
-                
+
             case 'error500':
                 return 'Внутренняя ошибка сервера';
-                
+
             default:
                 return $defaultDescription;
         }
@@ -569,7 +570,7 @@ class News
     {
         global $config;
         $defaultKeywords = $config['metaKeywords'] ?? '';
-        
+
         switch ($type) {
             case 'article':
                 // Для статьи берем слова из заголовка и первые 20 слов контента
@@ -577,36 +578,36 @@ class News
                 $cleanContent = strip_tags($content);
                 $contentWords = explode(' ', $cleanContent);
                 $allWords = array_merge($titleWords, array_slice($contentWords, 0, 20));
-                
+
                 // Удаляем слишком короткие слова и дубликаты
                 $filteredWords = array_filter($allWords, function ($word) {
                     return mb_strlen($word) > 3;
                 });
-                
+
                 $uniqueWords = array_unique($filteredWords);
                 return implode(', ', array_slice($uniqueWords, 0, 15));
-                
+
             case 'tag':
                 return htmlspecialchars($additionalData['tag']) . ', ' . $config['metaKeywords'];
-                
+
             case 'search':
                 return 'поиск, ' . htmlspecialchars($additionalData['query']);
-                
+
             case 'login':
                 return 'авторизация, вход, ' . $config['metaKeywords'];
-                
+
             case 'register':
                 return 'регистрация, создать аккаунт, ' . $config['metaKeywords'];
-                
+
             case 'contact':
                 return 'контакты, обратная связь, ' . $config['metaKeywords'];
-                
+
             case 'error404':
                 return '404, страница не найдена';
-                
+
             case 'error500':
                 return '500, ошибка сервера';
-                
+
             default:
                 return $defaultKeywords;
         }
@@ -615,30 +616,30 @@ class News
     public function getAllNewsCached($limit, $offset)
     {
         $cacheKey = 'news_all_' . $limit . '_' . $offset . '_' . ($_SESSION['lang'] ?? 'ru');
-        
+
         if (Cache::has($cacheKey)) {
             return Cache::get($cacheKey);
         }
-        
+
         $result = $this->getAllNews($limit, $offset);
         Cache::set($cacheKey, $result, 1800); // 30 минут кэша
-        
+
         return $result;
     }
 
     public function getNewsByIdCached($id)
     {
         $cacheKey = 'news_item_' . $id;
-        
+
         if (Cache::has($cacheKey)) {
             return Cache::get($cacheKey);
         }
-        
+
         $result = $this->getNewsById($id);
         if ($result) {
             Cache::set($cacheKey, $result, 3600); // 1 час кэша для статьи
         }
-        
+
         return $result;
     }
 }

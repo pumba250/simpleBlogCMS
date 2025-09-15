@@ -1,13 +1,17 @@
 <?php
-if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
+
+if (!defined('IN_SIMPLECMS'))
+{
+    die('Прямой доступ запрещен');
+}
 /**
  * Класс для подготовки данных футера
- * 
+ *
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Views
  * @version    0.9.8
- * 
+ *
  * @method void __construct(News $news, User $user, Template $template, array $config) Инициализирует зависимости
  * @method array prepareFooterData()                                                 Подготавливает все данные для футера
  * @method string prepareUserSection()                                               Подготавливает секцию пользователя
@@ -16,20 +20,23 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @method string prepareTagsList()                                                  Подготавливает список тегов
  * @method string prepareFooterContent()                                             Подготавливает контент футера
  */
-class FooterDataProvider {
+class FooterDataProvider
+{
     private $news;
     private $user;
     private $template;
     private $config;
 
-    public function __construct(News $news, User $user, Template $template, array $config) {
+    public function __construct(News $news, User $user, Template $template, array $config)
+	{
         $this->news = $news;
         $this->user = $user;
         $this->template = $template;
         $this->config = $config;
     }
 
-    public function prepareFooterData() {
+    public function prepareFooterData()
+	{
         return [
             'userSection' => $this->prepareUserSection(),
             'searchForm' => $this->prepareSearchForm(),
@@ -42,7 +49,8 @@ class FooterDataProvider {
         ];
     }
 
-    private function prepareUserSection() {
+    private function prepareUserSection()
+	{
         $currentUser = $_SESSION['user'] ?? null;
         $data = [
             'auth_error' => $_SESSION['auth_error'] ?? null,
@@ -59,34 +67,37 @@ class FooterDataProvider {
         }
     }
 
-    private function prepareSearchForm() {
+    private function prepareSearchForm()
+	{
         return $this->template->render('partials/footer/search_form.tpl', [
             'searchQuery' => $_GET['search'] ?? ''
         ]);
     }
 
-private function prepareRecentNewsList() {
-    $lastThreeNews = $this->news->getLastThreeNews();
-    //var_dump('Recent News Data: ' . print_r($lastThreeNews, true));
-    if (empty($lastThreeNews)) {
-        return 'Нет новостей'; // или можно вернуть сообщение "Нет новостей"
+    private function prepareRecentNewsList() {
+        $lastThreeNews = $this->news->getLastThreeNews();
+        //var_dump('Recent News Data: ' . print_r($lastThreeNews, true));
+        if (empty($lastThreeNews)) {
+            return 'Нет новостей'; // или можно вернуть сообщение "Нет новостей"
+        }
+        return $this->template->render('partials/footer/recent_news_list.tpl', [
+            'newsItems' => $lastThreeNews
+        ]);
     }
-    return $this->template->render('partials/footer/recent_news_list.tpl', [
-        'newsItems' => $lastThreeNews
-    ]);
-}
 
-private function prepareTagsList() {
-    $allTags = $this->news->getAllTags();
-    if (empty($allTags)) {
-        return 'Нет тегов'; // или можно вернуть сообщение "Нет тегов"
+    private function prepareTagsList()
+    {
+        $allTags = $this->news->getAllTags();
+        if (empty($allTags)) {
+            return 'Нет тегов'; // или можно вернуть сообщение "Нет тегов"
+        }
+        return $this->template->render('partials/footer/tags_list.tpl', [
+            'allTags' => $allTags
+        ]);
     }
-    return $this->template->render('partials/footer/tags_list.tpl', [
-        'allTags' => $allTags
-    ]);
-}
 
-    private function prepareFooterContent() {
+    private function prepareFooterContent()
+	{
         return $this->template->render('partials/footer/footer_content.tpl', [
             'currentYear' => date("Y"),
             'serverName' => htmlspecialchars($_SERVER['SERVER_NAME']),

@@ -1,16 +1,17 @@
 <?php
+
 if (!defined('IN_SIMPLECMS')) {
     die('Прямой доступ запрещен');
 }
 
 /**
  * Класс для работы с кэшированием данных
- * 
+ *
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Performance
  * @version    0.9.8
- * 
+ *
  * @method static bool   has(string $key)                  Проверяет наличие данных в кэше
  * @method static mixed  get(string $key)                  Получает данные из кэша
  * @method static bool   set(string $key, mixed $data, int $ttl = 3600) Сохраняет данные в кэш
@@ -19,6 +20,7 @@ if (!defined('IN_SIMPLECMS')) {
  * @method static string getCacheKey(string $identifier)   Генерирует ключ кэша
  * @method static void   init(array $config)               Инициализирует кэш с указанной конфигурацией
  */
+
 class Cache
 {
     private static $driver;
@@ -36,7 +38,7 @@ class Cache
         }
 
         $driver = strtolower($config['cache_driver'] ?? 'file');
-        
+
         try {
             switch ($driver) {
                 case 'redis':
@@ -52,7 +54,7 @@ class Cache
                         self::$driver = $redis;
                     }
                     break;
-                    
+
                 case 'memcached':
                     if (extension_loaded('memcached')) {
                         $memcached = new Memcached();
@@ -63,13 +65,13 @@ class Cache
                         self::$driver = $memcached;
                     }
                     break;
-                    
+
                 case 'apcu':
                     if (extension_loaded('apcu') && ini_get('apc.enabled')) {
                         self::$driver = 'apcu';
                     }
                     break;
-                    
+
                 case 'file':
                 default:
                     self::ensureCacheDir();
@@ -103,13 +105,13 @@ class Cache
     {
         self::validateCacheKey($key);
         $file = self::$cacheDir . $key . '.cache';
-        
+
         // Protection against directory traversal
         $realPath = realpath(dirname($file)) . DIRECTORY_SEPARATOR . basename($file);
         if (strpos($realPath, realpath(self::$cacheDir)) !== 0) {
             throw new RuntimeException('Invalid cache path detected');
         }
-        
+
         return $file;
     }
 
@@ -120,30 +122,30 @@ class Cache
         }
 
         $key = self::getCacheKey($key);
-        
+
         switch (self::$driver) {
             case 'redis':
                 return self::$driver->exists($key);
-                
+
             case 'memcached':
                 self::$driver->get($key);
                 return self::$driver->getResultCode() === Memcached::RES_SUCCESS;
-                
+
             case 'apcu':
                 return apcu_exists($key);
-                
+
             case 'file':
                 try {
                     $file = self::getCacheFilePath($key);
                     if (!file_exists($file)) {
                         return false;
                     }
-                    
+
                     $content = file_get_contents($file);
                     if ($content === false) {
                         return false;
                     }
-                    
+
                     $data = unserialize($content);
                     return isset($data['expire']) && $data['expire'] > time();
                 } catch (Exception $e) {
@@ -151,7 +153,7 @@ class Cache
                     return false;
                 }
         }
-        
+
         return false;
     }
 
@@ -162,54 +164,54 @@ class Cache
         }
 
         $key = self::getCacheKey($key);
-        
+
         switch (self::$driver) {
             case 'redis':
                 $data = self::$driver->get($key);
                 return $data ? unserialize($data) : null;
-                
+
             case 'memcached':
                 $data = self::$driver->get($key);
                 return $data ?: null;
-                
+
             case 'apcu':
                 return apcu_fetch($key);
-                
+
             case 'file':
                 try {
                     $file = self::getCacheFilePath($key);
                     if (!file_exists($file)) {
                         return null;
                     }
-                    
+
                     $content = file_get_contents($file);
                     if ($content === false) {
                         return null;
                     }
-                    
+
                     $data = unserialize($content);
                     if (!is_array($data)) {
                         unlink($file);
                         return null;
                     }
-                    
+
                     if (isset($data['user_id']) && $data['user_id'] != ($_SESSION['user_id'] ?? null)) {
                         self::delete($key);
                         return null;
                     }
-                    
+
                     if (isset($data['expire']) && $data['expire'] < time()) {
                         unlink($file);
                         return null;
                     }
-                    
+
                     return $data['content'] ?? null;
                 } catch (Exception $e) {
                     error_log("Cache get() error: " . $e->getMessage());
                     return null;
                 }
         }
-        
+
         return null;
     }
 
@@ -220,17 +222,17 @@ class Cache
         }
 
         $key = self::getCacheKey($key);
-        
+
         switch (self::$driver) {
             case 'redis':
                 return self::$driver->set($key, serialize($data), $ttl);
-                
+
             case 'memcached':
                 return self::$driver->set($key, $data, $ttl);
-                
+
             case 'apcu':
                 return apcu_store($key, $data, $ttl);
-                
+
             case 'file':
                 try {
                     $file = self::getCacheFilePath($key);
@@ -239,23 +241,23 @@ class Cache
                         'expire' => time() + $ttl,
                         'created_at' => time()
                     ];
-                    
+
                     // Atomic write via temp file
                     $tempFile = tempnam(self::$cacheDir, 'tmp_');
                     if ($tempFile === false) {
                         return false;
                     }
-                    
+
                     if (file_put_contents($tempFile, serialize($content), LOCK_EX) === false) {
                         unlink($tempFile);
                         return false;
                     }
-                    
+
                     if (!rename($tempFile, $file)) {
                         unlink($tempFile);
                         return false;
                     }
-                    
+
                     chmod($file, 0600);
                     return true;
                 } catch (Exception $e) {
@@ -263,7 +265,7 @@ class Cache
                     return false;
                 }
         }
-        
+
         return false;
     }
 
@@ -274,17 +276,17 @@ class Cache
         }
 
         $key = self::getCacheKey($key);
-        
+
         switch (self::$driver) {
             case 'redis':
                 return self::$driver->del($key) > 0;
-                
+
             case 'memcached':
                 return self::$driver->delete($key);
-                
+
             case 'apcu':
                 return apcu_delete($key);
-                
+
             case 'file':
                 try {
                     $file = self::getCacheFilePath($key);
@@ -297,7 +299,7 @@ class Cache
                     return false;
                 }
         }
-        
+
         return false;
     }
 
@@ -311,22 +313,22 @@ class Cache
             case 'redis':
                 self::$driver->flushDB();
                 break;
-                
+
             case 'memcached':
                 self::$driver->flush();
                 break;
-                
+
             case 'apcu':
                 apcu_clear_cache();
                 break;
-                
+
             case 'file':
                 try {
                     $files = glob(self::$cacheDir . '*.cache');
                     if ($files === false) {
                         return;
                     }
-                    
+
                     foreach ($files as $file) {
                         if (is_file($file) && strpos($file, '..') === false) {
                             unlink($file);

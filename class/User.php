@@ -1,16 +1,17 @@
 <?php
+
 if (!defined('IN_SIMPLECMS')) {
     die('Прямой доступ запрещен');
 }
 
 /**
  * Класс для работы с пользователями и аутентификацией
- * 
+ *
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Authentication
  * @version    0.9.9
- * 
+ *
  * @method void   __construct(PDO $pdo)                                        Инициализирует систему пользователей
  * @method array  getAllUsers()                                                Получает список всех пользователей
  * @method bool   hasPermission(int $requiredRole, int $currentRole)           Проверяет права доступа
@@ -93,7 +94,7 @@ class User
             return false;
         }
     }
-    
+
     /**
      * Удалить пользователя
      */
@@ -131,10 +132,10 @@ class User
             flash(Lang::get('user_exists', 'core'), 'error');
             return false;
         }
-        
+
         if (
-            strlen($password) < 6 
-            || !preg_match('/[A-Z]/', $password) 
+            strlen($password) < 6
+            || !preg_match('/[A-Z]/', $password)
             || !preg_match('/[0-9]/', $password)
         ) {
             throw new Exception("Password does not meet complexity requirements");
@@ -145,13 +146,13 @@ class User
             (username, password, email, isadmin, verification_token) 
             VALUES (?, ?, ?, ?, ?)"
         );
-        
+
         if ($stmt->execute([$username, $hash, $email, $isAdmin, $verificationToken])) {
             $this->sendVerificationEmail($username, $email, $verificationToken);
             flash(Lang::get('reg_success_verify', 'core'), 'success');
             return true;
         }
-        
+
         return false;
     }
 
@@ -172,28 +173,28 @@ class User
     {
         global $config;
         Mailer::init($config);
-        
+
         $verificationUrl = "https://{$_SERVER['HTTP_HOST']}/?action=verify_email&token=$token";
         $subject = Lang::get('verify_email_subject', 'core');
-        
+
         $message = '
-            <p>'.Lang::get('hiuser', 'main').' <strong>'.htmlspecialchars($username).'</strong>,</p>
-            
-            <p>'.Lang::get('thank', 'core').' '.htmlspecialchars($config['home_title'] ?? 'our site').'. 
-            '.Lang::get('verify_email_body', 'core').'</p>
-            
+            <p>' . Lang::get('hiuser', 'main') . ' <strong>' . htmlspecialchars($username) . '</strong>,</p>
+
+            <p>' . Lang::get('thank', 'core') . ' '.htmlspecialchars($config['home_title'] ?? 'our site') . '. 
+            ' . Lang::get('verify_email_body', 'core') . '</p>
+
             <p style="text-align: center; margin: 25px 0;">
-                <a href="'.htmlspecialchars($verificationUrl).'" class="button">
-                    '.Lang::get('verify', 'core').'
+                <a href="' . htmlspecialchars($verificationUrl) . '" class="button">
+                    ' . Lang::get('verify', 'core') . '
                 </a>
             </p>
+
+            <p>' . Lang::get('reset_email_body2', 'core') . '<br>
+            <code>' . htmlspecialchars($verificationUrl) . '</code></p>
+
+            <p>' . Lang::get('verify_email_body2', 'core') . '</p>
             
-            <p>'.Lang::get('reset_email_body2', 'core').'<br>
-            <code>'.htmlspecialchars($verificationUrl).'</code></p>
-            
-            <p>'.Lang::get('verify_email_body2', 'core').'</p>
-            
-            <p>'.Lang::get('reset_email_body4', 'core').',<br>'.htmlspecialchars($config['home_title'] ?? 'simpleBlog').'</p>
+            <p>' . Lang::get('reset_email_body4', 'core') . ',<br>' . htmlspecialchars($config['home_title'] ?? 'simpleBlog') . '</p>
         ';
 
         return Mailer::send($email, $subject, $message);
@@ -202,7 +203,7 @@ class User
     public function verifyEmail($token)
     {
         global $dbPrefix;
-        
+
         // Check if token exists
         $stmt = $this->pdo->prepare(
             "SELECT id 
@@ -229,7 +230,7 @@ class User
     public function sendPasswordReset($email)
     {
         global $dbPrefix, $config;
-        
+
         $stmt = $this->pdo->prepare(
             "SELECT id, username 
             FROM {$dbPrefix}users 
@@ -241,7 +242,7 @@ class User
         if ($user) {
             $resetToken = bin2hex(random_bytes(32));
             $expires = date('Y-m-d H:i:s', time() + 3600); // 1 hour expiration
-            
+
             $stmt = $this->pdo->prepare(
                 "UPDATE {$dbPrefix}users 
                 SET reset_token = ?, reset_expires = ? 
@@ -251,7 +252,7 @@ class User
                 return $this->sendResetEmail($user['username'], $email, $resetToken);
             }
         }
-        
+
         return false;
     }
 
@@ -259,27 +260,27 @@ class User
     {
         global $config;
         Mailer::init($config);
-        
+
         $resetUrl = "https://{$_SERVER['HTTP_HOST']}/?action=reset_password&token=$token";
         $subject = Lang::get('reset_email_subject', 'core');
-        
+
         $message = '
-            <p>'.Lang::get('hiuser', 'main').' <strong>'.htmlspecialchars($username).'</strong>,</p>
-            
-            <p>'.Lang::get('reset_email_body', 'core').'</p>
-            
+            <p>' . Lang::get('hiuser', 'main') . ' <strong>' . htmlspecialchars($username) . '</strong>,</p>
+
+            <p>' . Lang::get('reset_email_body', 'core') . '</p>
+
             <p style="text-align: center; margin: 25px 0;">
-                <a href="'.htmlspecialchars($resetUrl).'" class="button">
-                    '.Lang::get('reset_password', 'core').'
+                <a href="' . htmlspecialchars($resetUrl) . '" class="button">
+                    ' . Lang::get('reset_password', 'core') . '
                 </a>
             </p>
-            
-            <p>'.Lang::get('reset_email_body2', 'core').'<br>
-            <code>'.htmlspecialchars($resetUrl).'</code></p>
-            
-            <p>'.Lang::get('reset_email_body3', 'core').'</p>
-            
-            <p>'.Lang::get('reset_email_body4', 'core').',<br>'.htmlspecialchars($config['home_title'] ?? 'simpleBlog').'</p>
+
+            <p>' . Lang::get('reset_email_body2', 'core') . '<br>
+            <code>' . htmlspecialchars($resetUrl) . '</code></p>
+
+            <p>' . Lang::get('reset_email_body3', 'core') . '</p>
+
+            <p>' . Lang::get('reset_email_body4', 'core') . ',<br>' . htmlspecialchars($config['home_title'] ?? 'simpleBlog') . '</p>
         ';
 
         return Mailer::send($email, $subject, $message);
@@ -288,7 +289,7 @@ class User
     public function resetPassword($token, $newPassword)
     {
         global $dbPrefix;
-        
+
         // Check if token is valid and not expired
         $stmt = $this->pdo->prepare(
             "SELECT id 
@@ -307,7 +308,7 @@ class User
             );
             return $stmt->execute([$hash, $userId]);
         }
-        
+
         return false;
     }
 
@@ -317,18 +318,18 @@ class User
     public function updateProfile($userId, $username, $email, $avatar = null, $currentPassword = null)
     {
         global $dbPrefix;
-        
+
         try {
             // Проверяем, изменился ли email
             $stmtCurrent = $this->pdo->prepare("SELECT email FROM {$dbPrefix}users WHERE id = ?");
             $stmtCurrent->execute([$userId]);
             $currentEmail = $stmtCurrent->fetchColumn();
-            
+
             $emailChanged = ($currentEmail !== $email);
             $verificationToken = null;
             $updates = [];
             $params = [];
-            
+
             // Если email изменился, выполняем дополнительные проверки
             if ($emailChanged) {
                 // Проверяем, не занят ли новый email
@@ -344,52 +345,52 @@ class User
                     flash(Lang::get('email_exists', 'core'), 'error');
                     return false;
                 }
-                
+
                 // Требуем текущий пароль для смены email
                 if (!$currentPassword) {
                     flash(Lang::get('current_password_required', 'core'));
                     return false;
                 }
-                
+
                 // Проверяем текущий пароль
                 $stmtPass = $this->pdo->prepare("SELECT password FROM {$dbPrefix}users WHERE id = ?");
                 $stmtPass->execute([$userId]);
                 $user = $stmtPass->fetch();
-                
+
                 if (!$user || !password_verify($currentPassword, $user['password'])) {
                     flash(Lang::get('invalid_password', 'core'));
                     return false;
                 }
-                
+
                 // Генерируем токен верификации
                 $verificationToken = bin2hex(random_bytes(32));
                 $updates[] = 'verification_token = ?';
                 $updates[] = 'email_verified = 0';
                 $params[] = $verificationToken;
             }
-            
+
             // Добавляем обновление username
             $updates[] = 'username = ?';
             $params[] = $username;
-            
+
             // Добавляем обновление email
             $updates[] = 'email = ?';
             $params[] = $email;
-            
+
             // Добавляем аватар, если есть
             if ($avatar) {
                 $updates[] = 'avatar = ?';
                 $params[] = $avatar;
             }
-            
+
             // Добавляем ID пользователя в параметры
             $params[] = $userId;
-            
+
             // Формируем и выполняем SQL запрос
             $sql = "UPDATE {$dbPrefix}users SET " . implode(', ', $updates) . " WHERE id = ?";
             $stmt = $this->pdo->prepare($sql);
             $result = $stmt->execute($params);
-            
+
             // Если email изменился, отправляем письмо для подтверждения
             if ($result && $emailChanged) {
                 $this->sendVerificationEmail($username, $email, $verificationToken);
@@ -397,9 +398,8 @@ class User
             } elseif ($result) {
                 flash(Lang::get('profile_update_success', 'core'), 'success');
             }
-            
+
             return $result;
-            
         } catch (Exception $e) {
             error_log("Profile update error: " . $e->getMessage());
             flash(Lang::get('profile_update_error', 'core'));
@@ -410,17 +410,17 @@ class User
     public function changeEmail($userId, $newEmail, $password)
     {
         global $dbPrefix, $config;
-        
+
         // Сначала проверяем правильность пароля
         $stmt = $this->pdo->prepare("SELECT password FROM {$dbPrefix}users WHERE id = ?");
         $stmt->execute([$userId]);
         $user = $stmt->fetch();
-        
+
         if (!$user || !password_verify($password, $user['password'])) {
             flash(Lang::get('invalid_password', 'core'), 'error');
             return false;
         }
-        
+
         // Проверяем, не занят ли новый email
         $stmtCheck = $this->pdo->prepare(
             "SELECT COUNT(*) 
@@ -434,28 +434,28 @@ class User
             flash(Lang::get('email_exists', 'core'), 'error');
             return false;
         }
-        
+
         // Генерируем новый токен верификации
         $verificationToken = bin2hex(random_bytes(32));
-        
+
         // Обновляем email и устанавливаем статус неверифицированным
         $stmtUpdate = $this->pdo->prepare(
             "UPDATE {$dbPrefix}users 
             SET email = ?, verification_token = ?, email_verified = 0 
             WHERE id = ?"
         );
-        
+
         if ($stmtUpdate->execute([$newEmail, $verificationToken, $userId])) {
             // Получаем имя пользователя для письма
             $stmtUsername = $this->pdo->prepare("SELECT username FROM {$dbPrefix}users WHERE id = ?");
             $stmtUsername->execute([$userId]);
             $username = $stmtUsername->fetchColumn();
-            
+
             $this->sendVerificationEmail($username, $newEmail, $verificationToken);
             flash(Lang::get('email_change_success_verify', 'core'), 'success');
             return true;
         }
-        
+
         return false;
     }
 
@@ -465,12 +465,12 @@ class User
     public function setSocialLink($userId, $socialType, $socialId, $username = null)
     {
         global $dbPrefix;
-        
+
         try {
             error_log(
                 "Attempting to link social: user_id=$userId, type=$socialType, id=$socialId, username=$username"
             );
-            
+
             // Проверяем существующую привязку
             $stmt = $this->pdo->prepare(
                 "SELECT id 
@@ -479,9 +479,9 @@ class User
             );
             $stmt->execute([$userId, $socialType]);
             $existing = $stmt->fetch();
-            
+
             if ($existing) {
-                error_log("Updating existing social link: ID ".$existing['id']);
+                error_log("Updating existing social link: ID " . $existing['id']);
                 $stmt = $this->pdo->prepare(
                     "UPDATE {$dbPrefix}user_social SET 
                     social_id = ?, 
@@ -498,13 +498,13 @@ class User
                 );
                 $result = $stmt->execute([$userId, $socialType, $socialId, $username]);
             }
-            
-            error_log("Operation result: ".($result ? "success" : "failed"));
-            error_log("PDO errorInfo: ".json_encode($this->pdo->errorInfo()));
-            
+
+            error_log("Operation result: " . ($result ? "success" : "failed"));
+            error_log("PDO errorInfo: " . json_encode($this->pdo->errorInfo()));
+
             return $result;
         } catch (Exception $e) {
-            error_log("Social link error: ".$e->getMessage());
+            error_log("Social link error: " . $e->getMessage());
             return false;
         }
     }
@@ -515,7 +515,7 @@ class User
     public function getSocialLinks($userId)
     {
         global $dbPrefix;
-        
+
         $stmt = $this->pdo->prepare(
             "SELECT social_type, social_id, social_username 
             FROM {$dbPrefix}user_social 
@@ -531,7 +531,7 @@ class User
     public function removeSocialLink($userId, $socialType)
     {
         global $dbPrefix;
-        
+
         try {
             $stmt = $this->pdo->prepare(
                 "DELETE FROM {$dbPrefix}user_social 
@@ -547,7 +547,7 @@ class User
     public function login($username, $password)
     {
         global $dbPrefix;
-        
+
         // Rate limiting check
         $security = [
             'max_attempts' => 5,         // Макс. попыток до полной блокировки
@@ -558,21 +558,21 @@ class User
 
         // Проверка блокировки
         if (
-            $_SESSION['login_attempts'] >= $security['max_attempts'] 
+            $_SESSION['login_attempts'] >= $security['max_attempts']
             && time() - $_SESSION['last_attempt'] < $security['block_time']
         ) {
             flash(
-        Lang::get('too_many_attempts', 'core') . ' Попробуйте через ' . 
-        ceil(($security['block_time'] - (time() - $_SESSION['last_attempt'])) / 60) . ' минут.',
-        'error'
-    );
+            Lang::get('too_many_attempts', 'core') . ' Попробуйте через ' . 
+            ceil(($security['block_time'] - (time() - $_SESSION['last_attempt'])) / 60) . ' минут.',
+            'error'
+            );
             return false;
         }
 
         // Прогрессивная задержка
         if ($_SESSION['login_attempts'] >= 1) {
-            $delay = ($_SESSION['login_attempts'] >= 3) 
-                ? $security['progressive_delay'] 
+            $delay = ($_SESSION['login_attempts'] >= 3)
+                ? $security['progressive_delay']
                 : $security['initial_delay'];
             sleep($delay);
         }
@@ -595,7 +595,7 @@ class User
             Cache::clear();
             return $user;
         }
-        
+
         // Увеличиваем счетчик попыток
         $_SESSION['login_attempts']++;
         $_SESSION['last_attempt'] = time();
@@ -621,9 +621,9 @@ function flash(?string $message = null, ?string $type = null)
             'type' => $type ?? 'info' // default, success, error, warning
         ];
     } else {
-        if (!empty($_SESSION['flash'])) { 
+        if (!empty($_SESSION['flash'])) {
             $flash = $_SESSION['flash'];
-            
+
             // Совместимая замена оператора match
             $color = 'blue'; // значение по умолчанию
             if ($flash['type'] === 'success') {

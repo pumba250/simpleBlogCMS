@@ -1,10 +1,11 @@
 <?php
+
 /**
  * Класс для безопасной загрузки и обработки изображений
- * 
+ *
  * Обеспечивает проверку MIME-типов, размеров файлов, генерацию безопасных имен
  * и валидацию изображений средствами GD
- * 
+ *
  * @package    SimpleBlog
  * @category   FileUpload
  * @version    0.9.8
@@ -17,6 +18,7 @@
  * @method string formatBytes(int $bytes, int $precision = 2)                        Форматирует байты в читаемый вид
  * @method static void removeOldAvatar(string $oldAvatarPath)                        Удаляет старый аватар
  */
+ 
 if (!defined('IN_SIMPLECMS')) {
     die('Прямой доступ запрещен');
 }
@@ -169,10 +171,9 @@ class ImageUploader
     {
         // Не удаляем дефолтные аватары
         $defaultAvatars = ['images/avatar_g.png', 'images/avatar_m.png'];
-        
-        if (!empty($oldAvatarPath) && 
-            !in_array($oldAvatarPath, $defaultAvatars) && 
-            file_exists($oldAvatarPath)) {
+
+        if (!empty($oldAvatarPath) && !in_array($oldAvatarPath, $defaultAvatars) && file_exists($oldAvatarPath))
+		{
             @unlink($oldAvatarPath);
         }
     }
