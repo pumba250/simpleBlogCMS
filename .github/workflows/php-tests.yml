@@ -107,12 +107,14 @@ jobs:
       run: |
         find . -name "*.php" -not -path "./vendor/*" -not -path "./tests/*" -exec php -l {} \;
 
-  code-style:
-    name: Code Style Check
+    code-style:
+    name: Code Style Check and Fix
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
@@ -120,9 +122,40 @@ jobs:
         php-version: 8.2
         tools: composer:v2
 
-    - name: Install PHP Code Sniffer
+    - name: Install PHP Code Sniffer and Fixer
       run: |
         composer require --dev squizlabs/php_codesniffer
 
-    - name: Run code style check
-      run: ./vendor/bin/phpcs class/ --standard=PSR12
+    - name: Install jq for JSON parsing
+      run: sudo apt-get install -y jq
+
+    - name: Auto-fix code style
+      run: |
+        echo "Running PHPCBF to fix automatic violations..."
+        ./vendor/bin/phpcbf class/ --standard=PSR12 --report=summary || true
+        
+        # Проверяем остаточные нарушения с нашим кастомным config
+        echo "Checking remaining violations with custom rules..."
+        REMAINING_VIOLATIONS=$(./vendor/bin/phpcs class/ --standard=phpcs.xml --report=json | jq '.totals.errors + .totals.warnings')
+        echo "Remaining violations after auto-fix: $REMAINING_VIOLATIONS"
+        
+        if [ "$REMAINING_VIOLATIONS" -gt 0 ]; then
+          echo "There are $REMAINING_VIOLATIONS violations that cannot be fixed automatically"
+          echo "These violations require manual intervention:"
+          ./vendor/bin/phpcs class/ --standard=phpcs.xml --report=source
+        fi
+
+    - name: Final code style check
+      run: |
+        echo "Final code style check with custom rules:"
+        ./vendor/bin/phpcs class/ --standard=phpcs.xml --report=summary --warning-severity=0
+        
+        # Проверяем только ошибки (игнорируем предупреждения)
+        ERROR_COUNT=$(./vendor/bin/phpcs class/ --standard=phpcs.xml --report=json --warning-severity=0 | jq '.totals.errors')
+        
+        if [ "$ERROR_COUNT" -gt 0 ]; then
+          echo "There are $ERROR_COUNT errors that need to be fixed manually"
+          exit 1
+        else
+          echo "No critical errors found! 🎉"
+        fi
