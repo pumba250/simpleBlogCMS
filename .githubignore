@@ -9,6 +9,7 @@ composer.lock
 .gitignore
 .php-cs-fixer.php
 .phpcs.xml
+phpcs.xml
 phpmd.xml
 .editorconfig
 logs/
