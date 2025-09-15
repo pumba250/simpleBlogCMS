@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<ruleset name="simpleBlogCMS Coding Standard">
+    <description>PSR-12 coding standard for simpleBlogCMS</description>
+    
+    <!-- Исключаемые директории -->
+    <exclude-pattern>vendor/*</exclude-pattern>
+    <exclude-pattern>tests/*</exclude-pattern>
+    <exclude-pattern>node_modules/*</exclude-pattern>
+    <exclude-pattern>cache/*</exclude-pattern>
+    <exclude-pattern>logs/*</exclude-pattern>
+    <exclude-pattern>templates/*</exclude-pattern>
+    <exclude-pattern>images/*</exclude-pattern>
+    
+    <!-- Проверяемые файлы -->
+    <file>class</file>
+    <file>index.php</file>
+    <file>admin.php</file>
+    <file>install.php</file>
+    
+    <!-- Используем стандарт PSR12 -->
+    <rule ref="PSR12"/>
+    
+    <!-- Дополнительные настройки -->
+    <arg name="colors"/>
+    <arg value="p"/>
+    <arg value="s"/>
+</ruleset>
