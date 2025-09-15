@@ -172,8 +172,7 @@ class ImageUploader
         // Не удаляем дефолтные аватары
         $defaultAvatars = ['images/avatar_g.png', 'images/avatar_m.png'];
 
-        if (!empty($oldAvatarPath) && !in_array($oldAvatarPath, $defaultAvatars) && file_exists($oldAvatarPath)) 
-        {
+        if (!empty($oldAvatarPath) && !in_array($oldAvatarPath, $defaultAvatars) && file_exists($oldAvatarPath)) {
             @unlink($oldAvatarPath);
         }
     }

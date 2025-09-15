@@ -202,8 +202,7 @@ class News
         }
 
         return new class ($lastThreeNewsHtml)
-		{
-
+        {
             private $html;
 
             public function __construct($html)
@@ -385,8 +384,7 @@ class News
         }
 
         return new class ($allTagsHtml)
-		{
-
+        {
             private $html;
 
             public function __construct($html)

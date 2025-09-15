@@ -288,7 +288,7 @@ class Updater
 
             // Функция для обновления прогресса и логов
             function updateProgress($percent, $message)
-			{
+            {
                 echo '<script>
                     document.getElementById("updateProgressBar").style.width = "' . $percent . '%";
                     document.getElementById("updateProgressBar").innerHTML = "' . $percent . '% - ' . addslashes($message) . '";

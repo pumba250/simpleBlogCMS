@@ -259,16 +259,16 @@ class parse
     {
         $action = strtolower($action);
         if (strpos($action, 'удал') !== false) {
-			return 'danger';
+            return 'danger';
         }
         if (strpos($action, 'добав') !== false || strpos($action, 'созда') !== false) {
-			return 'success';
+            return 'success';
         }
         if (strpos($action, 'опытк') !== false || strpos($action, 'измен') !== false) {
-			return 'warning';
+            return 'warning';
         }
         if (strpos($action, 'ошибка') !== false) {
-		    return 'danger';
+            return 'danger';
         }
         if (strpos($action, 'вход') !== false || strpos($action, 'выход') !== false) {
             return 'info';
