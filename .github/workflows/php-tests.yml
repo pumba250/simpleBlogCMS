@@ -108,7 +108,7 @@ jobs:
         find . -name "*.php" -not -path "./vendor/*" -not -path "./tests/*" -exec php -l {} \;
 
   code-style:
-    name: Code Style Check
+    name: Code Style Check and Fix
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
@@ -120,9 +120,83 @@ jobs:
         php-version: 8.2
         tools: composer:v2
 
-    - name: Install PHP Code Sniffer
+    - name: Install PHP Code Sniffer and Fixer
       run: |
         composer require --dev squizlabs/php_codesniffer
 
-    - name: Run code style check
-      run: ./vendor/bin/phpcs class/ --standard=PSR12
+    - name: Check code style
+      id: code-style-check
+      run: |
+        ./vendor/bin/phpcs class/ --standard=PSR12 --report=summary || true
+        VIOLATIONS=$(./vendor/bin/phpcs class/ --standard=PSR12 --report=json | jq '.totals.errors + .totals.warnings')
+        echo "violations=$VIOLATIONS" >> $GITHUB_OUTPUT
+
+    - name: Auto-fix code style
+      if: steps.code-style-check.outputs.violations != '0' && github.event_name == 'pull_request'
+      run: |
+        echo "Attempting to automatically fix code style violations..."
+        ./vendor/bin/phpcbf class/ --standard=PSR12
+        
+        # Проверяем, были ли внесены изменения
+        if git diff --exit-code; then
+          echo "No changes were made by PHPCBF"
+        else
+          echo "Code style violations were fixed automatically"
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git add class/
+          git commit -m "style: автоматическое исправление стиля кода с помощью PHPCBF"
+          git push
+        fi
+
+    - name: Final code style check
+      if: always()
+      run: |
+        echo "Final code style check:"
+        ./vendor/bin/phpcs class/ --standard=PSR12 --report=summary
+
+  # Новый job для автоматического исправления стиля
+  auto-fix:
+    name: Auto Fix Code Style
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.2
+        tools: composer:v2
+
+    - name: Install PHP Code Sniffer and Fixer
+      run: |
+        composer require --dev squizlabs/php_codesniffer
+
+    - name: Check and fix code style
+      run: |
+        # Проверяем есть ли нарушения
+        VIOLATIONS=$(./vendor/bin/phpcs class/ --standard=PSR12 --report=json | jq '.totals.errors + .totals.warnings')
+        
+        if [ "$VIOLATIONS" -gt 0 ]; then
+          echo "Found $VIOLATIONS violations, attempting to fix..."
+          ./vendor/bin/phpcbf class/ --standard=PSR12
+          
+          # Проверяем были ли изменения
+          if git diff --exit-code; then
+            echo "No changes were made by PHPCBF"
+          else
+            echo "Changes were made, committing and pushing..."
+            git config user.name 'GitHub Actions'
+            git config user.email 'actions@github.com'
+            git add class/
+            git commit -m "style: автоматическое исправление стиля кода [skip ci]"
+            git push
+          fi
+        else
+          echo "No code style violations found"
+        fi
