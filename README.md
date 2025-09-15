@@ -50,8 +50,7 @@ SimpleBlog распространяется под лицензией MIT. По�
 
 ## Тестирование
 
-![PHP Tests](https://github.com/pumba250/simpleBlogCMS/workflows/PHP%20Tests/badge.svg)
-![Security Check](https://github.com/pumba250/simpleBlogCMS/workflows/Security%20Check/badge.svg)
+[![PHP Tests](https://github.com/pumba250/simpleBlogCMS/actions/workflows/php-tests.yml/badge.svg?branch=main)](https://github.com/pumba250/simpleBlogCMS/actions/workflows/php-tests.yml)
 
 ## Поддержка
 
