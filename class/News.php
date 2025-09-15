@@ -195,14 +195,15 @@ class News
         $lastThreeNewsHtml = '';
         foreach ($last as $item) {
             $lastThreeNewsHtml .= '<li class="w3-padding">';
-            $lastThreeNewsHtml .= '<span class="w3-large"><a href="?id=' . htmlspecialchars($item['id']) . '">' 
+            $lastThreeNewsHtml .= '<span class="w3-large"><a href="?id=' . htmlspecialchars($item['id']) . '">'
                                 . htmlspecialchars($item['title']) . '</a></span><br>';
             $lastThreeNewsHtml .= '<span>' . htmlspecialchars($item['created_at']) . '</span>';
             $lastThreeNewsHtml .= '</li>';
         }
 
-        return new class($lastThreeNewsHtml) {
-			
+        return new class ($lastThreeNewsHtml)
+		{
+
             private $html;
 
             public function __construct($html)
@@ -378,13 +379,14 @@ class News
         foreach ($tags as $tag) {
             $allTagsHtml .= '
             <span class="w3-tag w3-light-grey w3-small w3-margin-bottom">
-                <a class="w3-button" href="?tags=' . urlencode($tag['name']) . '">' 
+                <a class="w3-button" href="?tags=' . urlencode($tag['name']) . '">'
                 . htmlspecialchars($tag['name']) . '</a>
             </span>';
         }
 
-        return new class($allTagsHtml) {
-			
+        return new class ($allTagsHtml)
+		{
+
             private $html;
 
             public function __construct($html)

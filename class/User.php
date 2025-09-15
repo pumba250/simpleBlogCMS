@@ -180,7 +180,7 @@ class User
         $message = '
             <p>' . Lang::get('hiuser', 'main') . ' <strong>' . htmlspecialchars($username) . '</strong>,</p>
 
-            <p>' . Lang::get('thank', 'core') . ' '.htmlspecialchars($config['home_title'] ?? 'our site') . '. 
+            <p>' . Lang::get('thank', 'core') . ' ' . htmlspecialchars($config['home_title'] ?? 'our site') . '. 
             ' . Lang::get('verify_email_body', 'core') . '</p>
 
             <p style="text-align: center; margin: 25px 0;">
@@ -562,9 +562,9 @@ class User
             && time() - $_SESSION['last_attempt'] < $security['block_time']
         ) {
             flash(
-            Lang::get('too_many_attempts', 'core') . ' Попробуйте через ' . 
-            ceil(($security['block_time'] - (time() - $_SESSION['last_attempt'])) / 60) . ' минут.',
-            'error'
+                Lang::get('too_many_attempts', 'core') . ' Попробуйте через ' .
+                ceil(($security['block_time'] - (time() - $_SESSION['last_attempt'])) / 60) . ' минут.',
+                'error'
             );
             return false;
         }
@@ -580,7 +580,7 @@ class User
         $stmt = $this->pdo->prepare("SELECT * FROM {$dbPrefix}users WHERE username = ?");
         $stmt->execute([$username]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if ($user && password_verify($password, $user['password'])) {
             session_regenerate_id(true);
             $_SESSION = [];

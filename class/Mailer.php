@@ -1,11 +1,12 @@
 <?php
+
 if (!defined('IN_SIMPLECMS')) {
     die('Прямой доступ запрещен');
 }
 
 /**
  * Класс для отправки электронной почты
- * 
+ *
  * @package    SimpleBlog
  * @subpackage Services
  * @category   Communication
@@ -19,11 +20,11 @@ class Mailer
 {
     /**
      * Конфигурация почтовой системы
-     * 
+     *
      * @var array
      */
     private static $config;
-    
+
     /**
      * Инициализирует конфигурацию почтовой системы
      *
@@ -34,7 +35,7 @@ class Mailer
     {
         self::$config = $config;
     }
-    
+
     /**
      * Отправляет email
      *
@@ -46,9 +47,9 @@ class Mailer
      */
     public static function send(string $to, string $subject, string $body, bool $isHtml = true): bool
     {
-        $from = self::$config['mail_from'] 
+        $from = self::$config['mail_from']
             ?? 'noreply@' . str_replace("www.", "", $_SERVER['SERVER_NAME']);
-        
+
         $headers = [
             'From' => $from,
             'Reply-To' => $from,
@@ -72,7 +73,7 @@ class Mailer
 
         return mail($to, $subject, $fullBody, $headerString);
     }
-    
+
     /**
      * Форматирует контент в HTML-шаблон
      *
@@ -84,7 +85,7 @@ class Mailer
     {
         $homeTitle = htmlspecialchars(self::$config['home_title'] ?? 'SimpleBlog');
         $poweredBy = self::$config['powered'] ?? 'Powered by SimpleBlog';
-        
+
         return '<!DOCTYPE html>
         <html>
         <head>

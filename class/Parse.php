@@ -1,7 +1,6 @@
 <?php
 
-if (!defined('IN_SIMPLECMS'))
-{
+if (!defined('IN_SIMPLECMS')) {
     die('Прямой доступ запрещен');
 }
 /**
@@ -21,7 +20,7 @@ if (!defined('IN_SIMPLECMS'))
 class parse
 {
     function truncateHTML($text, $size = 300, $finisher = '...')
-	{
+    {
         $len = strlen($text);
 
         if ($len <= $size) {
@@ -170,7 +169,7 @@ class parse
         return $output;
     }
     public static function userblocks($content, $config, $user = null)
-	{
+    {
         if (empty($config['blocks_for_reg'])) {
             return $content;
         }
@@ -194,7 +193,7 @@ class parse
  * Возвращает строку с временем, прошедшим с указанной даты
  */
     public function time_elapsed_string($datetime, $full = false)
-	{
+    {
         $now = new DateTime();
         $ago = new DateTime($datetime);
         $diff = $now->diff($ago);
@@ -239,7 +238,7 @@ class parse
 
     // Функция для правильного склонения существительных
     public function getNounPluralForm($number, $one, $two, $five)
-	{
+    {
         $number = abs($number) % 100;
         if ($number > 10 && $number < 20) {
             return $five;
@@ -257,18 +256,23 @@ class parse
  * Возвращает цвет badge в зависимости от типа действия
  */
     public function getLogBadgeColor($action)
-	{
+    {
         $action = strtolower($action);
-        if (strpos($action, 'удал') !== false)
+        if (strpos($action, 'удал') !== false) {
 			return 'danger';
-        if (strpos($action, 'добав') !== false || strpos($action, 'созда') !== false)
+        }
+        if (strpos($action, 'добав') !== false || strpos($action, 'созда') !== false) {
 			return 'success';
-        if (strpos($action, 'опытк') !== false || strpos($action, 'измен') !== false)
+        }
+        if (strpos($action, 'опытк') !== false || strpos($action, 'измен') !== false) {
 			return 'warning';
-        if (strpos($action, 'ошибка') !== false)
-			return 'danger';
-        if (strpos($action, 'вход') !== false || strpos($action, 'выход') !== false)
-			return 'info';
+        }
+        if (strpos($action, 'ошибка') !== false) {
+		    return 'danger';
+        }
+        if (strpos($action, 'вход') !== false || strpos($action, 'выход') !== false) {
+            return 'info';
+        }
         return 'secondary';
     }
 }

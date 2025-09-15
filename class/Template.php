@@ -43,7 +43,7 @@ class Template
         $this->config = $config;
         $this->news = $news;
         $this->templateDir = "templates/{$templ}";
-        
+
         if (!is_dir($this->templateDir)) {
             throw new Exception("Директория с шаблонами не найдена: {$this->templateDir}");
         }
@@ -99,7 +99,7 @@ class Template
 
     /**
      * Рендерит шаблон с передачей переменных
-     * 
+     *
      * @param string $templateFile Имя файла шаблона (относительно templateDir)
      * @param array $additionalVars Дополнительные переменные для этого рендеринга
      * @return string
@@ -235,7 +235,7 @@ class Template
                 $fullPath = $templatesDir . '/' . $item;
                 if ($item != '.' && $item != '..' && is_dir($fullPath)) {
                     if (
-                        file_exists($fullPath . '/footer.tpl') && 
+                        file_exists($fullPath . '/footer.tpl') &&
                         file_exists($fullPath . '/header.tpl')
                     ) {
                         $availableTemplates[] = $item;
@@ -261,7 +261,7 @@ class Template
         if (in_array($newTemplate, $availableTemplates)) {
             $config['templ'] = $newTemplate;
             $configContent = "<?php\nif (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }\nreturn " . var_export($config, true) . ";\n";
-            
+
             if (file_put_contents($configPath, $configContent, LOCK_EX)) {
                 if (function_exists('opcache_invalidate')) {
                     opcache_invalidate($configPath);
@@ -377,63 +377,38 @@ class Template
 
         return $template;
     }
-    
-    /*public function renderMainTemplate(string $mainTemplateFile, array $data = []): string
-    {
-        $templatePath = $this->templateDir . '/' . ltrim($mainTemplateFile, '/');
-        
-        if (!file_exists($templatePath)) {
-            throw new \RuntimeException("Main template file not found: {$templatePath}");
-        }
-        
-        $templateContent = file_get_contents($templatePath);
-        
-        // Заменяем плейсхолдеры на реальный контент
-        $replacements = [
-            '[[NAVIGATION]]' => $this->render('navigation.tpl', $data),
-            '[[CONTENTS]]' => $data['content'] ?? '',
-            '[[footer]]' => $this->renderFooter($data['footerData'] ?? []),
-            '[[pageTitle]]' => $data['pageTitle'] ?? ''
-        ];
-        
-        return str_replace(
-            array_keys($replacements), 
-            array_values($replacements), 
-            $templateContent
-        );
-    }*/
 
     public function renderNewsList(array $newsItems, string $templateFile): string
     {
         global $votes;
-        
+
         if (!isset($this->templateCache[$templateFile])) {
             $path = $this->templateDir . '/' . ltrim($templateFile, '/');
             $this->templateCache[$templateFile] = file_get_contents($path);
         }
-        
+
         $templateContent = $this->templateCache[$templateFile];
-        
+
         if (empty($newsItems)) {
-            return '<div class="w3-card-4 w3-margin w3-white"><div class="w3-container w3-padding"><h3><b>' 
+            return '<div class="w3-card-4 w3-margin w3-white"><div class="w3-container w3-padding"><h3><b>'
                 . Lang::get('nonews') . '</b></h3></div></div><hr>';
         }
-        
+
         $result = '';
         foreach ($newsItems as $item) {
             $item['article_rating'] = $votes->getArticleRating($item['id']);
-            $item['hasVotedArticle'] = isset($_SESSION['user']) 
-                ? $votes->hasUserVotedForArticle($item['id'], $_SESSION['user']['id']) 
+            $item['hasVotedArticle'] = isset($_SESSION['user'])
+                ? $votes->hasUserVotedForArticle($item['id'], $_SESSION['user']['id'])
                 : false;
             $result .= $this->renderTemplateString($templateContent, $item);
         }
-        
+
         return $result;
     }
 
     /**
      * Рендерит одну новость
-     * 
+     *
      * @param array|object $newsItem Данные новости
      * @param string $templateFile Шаблон для рендеринга
      * @return string
@@ -441,7 +416,7 @@ class Template
     public function renderNewsItem($newsItem, string $templateFile): string
     {
         global $votes;
-        
+
         if (!isset($this->templateCache[$templateFile])) {
             $path = $this->templateDir . '/' . ltrim($templateFile, '/');
             if (!file_exists($path)) {
@@ -449,13 +424,13 @@ class Template
             }
             $this->templateCache[$templateFile] = file_get_contents($path);
         }
-        
+
         $newsItem['article_rating'] = $votes->getArticleRating($newsItem['id']);
         $newsItem['csrf_token'] = $_SESSION['csrf_token'];
-        $newsItem['hasVotedArticle'] = isset($_SESSION['user']) 
-            ? $votes->hasUserVotedForArticle($newsItem['id'], $_SESSION['user']['id']) 
+        $newsItem['hasVotedArticle'] = isset($_SESSION['user'])
+            ? $votes->hasUserVotedForArticle($newsItem['id'], $_SESSION['user']['id'])
             : false;
-        
+
         return $this->renderTemplateId($this->templateCache[$templateFile], $newsItem);
     }
 
@@ -466,14 +441,14 @@ class Template
     {
         global $votes;
         $processed = '';
-        
+
         if (!isset($this->templateCache[$templateFile])) {
             $path = $this->templateDir . '/' . ltrim($templateFile, '/');
             $this->templateCache[$templateFile] = file_get_contents($path);
         }
-        
+
         $templateContent = $this->templateCache[$templateFile];
-        
+
         foreach ($comments as $comment) {
             $data = [
                 'id' => $comment['id'],
@@ -483,15 +458,15 @@ class Template
                 'avatar' => !empty($comment['avatar']) ? $comment['avatar'] : 'images/avatar_g.png',
                 'created_at' => $this->formatDate($comment['created_at'] ?? ''),
                 'comm_rating' => $votes->getCommentRating($comment['id']),
-                'voted' => isset($_SESSION['user']) 
-                    ? $votes->hasUserVoted($comment['id'], $_SESSION['user']['id']) 
+                'voted' => isset($_SESSION['user'])
+                    ? $votes->hasUserVoted($comment['id'], $_SESSION['user']['id'])
                     : false,
                 'csrf_token' => $_SESSION['csrf_token'] ?? ''
             ];
-            
+
             $processed .= $this->renderTemplateString($templateContent, $data);
         }
-        
+
         return $processed;
     }
 
@@ -503,7 +478,7 @@ class Template
             }
 
             $timestamp = is_numeric($date) ? (int)$date : strtotime($date);
-            
+
             if ($timestamp === false) {
                 return 'неверная дата';
             }
@@ -515,7 +490,7 @@ class Template
             if ($timestamp >= $today) {
                 return 'сегодня в ' . date('H:i', $timestamp);
             }
-            
+
             if ($timestamp >= $yesterday) {
                 return 'вчера в ' . date('H:i', $timestamp);
             }
@@ -542,7 +517,7 @@ class Template
     public function generateUrl($params = [], $absolute = false)
     {
         global $config;
-        
+
         if ($config['pretty_urls'] ?? false) {
             if (isset($params['id'])) {
                 return ($absolute ? $config['base_url'] : '') . '/news/' . $params['id'];
@@ -554,7 +529,7 @@ class Template
                 return ($absolute ? $config['base_url'] : '') . '/user/' . $params['user'];
             }
         }
-        
+
         // Стандартные URL
         return ($absolute ? $config['base_url'] : '') . '?' . http_build_query($params);
     }

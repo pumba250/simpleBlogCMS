@@ -59,7 +59,7 @@ for ($i = 0; $i < 100; $i++) {
 
 // Добавление линий
 for ($i = 0; $i < 5; $i++) {
-    imageline($image, rand(0, $width), rand(0, $height),rand(0, $width), rand(0, $height),$noiseColor);
+    imageline($image, rand(0, $width), rand(0, $height), rand(0, $width), rand(0, $height), $noiseColor);
 }
 
 // Генерация текста капчи

@@ -1,7 +1,6 @@
 <?php
 
-if (!defined('IN_SIMPLECMS'))
-{
+if (!defined('IN_SIMPLECMS')) {
     die('Прямой доступ запрещен');
 }
 /**
@@ -28,7 +27,7 @@ class FooterDataProvider
     private $config;
 
     public function __construct(News $news, User $user, Template $template, array $config)
-	{
+    {
         $this->news = $news;
         $this->user = $user;
         $this->template = $template;
@@ -36,7 +35,7 @@ class FooterDataProvider
     }
 
     public function prepareFooterData()
-	{
+    {
         return [
             'userSection' => $this->prepareUserSection(),
             'searchForm' => $this->prepareSearchForm(),
@@ -50,7 +49,7 @@ class FooterDataProvider
     }
 
     private function prepareUserSection()
-	{
+    {
         $currentUser = $_SESSION['user'] ?? null;
         $data = [
             'auth_error' => $_SESSION['auth_error'] ?? null,
@@ -68,13 +67,14 @@ class FooterDataProvider
     }
 
     private function prepareSearchForm()
-	{
+    {
         return $this->template->render('partials/footer/search_form.tpl', [
             'searchQuery' => $_GET['search'] ?? ''
         ]);
     }
 
-    private function prepareRecentNewsList() {
+    private function prepareRecentNewsList()
+	{
         $lastThreeNews = $this->news->getLastThreeNews();
         //var_dump('Recent News Data: ' . print_r($lastThreeNews, true));
         if (empty($lastThreeNews)) {
@@ -97,7 +97,7 @@ class FooterDataProvider
     }
 
     private function prepareFooterContent()
-	{
+    {
         return $this->template->render('partials/footer/footer_content.tpl', [
             'currentYear' => date("Y"),
             'serverName' => htmlspecialchars($_SERVER['SERVER_NAME']),

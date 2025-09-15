@@ -1,6 +1,8 @@
 <?php
 
-if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'); }
+if (!defined('IN_SIMPLECMS')) {
+    die('Прямой доступ запрещен');
+}
 /**
  * Централизованный обработчик ошибок и исключений
  *
@@ -14,12 +16,12 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  * @method static bool handleError(int $errno, string $errstr, string $errfile, int $errline) Обрабатывает ошибки
  * @method static void handleShutdown()                                  Обрабатывает фатальные ошибки при завершении
  */
-class ErrorHandler 
+class ErrorHandler
 {
     private static $logFile = 'logs/errors.log';
     private static $debugMode = false;
 
-    public static function init(bool $debugMode = false) 
+    public static function init(bool $debugMode = false)
     {
         self::$debugMode = $debugMode;
 
@@ -33,13 +35,13 @@ class ErrorHandler
         register_shutdown_function([self::class, 'handleShutdown']);
     }
 
-    public static function handleException(Throwable $e) 
+    public static function handleException(Throwable $e)
     {
         self::logError($e);
         self::displayError($e);
     }
 
-    public static function handleError(int $errno, string $errstr, string $errfile, int $errline) 
+    public static function handleError(int $errno, string $errstr, string $errfile, int $errline)
     {
         if (!(error_reporting() & $errno)) {
             return false;
@@ -51,7 +53,7 @@ class ErrorHandler
         return true;
     }
 
-    public static function handleShutdown() 
+    public static function handleShutdown()
     {
         $error = error_get_last();
         if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
@@ -59,7 +61,7 @@ class ErrorHandler
         }
     }
 
-    private static function logError(Throwable $e) 
+    private static function logError(Throwable $e)
     {
         // Создаем директорию для логов если ее нет
         if (!file_exists(dirname(self::$logFile))) {
@@ -78,13 +80,13 @@ class ErrorHandler
         file_put_contents(self::$logFile, $message, FILE_APPEND);
     }
 
-    private static function shouldShowDebugInfo(): bool 
+    private static function shouldShowDebugInfo(): bool
     {
         // Режим отладки включен в конфиге ИЛИ пользователь - администратор
         return self::$debugMode || (isset($_SESSION['user']['isadmin']) && $_SESSION['user']['isadmin'] == 9);
     }
 
-    private static function displayError(Throwable $e) 
+    private static function displayError(Throwable $e)
     {
         if (headers_sent() === false) {
             header($_SERVER["SERVER_PROTOCOL"] . ' 500 Internal Server Error');
@@ -122,7 +124,7 @@ class ErrorHandler
         exit(1);
     }
 
-    private static function sanitizeSessionData(array $session): array 
+    private static function sanitizeSessionData(array $session): array
     {
         $sanitized = [];
         foreach ($session as $key => $value) {
@@ -141,7 +143,7 @@ class ErrorHandler
         return $sanitized;
     }
 
-    private static function sanitizePostData(array $data): array 
+    private static function sanitizePostData(array $data): array
     {
         $sanitized = [];
         foreach ($data as $key => $value) {

@@ -1,15 +1,16 @@
 <?php
+
 if (!defined('IN_SIMPLECMS')) {
     die('Прямой доступ запрещен');
 }
 /**
  * Основной класс для обработки запросов
- * 
+ *
  * @package    SimpleBlog
  * @subpackage Core
  * @category   System
  * @version    0.9.9
- * 
+ *
  * @method void __construct(PDO $pdo, array $config, Template $template) Инициализирует зависимости
  * @method void handlePostRequest() Обрабатывает все POST-запросы (основной публичный метод)
  * @method void handleCommentPost() Обрабатывает отправку комментария (приватный)
@@ -38,7 +39,7 @@ class Core
         $this->pdo = $pdo;
         $this->config = $config;
         $this->template = $template;
-        
+
         // Инициализация зависимостей
         $this->user = new User($pdo, $template);
         $this->votes = new Votes($pdo);
@@ -105,7 +106,7 @@ class Core
         $themeId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
         $userName = isset($_SESSION['user']['username']) ? $_SESSION['user']['username'] : $_POST['user_name'];
         $userText = $_POST['user_text'];
-        
+
         if ($themeId > 0 && !empty($userName) && !empty($userText)) {
             $this->comments->addComment(0, 0, $themeId, $userName, $userText);
             header("Location: ?id=" . $themeId);
@@ -118,26 +119,26 @@ class Core
      */
     private function handleVotePost()
     {
-        $newsId = isset($_POST['id']) 
-            ? (int)$_POST['id'] 
+        $newsId = isset($_POST['id'])
+            ? (int)$_POST['id']
             : (isset($_GET['id']) ? (int)$_GET['id'] : 0);
-        
+
         if ($newsId === 0) {
             die(Lang::get('not_id', 'core'));
         }
-        
+
         $newsItem = $this->news->getNewsById($newsId);
         if (!$newsItem) {
             die(Lang::get('not_news', 'core'));
         }
-        
+
         if (isset($_POST['vote_article']) && isset($_SESSION['user']['id'])) {
             $voteType = $_POST['vote_article'];
             $this->votes->voteArticle($newsId, $voteType, $_SESSION['user']['id']);
             header("Location: ?id=$newsId");
             exit;
         }
-        
+
         if (isset($_POST['vote_comment']) && isset($_SESSION['user']['id'])) {
             list($commentId, $voteType) = explode('_', $_POST['vote_comment']);
             $this->votes->voteComment($commentId, $voteType, $_SESSION['user']['id']);
@@ -164,7 +165,7 @@ class Core
         $captchaValid = isset($_POST['captcha']) && $_POST['captcha'] == $_SESSION['captcha_answer'];
         $username = $_POST['username'] ?? '';
         $password = $_POST['password'] ?? '';
-        
+
         if (!$captchaValid) {
             $_SESSION['auth_error'] = Lang::get('not_answer', 'core');
         } elseif (empty($username) || empty($password)) {
@@ -183,11 +184,11 @@ class Core
                 $_SESSION['auth_error'] = Lang::get('not_login', 'core');
             }
         }
-        
+
         $_SESSION['auth_form_data'] = [
             'username' => $username
         ];
-        
+
         header("Location: " . $_SERVER['REQUEST_URI']);
         exit;
     }
@@ -199,9 +200,9 @@ class Core
     {
         if (isset($_POST['captcha']) && $_POST['captcha'] == $_SESSION['captcha_answer']) {
             if ($this->contact->saveMessage($_POST['name'], $_POST['email'], $_POST['message'])) {
-            flash(Lang::get('msg_send', 'core'), 'success');
-            header('Location: ?action=contact&status=send');
-            exit();
+                flash(Lang::get('msg_send', 'core'), 'success');
+                header('Location: ?action=contact&status=send');
+                exit();
             } else {
                 flash(Lang::get('msg_error', 'core'), 'error');
                 header('Location: ?action=contact&status=errno');
@@ -212,7 +213,7 @@ class Core
             header('Location: ?action=contact&status=errno');
             exit();
         }
-}
+    }
 
     /**
      * Обработка запроса на сброс пароля
@@ -260,7 +261,7 @@ class Core
         $username = trim($_POST['username'] ?? '');
         $email = trim($_POST['email'] ?? '');
         $currentPassword = trim($_POST['current_password'] ?? '');
-        
+
         // Обработка загрузки аватара
         $avatar = null;
         if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
@@ -269,15 +270,14 @@ class Core
                 $uploadDir = $this->config['upload_dir'] . 'avatars/';
                 $maxSize = 2 * 1024 * 1024; // 2MB
                 $imageUploader = new ImageUploader($uploadDir, $maxSize);
-                
+
                 // Загружаем изображение. Базовое имя = 'user_' + ID пользователя
                 $baseFileName = 'user_' . $_SESSION['user']['id'];
                 $newAvatarPath = $imageUploader->upload($_FILES['avatar'], $baseFileName);
-                
+
                 // Если загрузка успешна, удаляем старый аватар и сохраняем путь к новому
                 ImageUploader::removeOldAvatar($_SESSION['user']['avatar'] ?? null);
                 $avatar = $newAvatarPath;
-                
             } catch (RuntimeException $e) {
                 // Ловим и обрабатываем ошибки загрузки
                 flash(Lang::get('avatar_upload_error', 'core') . ': ' . $e->getMessage(), 'error');
@@ -285,35 +285,34 @@ class Core
                 exit;
             }
         }
-        
+
         // Проверяем, изменился ли email
         $emailChanged = ($email !== $_SESSION['user']['email']);
-        
+
         // Если email изменился, проверяем текущий пароль
         if ($emailChanged && empty($currentPassword)) {
             flash(Lang::get('current_password_required', 'core'), 'error');
             header('Location: /?action=profile');
             exit;
         }
-        
+
         // Обновляем профиль
         if ($this->user->updateProfile($_SESSION['user']['id'], $username, $email, $avatar, $emailChanged ? $currentPassword : null)) {
             flash(Lang::get('profile_updated', 'core'), 'success');
-            
+
             // Обновляем данные в сессии
             $_SESSION['user']['username'] = $username;
             $_SESSION['user']['email'] = $email;
             if ($avatar) {
                 $_SESSION['user']['avatar'] = $avatar;
             }
-            
+
             // Если email изменился, разлогиниваем пользователя или отмечаем email как неверифицированный
             if ($emailChanged) {
                 $_SESSION['user']['email_verified'] = false;
                 flash(Lang::get('email_change_success_verify', 'core'), 'error');
-                
             }
-            
+
             header('Location: /?action=profile');
             exit;
         } else {

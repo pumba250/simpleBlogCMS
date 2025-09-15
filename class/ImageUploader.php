@@ -18,7 +18,7 @@
  * @method string formatBytes(int $bytes, int $precision = 2)                        Форматирует байты в читаемый вид
  * @method static void removeOldAvatar(string $oldAvatarPath)                        Удаляет старый аватар
  */
- 
+
 if (!defined('IN_SIMPLECMS')) {
     die('Прямой доступ запрещен');
 }
@@ -172,8 +172,8 @@ class ImageUploader
         // Не удаляем дефолтные аватары
         $defaultAvatars = ['images/avatar_g.png', 'images/avatar_m.png'];
 
-        if (!empty($oldAvatarPath) && !in_array($oldAvatarPath, $defaultAvatars) && file_exists($oldAvatarPath))
-		{
+        if (!empty($oldAvatarPath) && !in_array($oldAvatarPath, $defaultAvatars) && file_exists($oldAvatarPath)) 
+        {
             @unlink($oldAvatarPath);
         }
     }

@@ -1,7 +1,6 @@
 <?php
 
-if (!defined('IN_SIMPLECMS')) 
-{ 
+if (!defined('IN_SIMPLECMS')) { 
     die('Прямой доступ запрещен');
 }
 /**
@@ -16,6 +15,7 @@ if (!defined('IN_SIMPLECMS'))
  * @method array  getAllMessages() Получает все сообщения (сортировка по дате создания)
  * @method bool   deleteMessage(int $id) Удаляет сообщение по ID
  */
+
 class Contact
 {
     private $pdo;

@@ -26,6 +26,7 @@
  * @method void executeUpdateSql(string $file)                                 Выполняет SQL-скрипт
  * @method bool restoreBackup(string $backupFile)                              Восстанавливает из резервной копии
  */
+
 if (!defined('IN_SIMPLECMS')) {
     die('Прямой доступ запрещен');
 }
@@ -180,7 +181,7 @@ class Updater
      */
     private function isImportantUpdate($body)
     {
-        return (strpos($body, 'Security') !== false) 
+        return (strpos($body, 'Security') !== false)
                || (strpos($body, 'безопасност') !== false)
                || (strpos($body, 'критич') !== false);
     }
@@ -286,7 +287,8 @@ class Updater
             echo '</div>';
 
             // Функция для обновления прогресса и логов
-            function updateProgress($percent, $message) {
+            function updateProgress($percent, $message)
+			{
                 echo '<script>
                     document.getElementById("updateProgressBar").style.width = "' . $percent . '%";
                     document.getElementById("updateProgressBar").innerHTML = "' . $percent . '% - ' . addslashes($message) . '";
@@ -329,7 +331,7 @@ class Updater
             // Загружаем обновление
             updateProgress(40, "Загрузка обновления");
             $tempFile = $this->downloadUpdate($updateInfo['download_url']);
-            $fileSize = round(filesize($tempFile)/1024);
+            $fileSize = round(filesize($tempFile) / 1024);
             updateProgress(50, "Обновление загружено ({$fileSize} KB)");
 
             // Проверка хеша
@@ -379,7 +381,6 @@ class Updater
             echo "</body></html>";
 
             return true;
-
         } catch (Exception $e) {
             // Устанавливаем прогресс в ошибку
             echo '<script>
@@ -404,7 +405,6 @@ class Updater
                         document.getElementById("updateProgressBar").innerHTML = "Восстановлено из резервной копии";
                         document.getElementById("logContainer").innerHTML += "\n' . date('Y-m-d H:i:s') . ' - Восстановление успешно завершено";
                     </script>';
-
                 } catch (Exception $restoreEx) {
                     echo '<script>document.getElementById("logContainer").innerHTML += "\n<strong>ОШИБКА ВОССТАНОВЛЕНИЯ:</strong> ' . addslashes($restoreEx->getMessage()) . '";</script>';
                 }
@@ -481,7 +481,7 @@ class Updater
             throw new Exception("Не удалось создать временную директорию");
         }
 
-        $zip = new ZipArchive;
+        $zip = new ZipArchive();
         if ($zip->open($tempFile) !== true) {
             $this->removeDirectory($tempDir);
             throw new Exception("Не удалось открыть архив обновления");

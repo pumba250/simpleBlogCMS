@@ -15,7 +15,7 @@ if (!defined('IN_SIMPLECMS'))
  * @method static array  calculate(int $totalItems, string $type, int $currentPage = 1, array $config) Рассчитывает параметры пагинации
  * @method static string render(array $paginationData, string $baseUrl, string $pageParam = 'page')    Генерирует HTML-код пагинации
  */
-class Pagination 
+class Pagination
 {
     const TYPE_NEWS = 'news';
     const TYPE_COMMENTS = 'comments';
@@ -27,7 +27,7 @@ class Pagination
      * @param int $currentPage Текущая страница
      * @return array Массив с данными пагинации
      */
-    public static function calculate(int $totalItems, string $type, int $currentPage = 1, array $config): array 
+    public static function calculate(int $totalItems, string $type, int $currentPage = 1, array $config): array
     {
         // Определяем количество элементов на странице из конфига
         switch ($type) {
@@ -61,7 +61,7 @@ class Pagination
      * @param string $pageParam Имя параметра страницы в URL
      * @return string HTML код пагинации
      */
-    public static function render(array $paginationData, string $baseUrl, string $pageParam = 'page'): string 
+    public static function render(array $paginationData, string $baseUrl, string $pageParam = 'page'): string
     {
         $currentPage = $paginationData['current_page'];
         $totalPages = $paginationData['total_pages'];
