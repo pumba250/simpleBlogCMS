@@ -53,10 +53,12 @@ class FooterDataProvider
         $currentUser = $_SESSION['user'] ?? null;
         $data = [
             'auth_error' => $_SESSION['auth_error'] ?? null,
-            'csrf_token' => $_SESSION['csrf_token'],
-            'captcha_image_url' => '/class/captcha.php'
+            'csrf_token' => $_SESSION['csrf_token']
         ];
-
+        $currentAction = $_GET['action'] ?? '';
+		if ($currentAction !== 'login' && $currentAction !== 'register') {
+            $data['captcha_image_url'] = '/class/captcha.php';
+        }
         if ($currentUser) {
             return $this->template->render('partials/footer/user_logged_in.tpl', array_merge($data, [
                 'userData' => $currentUser,
