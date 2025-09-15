@@ -48,6 +48,11 @@ SimpleBlog - это простая и легковесная система уп
 
 SimpleBlog распространяется под лицензией MIT. Подробности см. в файле LICENSE.
 
+## Тестирование
+
+![PHP Tests](https://github.com/pumba250/simpleBlogCMS/workflows/PHP%20Tests/badge.svg)
+![Security Check](https://github.com/pumba250/simpleBlogCMS/workflows/Security%20Check/badge.svg)
+
 ## Поддержка
 
 Вопросы и предложения можно оставлять в [Issues](https://github.com/pumba250/simpleBlog/issues) на GitHub.
