@@ -3,6 +3,7 @@
 if (!defined('IN_SIMPLECMS')) {
     die('Прямой доступ запрещен');
 }
+
 /**
  * Класс для работы с комментариями
  *
@@ -28,6 +29,7 @@ if (!defined('IN_SIMPLECMS')) {
  * @method bool   getCommentStatus(int $id)                               Получает статус модерации комментария
  * @method array  getCommentsPaginationData(int $themeId, int $currentPage = 1, bool $moderatedOnly = true) Рассчитывает данные пагинации
  */
+
 class Comments
 {
     private $pdo;

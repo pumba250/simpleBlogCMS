@@ -132,46 +132,46 @@ class News
     }
 
     public function getAllAdm($limit = null, $offset = null)
-	{
-		$sql = "
-			SELECT b.*, GROUP_CONCAT(t.name) as tag_names, GROUP_CONCAT(t.id) as tag_ids
-			FROM `{$this->dbPrefix}blogs` b
-			LEFT JOIN `{$this->dbPrefix}blogs_tags` bt ON b.id = bt.blogs_id
-			LEFT JOIN `{$this->dbPrefix}tags` t ON bt.tag_id = t.id
-			GROUP BY b.id
-			ORDER BY b.created_at DESC
-		";
-		
-		// Добавляем LIMIT и OFFSET если они указаны
-		if ($limit !== null) {
-			$sql .= " LIMIT :limit";
-			if ($offset !== null) {
-				$sql .= " OFFSET :offset";
-			}
-		}
-		
-		$stmt = $this->pdo->prepare($sql);
-		
-		// Привязываем параметры если они указаны
-		if ($limit !== null) {
-			$stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
-			if ($offset !== null) {
-				$stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
-			}
-		}
-		
-		$stmt->execute();
-		
-		$blogs = $stmt->fetchAll(PDO::FETCH_ASSOC);
-		
-		// Преобразуем теги в массивы
-		foreach ($blogs as &$blog) {
-			$blog['tags'] = $blog['tag_names'] ? array_map('htmlspecialchars', explode(',', $blog['tag_names'])) : [];
-			$blog['tag_ids'] = $blog['tag_ids'] ? array_map('intval', explode(',', $blog['tag_ids'])) : [];
-		}
-		
-		return $blogs;
-	}
+    {
+        $sql = "
+            SELECT b.*, GROUP_CONCAT(t.name) as tag_names, GROUP_CONCAT(t.id) as tag_ids
+            FROM `{$this->dbPrefix}blogs` b
+            LEFT JOIN `{$this->dbPrefix}blogs_tags` bt ON b.id = bt.blogs_id
+            LEFT JOIN `{$this->dbPrefix}tags` t ON bt.tag_id = t.id
+            GROUP BY b.id
+            ORDER BY b.created_at DESC
+        ";
+        
+        // Добавляем LIMIT и OFFSET если они указаны
+        if ($limit !== null) {
+            $sql .= " LIMIT :limit";
+            if ($offset !== null) {
+                $sql .= " OFFSET :offset";
+            }
+        }
+        
+        $stmt = $this->pdo->prepare($sql);
+        
+        // Привязываем параметры если они указаны
+        if ($limit !== null) {
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            if ($offset !== null) {
+                $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+            }
+        }
+        
+        $stmt->execute();
+        
+        $blogs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Преобразуем теги в массивы
+        foreach ($blogs as &$blog) {
+            $blog['tags'] = $blog['tag_names'] ? array_map('htmlspecialchars', explode(',', $blog['tag_names'])) : [];
+            $blog['tag_ids'] = $blog['tag_ids'] ? array_map('intval', explode(',', $blog['tag_ids'])) : [];
+        }
+        
+        return $blogs;
+    }
 
     public function getTotalNewsCount()
     {
@@ -477,54 +477,54 @@ class News
     public function getNewsByTag($tag, $limit, $offset)
     {
         $stmt = $this->pdo->prepare("SELECT id FROM {$this->dbPrefix}tags WHERE name = :tag");
-		$stmt->bindParam(':tag', $tag, PDO::PARAM_STR);
-		$stmt->execute();
-		$tagId = $stmt->fetchColumn();
+        $stmt->bindParam(':tag', $tag, PDO::PARAM_STR);
+        $stmt->execute();
+        $tagId = $stmt->fetchColumn();
         if (!$tagId) {
             return [];
         }
 
         $stmt = $this->pdo->prepare("
-			SELECT b.id, b.title, LEFT(b.content, 320) AS content, b.created_at as date
-			FROM {$this->dbPrefix}blogs b
-			JOIN {$this->dbPrefix}blogs_tags bt ON b.id = bt.blogs_id
-			WHERE bt.tag_id = :tag_id
-			ORDER BY b.created_at DESC
-			LIMIT :limit OFFSET :offset
-		");
+            SELECT b.id, b.title, LEFT(b.content, 320) AS content, b.created_at as date
+            FROM {$this->dbPrefix}blogs b
+            JOIN {$this->dbPrefix}blogs_tags bt ON b.id = bt.blogs_id
+            WHERE bt.tag_id = :tag_id
+            ORDER BY b.created_at DESC
+            LIMIT :limit OFFSET :offset
+        ");
         $stmt->bindParam(':tag_id', $tagId, PDO::PARAM_INT);
-		$stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-		$stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-		$stmt->execute();
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
 
         $news = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         return $news ?: [];
     }
-	
-	public function getNewsCountByTag($tag)
-	{
-		$stmt = $this->pdo->prepare("SELECT id FROM {$this->dbPrefix}tags WHERE name = :tag");
-		$stmt->bindParam(':tag', $tag, PDO::PARAM_STR);
-		$stmt->execute();
-		$tagId = $stmt->fetchColumn();
-		
-		if (!$tagId) {
-			return 0;
-		}
+    
+    public function getNewsCountByTag($tag)
+    {
+        $stmt = $this->pdo->prepare("SELECT id FROM {$this->dbPrefix}tags WHERE name = :tag");
+        $stmt->bindParam(':tag', $tag, PDO::PARAM_STR);
+        $stmt->execute();
+        $tagId = $stmt->fetchColumn();
+        
+        if (!$tagId) {
+            return 0;
+        }
 
-		$stmt = $this->pdo->prepare("
-			SELECT COUNT(*) 
-			FROM {$this->dbPrefix}blogs b
-			JOIN {$this->dbPrefix}blogs_tags bt ON b.id = bt.blogs_id
-			WHERE bt.tag_id = :tag_id
-		");
-		
-		$stmt->bindParam(':tag_id', $tagId, PDO::PARAM_INT);
-		$stmt->execute();
-		
-		return $stmt->fetchColumn();
-	}
+        $stmt = $this->pdo->prepare("
+            SELECT COUNT(*) 
+            FROM {$this->dbPrefix}blogs b
+            JOIN {$this->dbPrefix}blogs_tags bt ON b.id = bt.blogs_id
+            WHERE bt.tag_id = :tag_id
+        ");
+        
+        $stmt->bindParam(':tag_id', $tagId, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchColumn();
+    }
 
     // Функция для генерации metaDescription
     public function generateMetaDescription($content, $type = 'default', $additionalData = [])

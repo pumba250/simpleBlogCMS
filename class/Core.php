@@ -199,19 +199,19 @@ class Core
     {
         if (isset($_POST['captcha']) && $_POST['captcha'] == $_SESSION['captcha_answer']) {
             if ($this->contact->saveMessage($_POST['name'], $_POST['email'], $_POST['message'])) {
-			flash(Lang::get('msg_send', 'core'), 'success');
-			header('Location: ?action=contact&status=send');
-			exit();
-			} else {
-				flash(Lang::get('msg_error', 'core'), 'error');
-				header('Location: ?action=contact&status=errno');
-				exit();
-			}
-		} else {
-			flash(Lang::get('not_answer', 'core'), 'error');
-			header('Location: ?action=contact&status=errno');
-			exit();
-		}
+            flash(Lang::get('msg_send', 'core'), 'success');
+            header('Location: ?action=contact&status=send');
+            exit();
+            } else {
+                flash(Lang::get('msg_error', 'core'), 'error');
+                header('Location: ?action=contact&status=errno');
+                exit();
+            }
+        } else {
+            flash(Lang::get('not_answer', 'core'), 'error');
+            header('Location: ?action=contact&status=errno');
+            exit();
+        }
 }
 
     /**
@@ -221,10 +221,10 @@ class Core
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
             if ($this->user->sendPasswordReset($_POST['email'])) {
-				flash(Lang::get('reset_email_sent', 'core'), 'success');
-			} else {
-				flash(Lang::get('reset_email_error', 'core'), 'error');
-			}
+                flash(Lang::get('reset_email_sent', 'core'), 'success');
+            } else {
+                flash(Lang::get('reset_email_error', 'core'), 'error');
+            }
             header('Location: /');
             exit;
         }
@@ -237,10 +237,10 @@ class Core
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['token'], $_POST['password'])) {
             if ($this->user->resetPassword($_POST['token'], $_POST['password'])) {
-				flash(Lang::get('password_reset_success', 'core'), 'success');
-			} else {
-				flash(Lang::get('password_reset_error', 'core'), 'error');
-			}
+                flash(Lang::get('password_reset_success', 'core'), 'success');
+            } else {
+                flash(Lang::get('password_reset_error', 'core'), 'error');
+            }
             header('Location: /');
             exit;
         }
@@ -252,10 +252,10 @@ class Core
     private function handleProfileUpdate()
     {
         if (!isset($_SESSION['user']['id'])) {
-			flash(Lang::get('auth_required', 'core'), 'error');
-			header('Location: /?action=login');
-			exit;
-		}
+            flash(Lang::get('auth_required', 'core'), 'error');
+            header('Location: /?action=login');
+            exit;
+        }
 
         $username = trim($_POST['username'] ?? '');
         $email = trim($_POST['email'] ?? '');
@@ -310,7 +310,7 @@ class Core
             // Если email изменился, разлогиниваем пользователя или отмечаем email как неверифицированный
             if ($emailChanged) {
                 $_SESSION['user']['email_verified'] = false;
-				flash(Lang::get('email_change_success_verify', 'core'), 'error');
+                flash(Lang::get('email_change_success_verify', 'core'), 'error');
                 
             }
             

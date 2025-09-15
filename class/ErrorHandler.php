@@ -20,7 +20,7 @@ class ErrorHandler
     private static $debugMode = false;
 
     public static function init(bool $debugMode = false) 
-	{
+    {
         self::$debugMode = $debugMode;
 
         // Обработчик исключений
@@ -34,13 +34,13 @@ class ErrorHandler
     }
 
     public static function handleException(Throwable $e) 
-	{
+    {
         self::logError($e);
         self::displayError($e);
     }
 
     public static function handleError(int $errno, string $errstr, string $errfile, int $errline) 
-	{
+    {
         if (!(error_reporting() & $errno)) {
             return false;
         }
@@ -52,7 +52,7 @@ class ErrorHandler
     }
 
     public static function handleShutdown() 
-	{
+    {
         $error = error_get_last();
         if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
             self::handleException(new ErrorException($error['message'], $error['type'], 0, $error['file'], $error['line']));
@@ -60,7 +60,7 @@ class ErrorHandler
     }
 
     private static function logError(Throwable $e) 
-	{
+    {
         // Создаем директорию для логов если ее нет
         if (!file_exists(dirname(self::$logFile))) {
             mkdir(dirname(self::$logFile), 0755, true);
@@ -79,13 +79,13 @@ class ErrorHandler
     }
 
     private static function shouldShowDebugInfo(): bool 
-	{
+    {
         // Режим отладки включен в конфиге ИЛИ пользователь - администратор
         return self::$debugMode || (isset($_SESSION['user']['isadmin']) && $_SESSION['user']['isadmin'] == 9);
     }
 
     private static function displayError(Throwable $e) 
-	{
+    {
         if (headers_sent() === false) {
             header($_SERVER["SERVER_PROTOCOL"] . ' 500 Internal Server Error');
             header('Content-Type: text/html; charset=utf-8');
@@ -123,7 +123,7 @@ class ErrorHandler
     }
 
     private static function sanitizeSessionData(array $session): array 
-	{
+    {
         $sanitized = [];
         foreach ($session as $key => $value) {
             if (in_array($key, ['user', 'csrf_token'])) {
@@ -142,7 +142,7 @@ class ErrorHandler
     }
 
     private static function sanitizePostData(array $data): array 
-	{
+    {
         $sanitized = [];
         foreach ($data as $key => $value) {
             if (strtolower($key) === 'password' || strpos(strtolower($key), 'pass') !== false) {

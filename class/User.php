@@ -219,7 +219,7 @@ class User
                 SET email_verified = 1, verification_token = NULL 
                 WHERE id = ?"
             );
-			flash(Lang::get('email_verified', 'core'), 'success');
+            flash(Lang::get('email_verified', 'core'), 'success');
             return $stmt->execute([$userId]);
         }
         flash(Lang::get('invalid_token', 'core'), 'error');

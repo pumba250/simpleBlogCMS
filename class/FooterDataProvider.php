@@ -67,7 +67,7 @@ class FooterDataProvider {
 
 private function prepareRecentNewsList() {
     $lastThreeNews = $this->news->getLastThreeNews();
-	//var_dump('Recent News Data: ' . print_r($lastThreeNews, true));
+    //var_dump('Recent News Data: ' . print_r($lastThreeNews, true));
     if (empty($lastThreeNews)) {
         return 'Нет новостей'; // или можно вернуть сообщение "Нет новостей"
     }
