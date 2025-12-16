@@ -9,7 +9,7 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Views
- * @version    0.9.8
+ * @version    1.0.0
  *
  * @method static void init(bool $debugMode = false)                     Инициализирует обработчики ошибок и исключений
  * @method static void handleException(Throwable $e)                     Обрабатывает исключения

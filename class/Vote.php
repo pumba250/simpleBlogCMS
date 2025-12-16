@@ -10,7 +10,7 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Interaction
- * @version    0.9.8
+ * @version    1.0.0
  *
  * @method void   __construct(PDO $pdo)                                        Инициализирует систему голосования
  * @method bool   voteComment(int $id, string $voteType, int $userId)          Голосует за комментарий

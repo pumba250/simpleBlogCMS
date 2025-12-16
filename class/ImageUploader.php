@@ -105,22 +105,32 @@ class ImageUploader
      * @return bool
      */
     private function isValidImage($filePath)
-    {
-        // Пытаемся открыть изображение средствами GD
-        $imageInfo = @getimagesize($filePath);
-        if ($imageInfo === false) {
-            return false;
-        }
-
-        // Дополнительная проверка: пытаемся создать изображение из файла
-        $image = @imagecreatefromstring(file_get_contents($filePath));
-        if ($image === false) {
-            return false;
-        }
-        imagedestroy($image);
-
-        return true;
-    }
+	{
+		$allowedTypes = [
+			IMAGETYPE_JPEG => 'image/jpeg',
+			IMAGETYPE_PNG => 'image/png',
+			IMAGETYPE_GIF => 'image/gif'
+		];
+		
+		$imageInfo = @getimagesize($filePath);
+		if ($imageInfo === false) {
+			return false;
+		}
+		
+		$detectedType = $imageInfo[2];
+		if (!isset($allowedTypes[$detectedType])) {
+			return false;
+		}
+		
+		// Дополнительная проверка содержимого
+		$image = @imagecreatefromstring(file_get_contents($filePath));
+		if ($image === false) {
+			return false;
+		}
+		imagedestroy($image);
+		
+		return true;
+	}
 
     /**
      * Генерирует безопасное имя файла

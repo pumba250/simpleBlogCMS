@@ -5,7 +5,7 @@ if (!defined('IN_SIMPLECMS')) { die('Прямой доступ запрещен'
  */
 function dbBackup($fname, $gzmode, $tlist = '') {
     global $pdo, $dbPrefix, $backupDir, $maxBackups, $version;
-	cleanOldBackups($backupDir, $maxBackups);
+    cleanOldBackups($backupDir, $maxBackups);
 
     // Проверка поддержки gzip
     if ($gzmode && !function_exists('gzopen')) {
@@ -23,7 +23,7 @@ function dbBackup($fname, $gzmode, $tlist = '') {
         return false;
     }
 
-    // Получение списка таблиц
+    // Получение списка таблиц с информацией о зависимостях
     if (!is_array($tlist)) {
         $tlist = [];
         $stmt = $pdo->query("SHOW TABLES LIKE '{$dbPrefix}%'");
@@ -32,13 +32,17 @@ function dbBackup($fname, $gzmode, $tlist = '') {
         }
     }
 
-    // Запись заголовка
+    // Запись заголовка с командами отключения внешних ключей
     $out  = "# ".str_repeat('=', 60)."\n";
     $out .= "# Backup file for simpleBlog\n";
     $out .= "# ".str_repeat('=', 60)."\n";
     $out .= "# DATE: ".gmdate("d-m-Y H:i:s", time())." GMT\n";
     $out .= "# VERSION: ".($version ?? 'unknown')."\n#\n";
     $out .= "# List of tables for backup: ".implode(", ", $tlist)."\n#\n";
+    $out .= "\n# Отключение проверки внешних ключей\n";
+    $out .= "SET FOREIGN_KEY_CHECKS = 0;\n";
+    $out .= "SET NAMES utf8;\n";
+    $out .= "SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';\n";
 
     if ($gzmode) {
         gzwrite($fh, $out);
@@ -46,8 +50,57 @@ function dbBackup($fname, $gzmode, $tlist = '') {
         fwrite($fh, $out);
     }
 
-    // Обработка каждой таблицы
+    // Получаем информацию о зависимостях таблиц
+    $tableDependencies = [];
     foreach ($tlist as $tname) {
+        // Получаем список внешних ключей для каждой таблицы
+        $stmt = $pdo->query("SELECT 
+            TABLE_NAME,
+            COLUMN_NAME,
+            REFERENCED_TABLE_NAME,
+            REFERENCED_COLUMN_NAME
+            FROM information_schema.KEY_COLUMN_USAGE 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND REFERENCED_TABLE_NAME IS NOT NULL
+            AND TABLE_NAME = '{$tname}'");
+        
+        $dependencies = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $dependencies[] = $row['REFERENCED_TABLE_NAME'];
+        }
+        $tableDependencies[$tname] = $dependencies;
+    }
+
+    // Сортируем таблицы так, чтобы таблицы без зависимостей шли первыми
+    $sortedTables = [];
+    $processed = [];
+    
+    function sortTables($table, $dependencies, &$sortedTables, &$processed) {
+        if (in_array($table, $processed)) {
+            return;
+        }
+        
+        $processed[] = $table;
+        
+        // Сначала обрабатываем зависимости
+        foreach ($dependencies[$table] as $dependency) {
+            if (isset($dependencies[$dependency])) {
+                sortTables($dependency, $dependencies, $sortedTables, $processed);
+            }
+        }
+        
+        $sortedTables[] = $table;
+    }
+    
+    foreach ($tableDependencies as $table => $deps) {
+        sortTables($table, $tableDependencies, $sortedTables, $processed);
+    }
+    
+    // Удаляем дубликаты, сохраняя порядок
+    $sortedTables = array_values(array_unique($sortedTables));
+
+    // Обработка каждой таблицы в правильном порядке
+    foreach ($sortedTables as $tname) {
         try {
             // Получение структуры таблицы
             $stmt = $pdo->query("SHOW CREATE TABLE `{$tname}`");
@@ -100,6 +153,16 @@ function dbBackup($fname, $gzmode, $tlist = '') {
                 fwrite($fh, $out);
             }
         }
+    }
+
+    // В конце файла включить проверку внешних ключей
+    $out = "\n# Включение проверки внешних ключей\n";
+    $out .= "SET FOREIGN_KEY_CHECKS = 1;\n";
+    
+    if ($gzmode) {
+        gzwrite($fh, $out);
+    } else {
+        fwrite($fh, $out);
     }
 
     // Закрытие файла

@@ -9,7 +9,7 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Internationalization
- * @version    0.9.8
+ * @version    1.0.0
  *
  * @method static void   init()                           Инициализирует языковую систему
  * @method static void   setLanguage(string $lang)        Устанавливает язык

@@ -9,7 +9,7 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Views
- * @version    0.9.8
+ * @version    1.0.0
  *
  * @method void __construct(News $news, User $user, Template $template, array $config) Инициализирует зависимости
  * @method array prepareFooterData()                                                 Подготавливает все данные для футера

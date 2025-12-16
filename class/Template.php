@@ -10,7 +10,7 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Views
- * @version    0.9.9
+ * @version    1.0.0
  *
  * @method void   __construct()                                                Инициализирует шаблонизатор
  * @method void   assign(string $key, mixed $value)                            Назначает переменную шаблона
@@ -94,6 +94,7 @@ class Template
             'comments' => $comments ?? null,
             'currentYear' => date("Y"),
             'serverName' => htmlspecialchars($_SERVER['SERVER_NAME']),
+			'currentLang' => $_SESSION['lang'] ?? 'ru',
         ];
     }
 
@@ -165,7 +166,7 @@ class Template
 
             // Конфигурационные переменные (из $config)
             '/\{c_([a-zA-Z0-9_]+)\}/' => '<?php echo $config[\'$1\'] ?? \'\'; ?>',
-
+            '/\{var_([a-zA-Z0-9_]+)\}/' => '<?php echo var_dump($1) ?? \'\'; ?>',
             // Циклы
             '/\{foreach\s+\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\s+as\s+\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\}/' => '<?php foreach ($$1 as $$2): ?>',
             '/\{for \$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)\s*=\s*([^\s]+)\s+to\s+([^\}]+)\s*\}/' => '<?php for ($1 = $2; $1 <= $3; $1++): ?>',
@@ -381,6 +382,10 @@ class Template
     public function renderNewsList(array $newsItems, string $templateFile): string
     {
         global $votes;
+
+        if ($newsItems === null || !is_array($newsItems)) {
+            $newsItems = [];
+        }
 
         if (!isset($this->templateCache[$templateFile])) {
             $path = $this->templateDir . '/' . ltrim($templateFile, '/');

@@ -10,7 +10,7 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Content
- * @version    0.9.8
+ * @version    1.0.0
  *
  * @method bool   getCommentsByUser(int $userId, int $limit = 5)          Получает комментарии по автору с ограничением
  * @method int    addComment(int $parentId, int $fParent, int $themeId, string $userName, string $userText) Добавляет комментарий

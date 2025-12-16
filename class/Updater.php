@@ -6,7 +6,7 @@
  * @package    SimpleBlog
  * @subpackage Services
  * @category   Maintenance
- * @version    0.9.8
+ * @version    1.0.0
  *
  * @method void   __construct(PDO $pdo, array $config)                         Инициализирует систему обновлений
  * @method bool|array checkForUpdates()                                        Проверяет наличие обновлений
@@ -420,7 +420,14 @@ class Updater
      */
     private function downloadUpdate($url)
     {
-        $tempFile = tempnam(sys_get_temp_dir(), 'sb_update_');
+        // Проверка домена
+		$parsedUrl = parse_url($url);
+		$allowedDomains = ['github.com', 'api.github.com'];
+		
+		if (!in_array($parsedUrl['host'], $allowedDomains)) {
+			throw new Exception("Invalid download source");
+		}
+		$tempFile = tempnam(sys_get_temp_dir(), 'sb_update_');
         if (!$tempFile) {
             throw new Exception("Не удалось создать временный файл");
         }

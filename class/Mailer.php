@@ -10,7 +10,7 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Services
  * @category   Communication
- * @version    0.9.8
+ * @version    1.0.0
  *
  * @method static void   init(array $config)                              Инициализирует конфигурацию почтовой системы
  * @method static bool   send(string $to, string $subject, string $body, bool $isHtml = true) Отправляет email

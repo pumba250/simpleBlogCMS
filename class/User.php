@@ -10,7 +10,7 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Authentication
- * @version    0.9.9
+ * @version    1.0.0
  *
  * @method void   __construct(PDO $pdo)                                        Инициализирует систему пользователей
  * @method array  getAllUsers()                                                Получает список всех пользователей

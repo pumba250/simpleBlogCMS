@@ -9,7 +9,7 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Models
  * @category   Content
- * @version    0.9.8
+ * @version    1.0.0
  *
  * @method array getNewsByAuthor(int $userId, int $limit = 5) Получает новости по автору с ограничением
  * @method array getAllNews(int $limit, int $offset) Получает новости с пагинацией (ограничение и смещение)
@@ -190,18 +190,18 @@ class News
             LIMIT 3"
         );
         $stmt->execute();
-        $last = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $newsItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $lastThreeNewsHtml = '';
-        foreach ($last as $item) {
-            $lastThreeNewsHtml .= '<li class="w3-padding">';
-            $lastThreeNewsHtml .= '<span class="w3-large"><a href="?id=' . htmlspecialchars($item['id']) . '">'
-                                . htmlspecialchars($item['title']) . '</a></span><br>';
-            $lastThreeNewsHtml .= '<span>' . htmlspecialchars($item['created_at']) . '</span>';
-            $lastThreeNewsHtml .= '</li>';
+        $newsHtml = '';
+        foreach ($newsItems as $item) {
+            $newsHtml .= '<li class="news-item">';
+            $newsHtml .= '<a href="?id=' . htmlspecialchars($item['id']) . '" class="news-title">'
+                        . htmlspecialchars($item['title']) . '</a>';
+            $newsHtml .= '<span class="news-date">' . htmlspecialchars($item['created_at']) . '</span>';
+            $newsHtml .= '</li>';
         }
 
-        return new class ($lastThreeNewsHtml)
+        return new class ($newsHtml)
         {
             private $html;
 
@@ -372,31 +372,7 @@ class News
     {
         $stmt = $this->pdo->prepare("SELECT DISTINCT(`name`) FROM {$this->dbPrefix}tags");
         $stmt->execute();
-        $tags = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $allTagsHtml = '';
-        foreach ($tags as $tag) {
-            $allTagsHtml .= '
-            <span class="w3-tag w3-light-grey w3-small w3-margin-bottom">
-                <a class="w3-button" href="?tags=' . urlencode($tag['name']) . '">'
-                . htmlspecialchars($tag['name']) . '</a>
-            </span>';
-        }
-
-        return new class ($allTagsHtml)
-        {
-            private $html;
-
-            public function __construct($html)
-            {
-                $this->html = $html;
-            }
-
-            public function __toString()
-            {
-                return $this->html;
-            }
-        };
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function addTag($name)

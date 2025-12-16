@@ -9,7 +9,7 @@ if (!defined('IN_SIMPLECMS')) {
  * @package    SimpleBlog
  * @subpackage Core
  * @category   Utilities
- * @version    0.9.8
+ * @version    1.0.0
  *
  * @method static array  calculate(int $totalItems, string $type, int $currentPage = 1, array $config) Рассчитывает параметры пагинации
  * @method static string render(array $paginationData, string $baseUrl, string $pageParam = 'page')    Генерирует HTML-код пагинации
@@ -70,7 +70,6 @@ class Pagination
         }
 
         // Параметры URL
-        // Разбираем базовый URL
         $urlParts = parse_url($baseUrl);
         $path = $urlParts['path'] ?? '';
         parse_str($urlParts['query'] ?? '', $queryParams);
@@ -85,15 +84,15 @@ class Pagination
         // Кнопка "Назад"
         if ($currentPage > 1) {
             $queryParams[$pageParam] = $currentPage - 1;
-            $prevUrl = $urlPath . '?' . http_build_query($queryParams);
+            $prevUrl = $path . (!empty($queryParams) ? '?' . http_build_query($queryParams) : '');
             $links[] = sprintf(
-                '<a href="%s" class="w3-button w3-black w3-padding-large w3-margin-bottom">%s</a>',
+                '<a href="%s" class="pagination-link pagination-prev">%s</a>',
                 htmlspecialchars($prevUrl),
                 Lang::get('prev')
             );
         } else {
             $links[] = sprintf(
-                '<button class="w3-button w3-black w3-disabled w3-padding-large w3-margin-bottom">%s</button>',
+                '<span class="pagination-link pagination-prev pagination-disabled">%s</span>',
                 Lang::get('prev')
             );
         }
@@ -104,16 +103,16 @@ class Pagination
 
         for ($i = $start; $i <= $end; $i++) {
             $queryParams[$pageParam] = $i;
-            $pageUrl = $urlPath . '?' . http_build_query($queryParams);
+            $pageUrl = $path . (!empty($queryParams) ? '?' . http_build_query($queryParams) : '');
 
             if ($i == $currentPage) {
                 $links[] = sprintf(
-                    '<span class="w3-button w3-gray w3-padding-large w3-margin-bottom">%d</span>',
+                    '<span class="pagination-link pagination-page pagination-current">%d</span>',
                     $i
                 );
             } else {
                 $links[] = sprintf(
-                    '<a href="%s" class="w3-button w3-black w3-padding-large w3-margin-bottom">%d</a>',
+                    '<a href="%s" class="pagination-link pagination-page">%d</a>',
                     htmlspecialchars($pageUrl),
                     $i
                 );
@@ -123,15 +122,15 @@ class Pagination
         // Кнопка "Вперед"
         if ($currentPage < $totalPages) {
             $queryParams[$pageParam] = $currentPage + 1;
-            $nextUrl = $urlPath . '?' . http_build_query($queryParams);
+            $nextUrl = $path . (!empty($queryParams) ? '?' . http_build_query($queryParams) : '');
             $links[] = sprintf(
-                '<a href="%s" class="w3-button w3-black w3-padding-large w3-margin-bottom">%s &raquo;</a>',
+                '<a href="%s" class="pagination-link pagination-next">%s</a>',
                 htmlspecialchars($nextUrl),
                 Lang::get('next')
             );
         } else {
             $links[] = sprintf(
-                '<button class="w3-button w3-black w3-disabled w3-padding-large w3-margin-bottom">%s &raquo;</button>',
+                '<span class="pagination-link pagination-next pagination-disabled">%s</span>',
                 Lang::get('next')
             );
         }
