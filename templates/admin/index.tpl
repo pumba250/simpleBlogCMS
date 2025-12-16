@@ -1069,270 +1069,602 @@ document.addEventListener('keydown', function(e) {
 						</div>
 					</div>
 				<?php elseif ($section == 'system_settings'): ?>
+					<style>
+						/* Стили для вкладок настроек */
+						.settings-tabs {
+							display: flex;
+							flex-direction: row;
+						}
+
+						.settings-tabs .tab-btn {
+							background: #f8f9fa;
+							border: 1px solid #dee2e6;
+							border-radius: 0.25rem;
+							padding: 12px 16px;
+							margin-bottom: 8px;
+							text-align: left;
+							color: #495057;
+							cursor: pointer;
+							transition: all 0.2s ease;
+							font-weight: 500;
+							display: flex;
+							align-items: center;
+						}
+
+						.settings-tabs .tab-btn:hover {
+							background: #e9ecef;
+							border-color: #adb5bd;
+						}
+
+						.settings-tabs .tab-btn.active {
+							background: #555555b0;
+							border-color: #dee2e6;
+							color: white;
+						}
+
+						.settings-tabs .tab-btn i {
+							margin-right: 10px;
+							width: 20px;
+							text-align: center;
+						}
+
+						.tab-pane {
+							display: none;
+							animation: fadeIn 0.3s ease;
+						}
+
+						.tab-pane.active {
+							display: block;
+						}
+
+						@keyframes fadeIn {
+							from { opacity: 0; transform: translateY(10px); }
+							to { opacity: 1; transform: translateY(0); }
+						}
+
+						/* Стили для карточек настроек */
+						.settings-card {
+							border: 1px solid #dee2e6;
+							border-radius: 0.5rem;
+							overflow: hidden;
+							margin-bottom: 1.5rem;
+						}
+
+						.settings-card-header {
+							background: #f8f9fa;
+							padding: 1rem 1.5rem;
+							border-bottom: 1px solid #dee2e6;
+						}
+
+						.settings-card-body {
+							padding: 1.5rem;
+						}
+
+						/* Стили для цветовых индикаторов */
+						.color-indicator {
+							width: 24px;
+							height: 24px;
+							border: 1px solid #dee2e6;
+							border-radius: 3px;
+							margin-left: 10px;
+						}
+
+						/* Стили для переключателей */
+						.form-switch .form-check-input {
+							width: 3em;
+							height: 1.5em;
+						}
+
+						.form-switch .form-check-input:checked {
+							background-color: #0d6efd;
+							border-color: #0d6efd;
+						}
+
+						/* Стили для предупреждений */
+						.alert-warning {
+							background-color: #fff3cd;
+							border-color: #ffeaa7;
+							color: #721c24;
+						}
+					</style>
+
 					<div class="card">
-						<div class="card-header">
-							<h3><?= Lang::get('system_settings', 'admin') ?></h3>
+						<div class="card-header bg-primary text-white">
+							<h3><i class="fas fa-cog"></i> <?= Lang::get('system_settings', 'admin') ?></h3>
+							<p class="mb-0"><?= Lang::get('system_settings_desc', 'admin') ?></p>
 						</div>
 						<div class="card-body">
-						<!-- Новая секция настроек капчи -->
-						<div class="card mt-4" style="border: 1px solid rgba(0,0,0,.125);padding-bottom: 15px;">
-							<div class="card-header bg-info">
-								<div class="d-flex justify-content-between align-items-center">
-									<h4 class="mb-0">Настройки капчи</h4>
-									<button id="toggle-captcha-settings" class="btn btn-primary">
-										Показать настройки
-									</button>
-								</div>
-							</div>
-							
-							<div id="captcha-settings-content" style="display: none;">
-								<div class="card-body">
-									<form method="POST" id="captcha-settings-form">
-										<input type="hidden" name="csrf_token" value="<?=$csrf_token?>">
-										<input type="hidden" name="action" value="update_captcha_settings">
-										
-										<div class="row">
-											<div class="col-md-6">
-												<div class="form-group">
-													<label>Цвет фона (RGB):</label>
-													<input type="text" name="bg_color" style="width:120px;" class="form-control" 
-														   value="<?= $currentSettings['captcha_bg_color'] ?? '10,10,26' ?>">
-												</div>
-												
-												<div class="form-group">
-													<label>Цвет текста (RGB):</label>
-													<input type="text" name="text_color" style="width:120px;" class="form-control" 
-														   value="<?= $currentSettings['captcha_text_color'] ?? '11,227,255' ?>">
-												</div>
-											</div>
-											<div class="col-md-6">
-												<div class="form-group">
-													<label>Акцентный цвет (RGB):</label>
-													<input type="text" name="accent_color" style="width:120px;" class="form-control" 
-														   value="<?= $currentSettings['captcha_accent_color'] ?? '188,19,254' ?>">
-												</div>
-												
-												<div class="form-group">
-													<label>Цвет шума (RGB):</label>
-													<input type="text" name="noise_color" style="width:120px;" class="form-control" 
-														   value="<?= $currentSettings['captcha_noise_color'] ?? '50,50,80' ?>">
-												</div>
-											</div>
-										</div>
-										
-										<button type="submit" class="btn btn-primary">Сохранить настройки</button>
-										<button type="button" class="btn btn-secondary" onclick="updateCaptchaPreview()">Обновить предпросмотр</button>
-									</form>
-									
-									<div class="mt-4">
-										<h5>Предпросмотр капчи:</h5>
-										<div id="captcha-preview-container" style="background: #f8f9fa; padding: 20px; border-radius: 5px;">
-											<img id="captcha-preview" src="/class/captcha.php?preview=1" style="border: 1px solid #ddd;">
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-						
-						<script>
-						function updateCaptchaPreview() {
-							const bgColor = document.querySelector('#captcha-settings-form [name="bg_color"]').value;
-							const textColor = document.querySelector('#captcha-settings-form [name="text_color"]').value;
-							const accentColor = document.querySelector('#captcha-settings-form [name="accent_color"]').value;
-							const noiseColor = document.querySelector('#captcha-settings-form [name="noise_color"]').value;
-							
-							const params = new URLSearchParams();
-							params.append('bg_color', bgColor);
-							params.append('text_color', textColor);
-							params.append('accent_color', accentColor);
-							params.append('noise_color', noiseColor);
-							params.append('preview', '1');
-							
-							document.getElementById('captcha-preview').src = '/class/captcha.php?' + params.toString();
-						}
-						
-						document.addEventListener('DOMContentLoaded', function() {
-							const toggleBtn = document.getElementById('toggle-captcha-settings');
-							const settingsContent = document.getElementById('captcha-settings-content');
-							
-							toggleBtn.addEventListener('click', function() {
-								if (settingsContent.style.display === 'none') {
-									settingsContent.style.display = 'block';
-									toggleBtn.textContent = 'Скрыть настройки';
-									updateCaptchaPreview(); // Обновляем предпросмотр при открытии
-								} else {
-									settingsContent.style.display = 'none';
-									toggleBtn.textContent = 'Показать настройки';
-								}
-							});
-							
-							// Обновляем предпросмотр при изменении полей
-							document.querySelectorAll('#captcha-settings-form input').forEach(input => {
-								input.addEventListener('change', updateCaptchaPreview);
-							});
-						});
-						</script>
-							<form method="POST">
+							<form method="POST" id="systemSettingsForm">
 								<input type="hidden" name="csrf_token" value="<?=$csrf_token?>">
 								<input type="hidden" name="action" value="edit_settings">
-								<div class="form-group">
-									<label><?= Lang::get('home_title', 'admin') ?>:</label>
-									<input type="text" name="home_title" class="form-control" value="<?=htmlspecialchars($currentSettings['home_title'] ?? '')?>">
-									<small class="text-muted"><?= Lang::get('home_title_desc', 'admin') ?></small>
-								</div>
-								<div class="form-group">
-									<label><?= Lang::get('meta_keywords', 'admin') ?>:</label>
-									<input type="text" name="metaKeywords" class="form-control" value="<?=htmlspecialchars($currentSettings['metaKeywords'] ?? '')?>">
-									<small class="text-muted"><?= Lang::get('meta_keywords_desc', 'admin') ?></small>
-								</div>
 								
-								<div class="form-group">
-									<label><?= Lang::get('meta_description', 'admin') ?>:</label>
-									<textarea name="metaDescription" class="form-control" rows="3"><?=htmlspecialchars($currentSettings['metaDescription'] ?? '')?></textarea>
-									<small class="text-muted"><?= Lang::get('meta_description_desc', 'admin') ?></small>
-								</div>
-								
-								<div class="form-group">
-									<label><?= Lang::get('blogs_per_page', 'admin') ?>:</label>
-									<input type="text" name="blogs_per_page" class="form-control" value="<?=htmlspecialchars($currentSettings['blogs_per_page'] ?? '')?>">
-									<small class="text-muted"><?= Lang::get('blogs_per_page_desc', 'admin') ?></small>
-								</div>
-								
-								<div class="form-group">
-									<label><?= Lang::get('comments_per_page', 'admin') ?>:</label>
-									<input type="text" name="comments_per_page" class="form-control" value="<?=htmlspecialchars($currentSettings['comments_per_page'] ?? '')?>">
-									<small class="text-muted"><?= Lang::get('comments_per_page_desc', 'admin') ?></small>
-								</div>
-								
-								<div class="form-group">
-									<label><?= Lang::get('mail_from', 'admin') ?>:</label>
-									<input type="text" name="mail_from" class="form-control" value="<?=htmlspecialchars($currentSettings['mail_from'] ?? '')?>">
-									<small class="text-muted"><?= Lang::get('mail_from_desc', 'admin') ?></small>
-								</div>
-								<div class="form-group">
-									<label><?= Lang::get('mail_from_name', 'admin') ?>:</label>
-									<input type="text" name="mail_from_name" class="form-control" value="<?=htmlspecialchars($currentSettings['mail_from_name'] ?? '')?>">
-									<small class="text-muted"><?= Lang::get('mail_from_name_desc', 'admin') ?></small>
-								</div>
-								<div class="card mb-4">
-									<div class="card-header bg-light">
-										<h4><?= Lang::get('cache_settings', 'admin') ?></h4>
-									</div>
-									<div class="card-body">
-										<div class="form-group">
-											<div class="form-check">
-												<input type="checkbox" name="cache_enabled" id="cache_enabled" class="form-check-input" <?=($currentSettings['cache_enabled'] ?? false) ? 'checked' : ''?>>
-												<label for="cache_enabled" class="form-check-label"><?= Lang::get('cache_enabled', 'admin') ?></label>
-												<small class="text-muted"><?= Lang::get('cache_enabled_desc', 'admin') ?></small>
-											</div>
-										</div>
-										
-										<div class="form-group">
-											<label><?= Lang::get('cache_driver', 'admin') ?>:</label>
-											<select name="cache_driver" id="cache_driver_select" class="form-control">
-												<option value="file" <?=($currentSettings['cache_driver'] ?? 'file') == 'file' ? 'selected' : ''?>><?= Lang::get('cache_driver_file', 'admin') ?></option>
-												<option value="redis" <?=($currentSettings['cache_driver'] ?? '') == 'redis' ? 'selected' : ''?>><?= Lang::get('cache_driver_redis', 'admin') ?></option>
-												<option value="memcached" <?=($currentSettings['cache_driver'] ?? '') == 'memcached' ? 'selected' : ''?>><?= Lang::get('cache_driver_memcached', 'admin') ?></option>
-												<option value="apcu" <?=($currentSettings['cache_driver'] ?? '') == 'apcu' ? 'selected' : ''?>><?= Lang::get('cache_driver_apcu', 'admin') ?></option>
-											</select>
-											<small class="text-muted"><?= Lang::get('cache_driver_desc', 'admin') ?></small>
-										</div>
-										
-										<div id="common_cache_settings">
-											<div class="form-group">
-												<label><?= Lang::get('cache_ttl', 'admin') ?>:</label>
-												<input type="number" name="cache_ttl" class="form-control" value="<?=htmlspecialchars($currentSettings['cache_ttl'] ?? 3600)?>">
-												<small class="text-muted"><?= Lang::get('cache_ttl_desc', 'admin') ?></small>
-											</div>
-											
-											<div class="form-group">
-												<label><?= Lang::get('cache_key_salt', 'admin') ?>:</label>
-												<input type="text" name="cache_key_salt" class="form-control" value="<?=htmlspecialchars($currentSettings['cache_key_salt'] ?? 'your_unique_salt_here')?>">
-												<small class="text-muted"><?= Lang::get('cache_key_salt_desc', 'admin') ?></small>
-											</div>
-										</div>
-										
-										<div id="redis_settings" class="driver-settings" style="display: none;">
-											<h5 class="mt-3"><?= Lang::get('redis_settings', 'admin') ?></h5>
-											<div class="form-group">
-												<label><?= Lang::get('redis_host', 'admin') ?>:</label>
-												<input type="text" name="redis_host" class="form-control" value="<?=htmlspecialchars($currentSettings['redis_host'] ?? '127.0.0.1')?>">
-												<small class="text-muted"><?= Lang::get('redis_host_desc', 'admin') ?></small>
-											</div>
-											
-											<div class="form-group">
-												<label><?= Lang::get('redis_port', 'admin') ?>:</label>
-												<input type="number" name="redis_port" class="form-control" value="<?=htmlspecialchars($currentSettings['redis_port'] ?? 6379)?>">
-												<small class="text-muted"><?= Lang::get('redis_port_desc', 'admin') ?></small>
-											</div>
-											
-											<div class="form-group">
-												<label><?= Lang::get('redis_password', 'admin') ?>:</label>
-												<input type="password" name="redis_password" class="form-control" value="<?=htmlspecialchars($currentSettings['redis_password'] ?? '')?>">
-												<small class="text-muted"><?= Lang::get('redis_password_desc', 'admin') ?></small>
-											</div>
-										</div>
-										
-										<div id="memcached_settings" class="driver-settings" style="display: none;">
-											<h5 class="mt-3"><?= Lang::get('memcached_settings', 'admin') ?></h5>
-											<div class="form-group">
-												<label><?= Lang::get('memcached_host', 'admin') ?>:</label>
-												<input type="text" name="memcached_host" class="form-control" value="<?=htmlspecialchars($currentSettings['memcached_host'] ?? '127.0.0.1')?>">
-												<small class="text-muted"><?= Lang::get('memcached_host_desc', 'admin') ?></small>
-											</div>
-											
-											<div class="form-group">
-												<label><?= Lang::get('memcached_port', 'admin') ?>:</label>
-												<input type="number" name="memcached_port" class="form-control" value="<?=htmlspecialchars($currentSettings['memcached_port'] ?? 11211)?>">
-												<small class="text-muted"><?= Lang::get('memcached_port_desc', 'admin') ?></small>
-											</div>
+								<!-- Навигация по настройкам -->
+								<div class="row mb-4">
+									<div class="col-md-3">
+										<div class="settings-tabs">
+											<button class="tab-btn active" type="button" onclick="showTab('general')">
+												<i class="fas fa-home"></i> <?= Lang::get('general_settings', 'admin') ?>
+											</button>
+											<button class="tab-btn" type="button" onclick="showTab('seo')">
+												<i class="fas fa-search"></i> <?= Lang::get('seo_settings', 'admin') ?>
+											</button>
+											<button class="tab-btn" type="button" onclick="showTab('email')">
+												<i class="fas fa-envelope"></i> <?= Lang::get('email_settings', 'admin') ?>
+											</button>
+											<button class="tab-btn" type="button" onclick="showTab('performance')">
+												<i class="fas fa-tachometer-alt"></i> <?= Lang::get('performance_settings', 'admin') ?>
+											</button>
+											<button class="tab-btn" type="button" onclick="showTab('security')">
+												<i class="fas fa-shield-alt"></i> <?= Lang::get('security_settings', 'admin') ?>
+											</button>
+											<button class="tab-btn" type="button" onclick="showTab('captcha')">
+												<i class="fas fa-robot"></i> <?= Lang::get('captcha_settings', 'admin') ?>
+											</button>
 										</div>
 									</div>
-								</div>
-								
-								<div class="form-group">
-									<div class="form-check">
-										<input type="checkbox" name="blocks_for_reg" id="blocks_for_reg" class="form-check-input" <?=($currentSettings['blocks_for_reg'] ?? false) ? 'checked' : ''?>>
-										<label for="blocks_for_reg" class="form-check-label"><?= Lang::get('blocks_for_reg', 'admin') ?></label>
-										<small class="text-muted"><?= Lang::get('blocks_for_reg_desc', 'admin') ?></small>
+									
+									<div class="col-md-9">
+										<div class="tab-content">
+											<!-- Общие настройки -->
+											<div class="tab-pane active" id="generalContent">
+												<div class="settings-card">
+													<div class="settings-card-header">
+														<h4 class="mb-0"><i class="fas fa-home"></i> <?= Lang::get('general_settings', 'admin') ?></h4>
+													</div>
+													<div class="settings-card-body">
+														<div class="form-group mb-3">
+															<label class="form-label"><?= Lang::get('home_title', 'admin') ?>:</label>
+															<input type="text" name="home_title" class="form-control" 
+																   value="<?=htmlspecialchars($currentSettings['home_title'] ?? '')?>" 
+																   placeholder="<?= Lang::get('home_title_placeholder', 'admin') ?>">
+															<small class="form-text text-muted"><?= Lang::get('home_title_desc', 'admin') ?></small>
+														</div>
+														
+														<div class="row">
+															<div class="col-md-6">
+																<div class="form-group mb-3">
+																	<label class="form-label"><?= Lang::get('blogs_per_page', 'admin') ?>:</label>
+																	<input type="number" name="blogs_per_page" class="form-control" 
+																		   value="<?=htmlspecialchars($currentSettings['blogs_per_page'] ?? 10)?>" 
+																		   min="5" max="100">
+																	<small class="form-text text-muted"><?= Lang::get('blogs_per_page_desc', 'admin') ?></small>
+																</div>
+															</div>
+															<div class="col-md-6">
+																<div class="form-group mb-3">
+																	<label class="form-label"><?= Lang::get('comments_per_page', 'admin') ?>:</label>
+																	<input type="number" name="comments_per_page" class="form-control" 
+																		   value="<?=htmlspecialchars($currentSettings['comments_per_page'] ?? 20)?>" 
+																		   min="5" max="100">
+																	<small class="form-text text-muted"><?= Lang::get('comments_per_page_desc', 'admin') ?></small>
+																</div>
+															</div>
+														</div>
+														
+														<div class="form-check form-switch mb-3">
+															<input type="checkbox" name="blocks_for_reg" id="blocks_for_reg" 
+																   class="form-check-input" <?=($currentSettings['blocks_for_reg'] ?? false) ? 'checked' : ''?>>
+															<label for="blocks_for_reg" class="form-check-label">
+																<?= Lang::get('blocks_for_reg', 'admin') ?>
+															</label>
+															<small class="form-text text-muted d-block"><?= Lang::get('blocks_for_reg_desc', 'admin') ?></small>
+														</div>
+														
+														<div class="form-group mb-0">
+															<label class="form-label"><?= Lang::get('current_version', 'admin') ?>:</label>
+															<div class="alert alert-info p-2 mb-0">
+																<strong><?=htmlspecialchars($currentSettings['powered'] ?? '')?>_<?=htmlspecialchars($currentSettings['version'] ?? '')?></strong>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+											
+											<!-- SEO настройки -->
+											<div class="tab-pane" id="seoContent">
+												<div class="settings-card">
+													<div class="settings-card-header">
+														<h4 class="mb-0"><i class="fas fa-search"></i> <?= Lang::get('seo_settings', 'admin') ?></h4>
+													</div>
+													<div class="settings-card-body">
+														<div class="form-group mb-3">
+															<label class="form-label"><?= Lang::get('meta_keywords', 'admin') ?>:</label>
+															<input type="text" name="metaKeywords" class="form-control" 
+																   value="<?=htmlspecialchars($currentSettings['metaKeywords'] ?? '')?>" 
+																   placeholder="<?= Lang::get('meta_keywords_placeholder', 'admin') ?>">
+															<small class="form-text text-muted"><?= Lang::get('meta_keywords_desc', 'admin') ?></small>
+														</div>
+														
+														<div class="form-group mb-0">
+															<label class="form-label"><?= Lang::get('meta_description', 'admin') ?>:</label>
+															<textarea name="metaDescription" class="form-control" rows="4"
+																	  placeholder="<?= Lang::get('meta_description_placeholder', 'admin') ?>"><?=htmlspecialchars($currentSettings['metaDescription'] ?? '')?></textarea>
+															<small class="form-text text-muted"><?= Lang::get('meta_description_desc', 'admin') ?></small>
+														</div>
+													</div>
+												</div>
+											</div>
+											
+											<!-- Email настройки -->
+											<div class="tab-pane" id="emailContent">
+												<div class="settings-card">
+													<div class="settings-card-header">
+														<h4 class="mb-0"><i class="fas fa-envelope"></i> <?= Lang::get('email_settings', 'admin') ?></h4>
+													</div>
+													<div class="settings-card-body">
+														<div class="form-group mb-3">
+															<label class="form-label"><?= Lang::get('mail_from', 'admin') ?>:</label>
+															<input type="email" name="mail_from" class="form-control" 
+																   value="<?=htmlspecialchars($currentSettings['mail_from'] ?? '')?>" 
+																   placeholder="<?= Lang::get('mail_from_placeholder', 'admin') ?>">
+															<small class="form-text text-muted"><?= Lang::get('mail_from_desc', 'admin') ?></small>
+														</div>
+														
+														<div class="form-group mb-0">
+															<label class="form-label"><?= Lang::get('mail_from_name', 'admin') ?>:</label>
+															<input type="text" name="mail_from_name" class="form-control" 
+																   value="<?=htmlspecialchars($currentSettings['mail_from_name'] ?? '')?>" 
+																   placeholder="<?= Lang::get('mail_from_name_placeholder', 'admin') ?>">
+															<small class="form-text text-muted"><?= Lang::get('mail_from_name_desc', 'admin') ?></small>
+														</div>
+													</div>
+												</div>
+											</div>
+											
+											<!-- Настройки производительности -->
+											<div class="tab-pane" id="performanceContent">
+												<div class="settings-card">
+													<div class="settings-card-header">
+														<h4 class="mb-0"><i class="fas fa-tachometer-alt"></i> <?= Lang::get('performance_settings', 'admin') ?></h4>
+													</div>
+													<div class="settings-card-body">
+														<div class="form-check form-switch mb-3">
+															<input type="checkbox" name="cache_enabled" id="cache_enabled" 
+																   class="form-check-input" <?=($currentSettings['cache_enabled'] ?? false) ? 'checked' : ''?>>
+															<label for="cache_enabled" class="form-check-label">
+																<?= Lang::get('cache_enabled', 'admin') ?>
+															</label>
+															<small class="form-text text-muted d-block"><?= Lang::get('cache_enabled_desc', 'admin') ?></small>
+														</div>
+														
+														<div class="form-group mb-3">
+															<label class="form-label"><?= Lang::get('cache_driver', 'admin') ?>:</label>
+															<select name="cache_driver" id="cache_driver_select" class="form-control">
+																<option value="file" <?=($currentSettings['cache_driver'] ?? 'file') == 'file' ? 'selected' : ''?>>
+																	<?= Lang::get('cache_driver_file', 'admin') ?>
+																</option>
+																<option value="redis" <?=($currentSettings['cache_driver'] ?? '') == 'redis' ? 'selected' : ''?>>
+																	<?= Lang::get('cache_driver_redis', 'admin') ?>
+																</option>
+																<option value="memcached" <?=($currentSettings['cache_driver'] ?? '') == 'memcached' ? 'selected' : ''?>>
+																	<?= Lang::get('cache_driver_memcached', 'admin') ?>
+																</option>
+																<option value="apcu" <?=($currentSettings['cache_driver'] ?? '') == 'apcu' ? 'selected' : ''?>>
+																	<?= Lang::get('cache_driver_apcu', 'admin') ?>
+																</option>
+															</select>
+															<small class="form-text text-muted"><?= Lang::get('cache_driver_desc', 'admin') ?></small>
+														</div>
+														
+														<div class="form-group mb-3">
+															<label class="form-label"><?= Lang::get('cache_ttl', 'admin') ?>:</label>
+															<input type="number" name="cache_ttl" class="form-control" 
+																   value="<?=htmlspecialchars($currentSettings['cache_ttl'] ?? 3600)?>" 
+																   min="60" max="86400">
+															<small class="form-text text-muted"><?= Lang::get('cache_ttl_desc', 'admin') ?></small>
+														</div>
+														
+														<div class="form-group mb-3">
+															<label class="form-label"><?= Lang::get('cache_key_salt', 'admin') ?>:</label>
+															<input type="text" name="cache_key_salt" class="form-control" 
+																   value="<?=htmlspecialchars($currentSettings['cache_key_salt'] ?? 'your_unique_salt_here')?>">
+															<small class="form-text text-muted"><?= Lang::get('cache_key_salt_desc', 'admin') ?></small>
+														</div>
+														
+														<div id="redis_settings" class="driver-settings" style="display: <?=($currentSettings['cache_driver'] ?? '') == 'redis' ? 'block' : 'none' ?>;">
+															<h5 class="mt-3 border-bottom pb-2"><?= Lang::get('redis_settings', 'admin') ?></h5>
+															<div class="row">
+																<div class="col-md-6">
+																	<div class="form-group mb-3">
+																		<label class="form-label"><?= Lang::get('redis_host', 'admin') ?>:</label>
+																		<input type="text" name="redis_host" class="form-control" 
+																			   value="<?=htmlspecialchars($currentSettings['redis_host'] ?? '127.0.0.1')?>">
+																		<small class="form-text text-muted"><?= Lang::get('redis_host_desc', 'admin') ?></small>
+																	</div>
+																</div>
+																<div class="col-md-6">
+																	<div class="form-group mb-3">
+																		<label class="form-label"><?= Lang::get('redis_port', 'admin') ?>:</label>
+																		<input type="number" name="redis_port" class="form-control" 
+																			   value="<?=htmlspecialchars($currentSettings['redis_port'] ?? 6379)?>">
+																		<small class="form-text text-muted"><?= Lang::get('redis_port_desc', 'admin') ?></small>
+																	</div>
+																</div>
+															</div>
+															<div class="form-group mb-0">
+																<label class="form-label"><?= Lang::get('redis_password', 'admin') ?>:</label>
+																<input type="password" name="redis_password" class="form-control" 
+																	   value="<?=htmlspecialchars($currentSettings['redis_password'] ?? '')?>">
+																<small class="form-text text-muted"><?= Lang::get('redis_password_desc', 'admin') ?></small>
+															</div>
+														</div>
+														
+														<div id="memcached_settings" class="driver-settings" style="display: <?=($currentSettings['cache_driver'] ?? '') == 'memcached' ? 'block' : 'none' ?>;">
+															<h5 class="mt-3 border-bottom pb-2"><?= Lang::get('memcached_settings', 'admin') ?></h5>
+															<div class="row">
+																<div class="col-md-6">
+																	<div class="form-group mb-3">
+																		<label class="form-label"><?= Lang::get('memcached_host', 'admin') ?>:</label>
+																		<input type="text" name="memcached_host" class="form-control" 
+																			   value="<?=htmlspecialchars($currentSettings['memcached_host'] ?? '127.0.0.1')?>">
+																		<small class="form-text text-muted"><?= Lang::get('memcached_host_desc', 'admin') ?></small>
+																	</div>
+																</div>
+																<div class="col-md-6">
+																	<div class="form-group mb-3">
+																		<label class="form-label"><?= Lang::get('memcached_port', 'admin') ?>:</label>
+																		<input type="number" name="memcached_port" class="form-control" 
+																			   value="<?=htmlspecialchars($currentSettings['memcached_port'] ?? 11211)?>">
+																		<small class="form-text text-muted"><?= Lang::get('memcached_port_desc', 'admin') ?></small>
+																	</div>
+																</div>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+											
+											<!-- Настройки безопасности -->
+											<div class="tab-pane" id="securityContent">
+												<div class="settings-card">
+													<div class="settings-card-header">
+														<h4 class="mb-0"><i class="fas fa-shield-alt"></i> <?= Lang::get('security_settings', 'admin') ?></h4>
+													</div>
+													<div class="settings-card-body">
+														<div class="alert alert-warning">
+															<i class="fas fa-exclamation-triangle"></i>
+															<strong><?= Lang::get('security_warning', 'admin') ?>:</strong>
+															<?= Lang::get('security_warning_desc', 'admin') ?>
+														</div>
+														
+														<div class="form-group mb-3">
+															<label class="form-label"><?= Lang::get('session_lifetime', 'admin') ?>:</label>
+															<input type="number" name="session_lifetime" class="form-control" 
+																   value="<?=htmlspecialchars($currentSettings['session_lifetime'] ?? 7200)?>" 
+																   min="300" max="86400">
+															<small class="form-text text-muted"><?= Lang::get('session_lifetime_desc', 'admin') ?></small>
+														</div>
+														
+														<div class="form-check form-switch mb-3">
+															<input type="checkbox" name="force_https" id="force_https" 
+																   class="form-check-input" <?=($currentSettings['force_https'] ?? false) ? 'checked' : ''?>>
+															<label for="force_https" class="form-check-label">
+																<?= Lang::get('force_https', 'admin') ?>
+															</label>
+															<small class="form-text text-muted d-block"><?= Lang::get('force_https_desc', 'admin') ?></small>
+														</div>
+														
+														<!--<div class="form-check form-switch mb-3">
+															<input type="checkbox" name="disable_update_check" id="disable_update_check" 
+																   class="form-check-input" <?=($currentSettings['disable_update_check'] ?? false) ? 'checked' : ''?>>
+															<label for="disable_update_check" class="form-check-label">
+																<?= Lang::get('disable_update_check', 'admin') ?>
+															</label>
+															<small class="form-text text-muted d-block"><?= Lang::get('disable_update_check_desc', 'admin') ?></small>
+														</div>
+														
+														<div class="form-group mb-0">
+															<label class="form-label"><?= Lang::get('update_check_interval', 'admin') ?>:</label>
+															<input type="number" name="update_check_interval" class="form-control" 
+																   value="<?=htmlspecialchars($currentSettings['update_check_interval'] ?? 24)?>" 
+																   min="1" max="168">
+															<small class="form-text text-muted"><?= Lang::get('update_check_interval_desc', 'admin') ?></small>
+														</div> -->
+													</div>
+												</div>
+											</div>
+											
+											<!-- Настройки капчи -->
+											<div class="tab-pane" id="captchaContent">
+												<div class="settings-card">
+													<div class="settings-card-header">
+														<h4 class="mb-0"><i class="fas fa-robot"></i> <?= Lang::get('captcha_settings', 'admin') ?></h4>
+													</div>
+													<div class="settings-card-body">
+														<div class="row">
+															<div class="col-md-6">
+																<div class="form-group mb-3">
+																	<label class="form-label"><?= Lang::get('captcha_bg_color', 'admin') ?>:</label>
+																	<div class="input-group">
+																		<input type="text" name="bg_color" class="form-control" 
+																			   value="<?= htmlspecialchars($currentSettings['captcha_bg_color'] ?? '10,10,26') ?>">
+																		<span class="input-group-text">
+																			<div class="color-indicator" style="background-color: rgb(<?= $currentSettings['captcha_bg_color'] ?? '10,10,26' ?>);"></div>
+																		</span>
+																	</div>
+																	<small class="form-text text-muted"><?= Lang::get('captcha_bg_color_desc', 'admin') ?></small>
+																</div>
+																
+																<div class="form-group mb-3">
+																	<label class="form-label"><?= Lang::get('captcha_text_color', 'admin') ?>:</label>
+																	<div class="input-group">
+																		<input type="text" name="text_color" class="form-control" 
+																			   value="<?= htmlspecialchars($currentSettings['captcha_text_color'] ?? '11,227,255') ?>">
+																		<span class="input-group-text">
+																			<div class="color-indicator" style="background-color: rgb(<?= $currentSettings['captcha_text_color'] ?? '11,227,255' ?>);"></div>
+																		</span>
+																	</div>
+																	<small class="form-text text-muted"><?= Lang::get('captcha_text_color_desc', 'admin') ?></small>
+																</div>
+															</div>
+															<div class="col-md-6">
+																<div class="form-group mb-3">
+																	<label class="form-label"><?= Lang::get('captcha_accent_color', 'admin') ?>:</label>
+																	<div class="input-group">
+																		<input type="text" name="accent_color" class="form-control" 
+																			   value="<?= htmlspecialchars($currentSettings['captcha_accent_color'] ?? '188,19,254') ?>">
+																		<span class="input-group-text">
+																			<div class="color-indicator" style="background-color: rgb(<?= $currentSettings['captcha_accent_color'] ?? '188,19,254' ?>);"></div>
+																		</span>
+																	</div>
+																	<small class="form-text text-muted"><?= Lang::get('captcha_accent_color_desc', 'admin') ?></small>
+																</div>
+																
+																<div class="form-group mb-3">
+																	<label class="form-label"><?= Lang::get('captcha_noise_color', 'admin') ?>:</label>
+																	<div class="input-group">
+																		<input type="text" name="noise_color" class="form-control" 
+																			   value="<?= htmlspecialchars($currentSettings['captcha_noise_color'] ?? '50,50,80') ?>">
+																		<span class="input-group-text">
+																			<div class="color-indicator" style="background-color: rgb(<?= $currentSettings['captcha_noise_color'] ?? '50,50,80' ?>);"></div>
+																		</span>
+																	</div>
+																	<small class="form-text text-muted"><?= Lang::get('captcha_noise_color_desc', 'admin') ?></small>
+																</div>
+															</div>
+														</div>
+														
+														<div class="text-center mt-4">
+															<button type="button" class="btn btn-primary" onclick="updateCaptchaPreview()">
+																<i class="fas fa-sync-alt"></i> <?= Lang::get('update_preview', 'admin') ?>
+															</button>
+														</div>
+														
+														<div class="mt-4">
+															<h5><?= Lang::get('captcha_preview', 'admin') ?>:</h5>
+															<div class="card">
+																<div class="card-body text-center">
+																	<img id="captcha-preview" src="/class/captcha.php?preview=1&bg_color=<?= urlencode($currentSettings['captcha_bg_color'] ?? '10,10,26') ?>&text_color=<?= urlencode($currentSettings['captcha_text_color'] ?? '11,227,255') ?>" 
+																		 class="img-fluid" style="max-width: 300px;">
+																</div>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
 									</div>
 								</div>
 								
-								<div class="form-group">
-									<label><?= Lang::get('current_version', 'admin') ?>:</label>
-									<b><?=htmlspecialchars($currentSettings['powered'] ?? '')?>_<?=htmlspecialchars($currentSettings['version'] ?? '')?></b>
+								<!-- Кнопки сохранения -->
+								<div class="card mt-4">
+									<div class="card-body text-center">
+										<button type="submit" class="btn btn-primary btn-lg px-5">
+											<i class="fas fa-save"></i> <?= Lang::get('save_changes', 'admin') ?>
+										</button>
+										<button type="button" class="btn btn-secondary btn-lg px-5" onclick="resetForm()">
+											<i class="fas fa-undo"></i> <?= Lang::get('reset_changes', 'admin') ?>
+										</button>
+									</div>
 								</div>
-								
-								<button type="submit" class="btn btn-primary"><?= Lang::get('save_changes', 'admin') ?></button>
 							</form>
 						</div>
 					</div>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const cacheDriverSelect = document.getElementById('cache_driver_select');
-    const driverSettings = document.querySelectorAll('.driver-settings');
-    
-    function updateDriverSettings() {
-        const selectedDriver = cacheDriverSelect.value;
-        
-        driverSettings.forEach(setting => {
-            setting.style.display = 'none';
-        });
-        
-        if (selectedDriver === 'redis') {
-            document.getElementById('redis_settings').style.display = 'block';
-        } else if (selectedDriver === 'memcached') {
-            document.getElementById('memcached_settings').style.display = 'block';
-        }
-        
-        document.getElementById('common_cache_settings').style.display = 'block';
-    }
-    
-    updateDriverSettings();
-    
-    cacheDriverSelect.addEventListener('change', updateDriverSettings);
-});
-</script>
+
+					<script>
+					// Функция переключения вкладок
+					function showTab(tabName) {
+						// Скрываем все вкладки
+						document.querySelectorAll('.tab-pane').forEach(pane => {
+							pane.classList.remove('active');
+						});
+						
+						// Убираем активный класс со всех кнопок
+						document.querySelectorAll('.tab-btn').forEach(btn => {
+							btn.classList.remove('active');
+						});
+						
+						// Показываем выбранную вкладку
+						const contentId = tabName + 'Content';
+						const contentElement = document.getElementById(contentId);
+						if (contentElement) {
+							contentElement.classList.add('active');
+						}
+						
+						// Делаем кнопку активной
+						const activeButton = document.querySelector(`.tab-btn[onclick="showTab('${tabName}')"]`);
+						if (activeButton) {
+							activeButton.classList.add('active');
+						}
+						
+						// Обновляем цветовые индикаторы для капчи
+						if (tabName === 'captcha') {
+							updateColorIndicators();
+						}
+					}
+
+					// Функция обновления цветовых индикаторов
+					function updateColorIndicators() {
+						document.querySelectorAll('input[name="bg_color"], input[name="text_color"], input[name="accent_color"], input[name="noise_color"]').forEach(input => {
+							const colorValue = input.value;
+							const indicator = input.closest('.input-group')?.querySelector('.color-indicator');
+							if (indicator && colorValue) {
+								indicator.style.backgroundColor = `rgb(${colorValue})`;
+							}
+						});
+					}
+
+					// Инициализация настроек кэша при загрузке
+					document.addEventListener('DOMContentLoaded', function() {
+						const cacheDriverSelect = document.getElementById('cache_driver_select');
+						if (cacheDriverSelect) {
+							function updateDriverSettings() {
+								const selectedDriver = cacheDriverSelect.value;
+								
+								// Скрываем все настройки драйверов
+								document.querySelectorAll('.driver-settings').forEach(setting => {
+									setting.style.display = 'none';
+								});
+								
+								if (selectedDriver === 'redis') {
+									const redisSettings = document.getElementById('redis_settings');
+									if (redisSettings) redisSettings.style.display = 'block';
+								} else if (selectedDriver === 'memcached') {
+									const memcachedSettings = document.getElementById('memcached_settings');
+									if (memcachedSettings) memcachedSettings.style.display = 'block';
+								}
+							}
+							
+							updateDriverSettings();
+							cacheDriverSelect.addEventListener('change', updateDriverSettings);
+						}
+						
+						// Обновление цветовых индикаторов при изменении значений
+						document.querySelectorAll('input[name="bg_color"], input[name="text_color"], input[name="accent_color"], input[name="noise_color"]').forEach(input => {
+							input.addEventListener('input', updateColorIndicators);
+						});
+					});
+
+					// Функция обновления предпросмотра капчи
+					function updateCaptchaPreview() {
+						const bgColor = document.querySelector('input[name="bg_color"]')?.value || '10,10,26';
+						const textColor = document.querySelector('input[name="text_color"]')?.value || '11,227,255';
+						const accentColor = document.querySelector('input[name="accent_color"]')?.value || '188,19,254';
+						const noiseColor = document.querySelector('input[name="noise_color"]')?.value || '50,50,80';
+						
+						const params = new URLSearchParams();
+						params.append('bg_color', bgColor);
+						params.append('text_color', textColor);
+						params.append('accent_color', accentColor);
+						params.append('noise_color', noiseColor);
+						params.append('preview', '1');
+						params.append('t', new Date().getTime());
+						
+						const previewImg = document.getElementById('captcha-preview');
+						if (previewImg) {
+							previewImg.src = '/class/captcha.php?' + params.toString();
+						}
+					}
+
+					// Функция сброса формы
+					function resetForm() {
+						if (confirm('<?= Lang::get('reset_confirm', 'admin') ?>')) {
+							document.getElementById('systemSettingsForm').reset();
+							updateColorIndicators();
+						}
+					}
+					</script>
+
 				<?php elseif ($section == 'updates'): ?>
 					<div class="admin-content">
 						<h2><?= Lang::get('updates', 'admin') ?></h2>
