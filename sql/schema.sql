@@ -2,7 +2,7 @@
 # simpleBlog
 # ============================================================
 # 
-# VERSION: v0.9.6
+# VERSION: v1.0.0
 #
 #
 
@@ -116,6 +116,19 @@ CREATE TABLE `{PREFIX_}comments` (
   PRIMARY KEY (`id`),
   KEY `theme_id` (`theme_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
+#
+# Table `modules`
+#
+CREATE TABLE `{PREFIX_}modules` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `active` tinyint(1) NOT NULL DEFAULT '0',
+  `installed` tinyint(1) NOT NULL DEFAULT '0',
+  `settings` text,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 #
 # Table `tags`
